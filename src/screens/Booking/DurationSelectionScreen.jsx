@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Button } from 'react-native-paper';
+import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
@@ -84,15 +84,14 @@ const DurationSelectionScreen = ({ route, navigation }) => {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Button
-          mode="contained"
+        <TouchableOpacity
+          style={[styles.continueButton, !selectedDuration && styles.continueButtonDisabled]}
           onPress={handleContinue}
           disabled={!selectedDuration}
-          style={styles.continueButton}
-          labelStyle={styles.continueButtonText}
+          activeOpacity={0.8}
         >
-          Continue
-        </Button>
+          <Text style={styles.continueButtonText}>Continue</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

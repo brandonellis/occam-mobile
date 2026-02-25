@@ -1,12 +1,13 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity, FlatList } from 'react-native';
-import { Text, ActivityIndicator, Button } from 'react-native-paper';
+import { Text, ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { getAvailableTimeSlots } from '../../services/availability.service';
-import { getAvailabilityMonthlySummary } from '../../services/bookings.api';
+import { getAvailabilityMonthlySummary, getResources } from '../../services/bookings.api';
+import { filterResourcesNotFullyBlocked, filterSlotsByClosures } from '../../helpers/closure.helper';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 
@@ -43,6 +44,41 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [availabilityMap, setAvailabilityMap] = useState({});
+  const [resourcePool, setResourcePool] = useState([]);
+
+  // Fetch resources when service requires them (for auto-selection)
+  useEffect(() => {
+    if (!service?.requires_resource || !location?.id) {
+      setResourcePool([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await getResources();
+        const allResources = resp?.data || resp || [];
+        // Filter by active status, location, and service resource type
+        const filtered = allResources.filter((r) => {
+          if (r.status === 'inactive' || r.status === 'disabled') return false;
+          const locMatch = r.location_id === location.id ||
+            (Array.isArray(r.location_ids) && r.location_ids.includes(location.id)) ||
+            (!r.location_id && !r.location_ids);
+          if (!locMatch) return false;
+          const serviceTypeIds = service.resource_type_ids ||
+            (service.resource_type?.id ? [service.resource_type.id] : (service.resource_type_id ? [service.resource_type_id] : []));
+          if (serviceTypeIds.length > 0) {
+            const rTypeId = r.resource_type_id || r.type?.id || r.resource_type?.id;
+            if (rTypeId && !serviceTypeIds.includes(rTypeId)) return false;
+          }
+          return true;
+        });
+        if (!cancelled) setResourcePool(filtered);
+      } catch (err) {
+        console.warn('Failed to fetch resources:', err.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [service?.requires_resource, service?.resource_type_ids, service?.resource_type_id, service?.resource_type?.id, location?.id]);
 
   // Determine which months we need to fetch summaries for
   const monthsToFetch = useMemo(() => {
@@ -83,23 +119,46 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     fetchSummaries();
   }, [service?.id, location?.id, coach?.id, monthsToFetch]);
 
+  // Apply closure filtering to resource pool for the selected date
+  const effectiveResourcePool = useMemo(() => {
+    if (!service?.requires_resource || resourcePool.length === 0 || !selectedDate?.key) {
+      return resourcePool;
+    }
+    return filterResourcesNotFullyBlocked(
+      resourcePool,
+      selectedDate.key,
+      service.service_type,
+      location
+    );
+  }, [resourcePool, selectedDate?.key, service?.requires_resource, service?.service_type, location]);
+
   const loadTimeSlots = useCallback(async (dateKey) => {
     try {
       setIsLoading(true);
-      const slots = await getAvailableTimeSlots({
+      let slots = await getAvailableTimeSlots({
         service,
         coach,
         location,
         dateStr: dateKey,
         durationMinutes: bookingData.duration_minutes || null,
+        resourcePool: effectiveResourcePool,
       });
+
+      // Apply per-slot closure filtering (removes slots where all resources are blocked)
+      if (service?.requires_resource && effectiveResourcePool.length > 0) {
+        slots = filterSlotsByClosures(slots, {
+          service,
+          resourcePool: effectiveResourcePool,
+        });
+      }
+
       setTimeSlots(slots);
     } catch {
       setTimeSlots([]);
     } finally {
       setIsLoading(false);
     }
-  }, [service, coach, location, bookingData.duration_minutes]);
+  }, [service, coach, location, bookingData.duration_minutes, effectiveResourcePool]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -114,14 +173,24 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
 
   const handleContinue = useCallback(() => {
     if (!selectedSlot) return;
+    // Auto-assign first available resource from the selected time slot
+    let selectedResource = null;
+    if (service?.requires_resource && selectedSlot?.available_resource_ids?.length > 0) {
+      const resourceId = selectedSlot.available_resource_ids[0];
+      selectedResource = effectiveResourcePool.find(
+        (r) => (r.id || r.resource_id)?.toString() === resourceId?.toString()
+      ) || { id: resourceId };
+    }
+
     navigation.navigate(SCREENS.BOOKING_CONFIRMATION, {
       bookingData: {
         ...bookingData,
         date: selectedDate.key,
         timeSlot: selectedSlot,
+        ...(selectedResource ? { selectedResource } : {}),
       },
     });
-  }, [navigation, bookingData, selectedDate, selectedSlot]);
+  }, [navigation, bookingData, selectedDate, selectedSlot, service, effectiveResourcePool]);
 
   const getDateIndicatorColor = useCallback(
     (dateKey) => {
@@ -229,15 +298,14 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        <Button
-          mode="contained"
+        <TouchableOpacity
+          style={[styles.continueButton, !selectedSlot && styles.continueButtonDisabled]}
           onPress={handleContinue}
           disabled={!selectedSlot}
-          style={styles.continueButton}
-          labelStyle={styles.continueButtonText}
+          activeOpacity={0.8}
         >
-          Continue
-        </Button>
+          <Text style={styles.continueButtonText}>Continue</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );

@@ -82,7 +82,8 @@ const hasOverlap = (startA, endA, startB, endB) => {
  * @param {string} params.dateStr - Date string "YYYY-MM-DD"
  * @param {number} [params.durationMinutes] - Override duration for variable-duration services
  * @param {number} [params.slotInterval=15] - Interval between slot starts in minutes
- * @returns {Promise<Array>} Array of { start_time, end_time, display_time }
+ * @param {Array} [params.resourcePool=[]] - Resources of the required type at location (for auto-selection)
+ * @returns {Promise<Array>} Array of { start_time, end_time, display_time, available_resource_ids? }
  */
 export const getAvailableTimeSlots = async ({
   service,
@@ -91,6 +92,7 @@ export const getAvailableTimeSlots = async ({
   dateStr,
   durationMinutes = null,
   slotInterval = 15,
+  resourcePool = [],
 }) => {
   if (!service || !location) return [];
 
@@ -186,7 +188,39 @@ export const getAvailableTimeSlots = async ({
   }
 
   // --- Step 2: Fetch resource bookings if needed ---
-  if (service.requires_resource) {
+  // Build a map of resource_id -> array of booking time ranges for per-resource filtering
+  const resourceBookingMap = {};
+  if (service.requires_resource && resourcePool.length > 0) {
+    try {
+      const resourceIds = resourcePool.map((r) => r.id || r.resource_id).filter(Boolean);
+      const resp = await getBookingsCompact({
+        start_date: dateStr,
+        end_date: dateStr,
+        location_id: location.id,
+        resource_ids: resourceIds,
+      });
+      const allResourceBookings = (resp?.data || [])
+        .filter((b) => b.status !== 'cancelled');
+
+      // Group bookings by resource_id
+      allResourceBookings.forEach((b) => {
+        const rIds = b.resource_ids || (b.resource_id ? [b.resource_id] : []);
+        const booking = {
+          start: new Date(b.start_time || b.start),
+          end: new Date(b.end_time || b.end),
+        };
+        rIds.forEach((rid) => {
+          if (!resourceBookingMap[rid]) resourceBookingMap[rid] = [];
+          resourceBookingMap[rid].push(booking);
+        });
+        // Also add to global existingBookings for coach-based conflict detection
+        existingBookings.push(booking);
+      });
+    } catch (err) {
+      console.warn('Failed to fetch resource bookings:', err.message);
+    }
+  } else if (service.requires_resource) {
+    // No resource pool — fetch all bookings at location as fallback
     try {
       const resp = await getBookingsCompact({
         start_date: dateStr,
@@ -200,8 +234,8 @@ export const getAvailableTimeSlots = async ({
           end: new Date(b.end_time || b.end),
         }));
       existingBookings = [...existingBookings, ...resourceBookings];
-    } catch {
-      // Non-fatal — proceed without resource conflict data
+    } catch (err) {
+      console.warn('Failed to fetch resource bookings:', err.message);
     }
   }
 
@@ -239,11 +273,33 @@ export const getAvailableTimeSlots = async ({
         );
 
         if (!hasConflict) {
-          slots.push({
+          const slot = {
             start_time: toISO(slotStart),
             end_time: toISO(slotEnd),
             display_time: formatDisplayTime(slotStart),
-          });
+          };
+
+          // When service requires_resource, determine which resources are free for this slot
+          let includeSlot = true;
+          if (service.requires_resource && resourcePool.length > 0) {
+            const availableResourceIds = resourcePool
+              .map((r) => r.id || r.resource_id)
+              .filter((rid) => {
+                const bookings = resourceBookingMap[rid] || [];
+                return !bookings.some((b) =>
+                  hasOverlap(slotStart.getTime(), slotEnd.getTime(), b.start.getTime(), b.end.getTime())
+                );
+              });
+            slot.available_resource_ids = availableResourceIds;
+            // Only include slot if at least one resource is free
+            if (availableResourceIds.length === 0) {
+              includeSlot = false;
+            }
+          }
+
+          if (includeSlot) {
+            slots.push(slot);
+          }
         }
       }
 

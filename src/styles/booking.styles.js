@@ -435,6 +435,20 @@ export const bookingStyles = StyleSheet.create({
     color: colors.error,
     marginTop: 4,
   },
+  cardFieldSkeleton: {
+    height: 50,
+    marginVertical: spacing.sm,
+    backgroundColor: colors.border,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  cardFieldSkeletonShimmer: {
+    width: '60%',
+    height: '100%',
+    backgroundColor: colors.background,
+    opacity: 0.5,
+    borderRadius: borderRadius.md,
+  },
   paymentDisabledBanner: {
     backgroundColor: 'rgba(24, 144, 255, 0.08)',
     borderRadius: borderRadius.md,

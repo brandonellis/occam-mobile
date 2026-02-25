@@ -165,7 +165,7 @@ const LoginScreen = () => {
 
           <View style={styles.form}>
             {/* Organization search field */}
-            <View style={styles.fieldGroup}>
+            <View style={[styles.fieldGroup, { zIndex: 10 }]}>
               <Text style={styles.label}>Organization</Text>
               <View style={[
                 styles.input,

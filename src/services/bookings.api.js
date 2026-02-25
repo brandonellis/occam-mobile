@@ -60,6 +60,11 @@ export const getBookingsCompact = async (params = {}) => {
   return response.data;
 };
 
+export const getResources = async (params = {}) => {
+  const response = await apiClient.get('/resources', { params });
+  return response.data;
+};
+
 export const getEcommerceConfig = async () => {
   const response = await apiClient.get('/config/ecommerce');
   return response.data;

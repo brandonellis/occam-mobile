@@ -1,4 +1,4 @@
-export const DEFAULT_FEE_RATE = 0.03;
+export const DEFAULT_FEE_RATE = 0.04;
 
 export const BILLING_CYCLE_LABELS = {
   month: 'Monthly',

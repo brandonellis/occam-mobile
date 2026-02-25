@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
-import { View, ScrollView, Alert, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Text, Button, ProgressBar } from 'react-native-paper';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { View, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
+import { Text, ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CardField, useConfirmPayment } from '@stripe/stripe-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -22,10 +22,10 @@ import { COACH_ROLES } from '../../constants/auth.constants';
 
 const BookingConfirmationScreen = ({ route, navigation }) => {
   const { bookingData = {} } = route.params || {};
-  const { service, coach, location, client, date, timeSlot } = bookingData;
+  const { service, coach, location, client, date, timeSlot, selectedResource } = bookingData;
   const { user, activeRole } = useAuth();
   const { confirmPayment } = useConfirmPayment();
-  const { platformFeeRate, feeDescription, paymentsEnabled, connectAccount } = useEcommerceConfig();
+  const { platformFeeRate, feeDescription, paymentsEnabled, connectAccount, loading: ecommerceLoading } = useEcommerceConfig();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [feeBreakdownVisible, setFeeBreakdownVisible] = useState(false);
@@ -37,6 +37,20 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
   // Stripe card state
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState(null);
+
+  // Skeleton pulse animation for card loading state
+  const skeletonAnim = useRef(new Animated.Value(0.3)).current;
+  useEffect(() => {
+    if (!ecommerceLoading) return;
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(skeletonAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(skeletonAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [ecommerceLoading, skeletonAnim]);
 
   const isCoach = COACH_ROLES.includes(activeRole);
   const clientId = isCoach ? client?.id : user?.id;
@@ -159,6 +173,11 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
       payload.bookable_id = service?.id;
     }
 
+    // Include resource_ids when a resource was auto-selected (required by backend for requires_resource services)
+    if (selectedResource?.id) {
+      payload.resource_ids = [selectedResource.id];
+    }
+
     if (bookingData.duration_minutes && service?.is_variable_duration) {
       payload.duration_minutes = bookingData.duration_minutes;
     }
@@ -255,28 +274,64 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
     client, user, isCoach, confirmPayment, navigation,
   ]);
 
-  // Main confirm handler — routes to membership or payment flow
+  // Handle non-payment booking (staff/coach flow when Stripe not enabled)
+  const handleNoPaymentConfirm = useCallback(async () => {
+    try {
+      setIsSubmitting(true);
+      setLoadingMessage('Creating booking...');
+      const payload = buildBookingPayload('confirmed');
+      await createBooking(payload);
+
+      Alert.alert('Booking Confirmed', 'Your session has been booked.', [
+        { text: 'OK', onPress: () => navigation.popToTop() },
+      ]);
+    } catch (error) {
+      Alert.alert('Booking Failed', extractErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+      setLoadingMessage('');
+    }
+  }, [buildBookingPayload, navigation]);
+
+  // Main confirm handler — routes to membership, payment, or no-payment flow
   const handleConfirm = useCallback(() => {
     if (!clientId) {
       Alert.alert('Error', 'Client information is missing.');
       return;
     }
+    // Pre-flight validation: service requires a resource but none was auto-selected
+    if (service?.requires_resource && !selectedResource?.id) {
+      Alert.alert('Error', 'This service requires a resource to be selected. Please go back and select a different time slot.');
+      return;
+    }
+    // Coach flow: membership-only — block if client has no membership coverage
+    if (isCoach && !isMembershipBooking) {
+      Alert.alert(
+        'Membership Required',
+        'This client does not have an active membership with available usage for this service. Bookings through the coach app require a membership.',
+      );
+      return;
+    }
     if (isMembershipBooking) {
       handleMembershipConfirm();
-    } else {
+    } else if (paymentsEnabled) {
       handlePaymentConfirm();
+    } else {
+      handleNoPaymentConfirm();
     }
-  }, [clientId, isMembershipBooking, handleMembershipConfirm, handlePaymentConfirm]);
+  }, [clientId, service, selectedResource, isCoach, isMembershipBooking, paymentsEnabled, handleMembershipConfirm, handlePaymentConfirm, handleNoPaymentConfirm]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
-    if (isSubmitting || membershipLoading) return false;
+    if (isSubmitting || membershipLoading || ecommerceLoading) return false;
     if (isMembershipBooking) return true;
-    // One-off: require card if payments are enabled
+    // Coach flow: membership-only — disable button when no membership coverage
+    if (isCoach) return false;
+    // Client flow: one-off payment — require card if payments are enabled
     if (paymentsEnabled) return cardComplete;
     // Payments not enabled — allow booking without payment (staff flow)
     return true;
-  }, [isSubmitting, membershipLoading, isMembershipBooking, paymentsEnabled, cardComplete]);
+  }, [isSubmitting, membershipLoading, ecommerceLoading, isMembershipBooking, isCoach, paymentsEnabled, cardComplete]);
 
   // Allotment progress bars for membership
   const renderAllotmentSection = () => {
@@ -299,11 +354,17 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
           <View style={styles.allotmentNoMembership}>
             <Text style={styles.allotmentNoMembershipText}>
               {membershipStatus.isPaused
-                ? 'Your membership is paused. Benefits are temporarily unavailable.'
-                : "You don't currently have an active membership."}
+                ? isCoach
+                  ? 'This client\'s membership is paused. Benefits are temporarily unavailable.'
+                  : 'Your membership is paused. Benefits are temporarily unavailable.'
+                : isCoach
+                  ? 'This client does not have an active membership.'
+                  : "You don't currently have an active membership."}
             </Text>
             <Text style={[styles.allotmentNoMembershipText, { marginTop: 4, fontSize: 12 }]}>
-              Payment will be processed as a one-time booking.
+              {isCoach
+                ? 'A membership with available usage is required to book through the app.'
+                : 'Payment will be processed as a one-time booking.'}
             </Text>
           </View>
         </View>
@@ -370,10 +431,12 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
           {!membershipStatus.hasUsage && (
             <View style={styles.allotmentWarningBanner}>
               <Text style={styles.allotmentNoMembershipText}>
-                This service isn't covered or you've reached your limit.
+                This service isn't covered or {isCoach ? 'the client has' : 'you\'ve'} reached the limit.
               </Text>
               <Text style={[styles.allotmentNoMembershipText, { marginTop: 4, fontSize: 12 }]}>
-                Payment will be processed as a one-time booking.
+                {isCoach
+                  ? 'A membership with available usage for this service is required.'
+                  : 'Payment will be processed as a one-time booking.'}
               </Text>
             </View>
           )}
@@ -384,9 +447,21 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
     return null;
   };
 
-  // Stripe card input for one-off bookings
+  // Stripe card input for one-off bookings (client flow only)
   const renderCardSection = () => {
-    if (isMembershipBooking || membershipLoading) return null;
+    if (isCoach || isMembershipBooking || membershipLoading) return null;
+
+    // Show skeleton while ecommerce config is loading
+    if (ecommerceLoading) {
+      return (
+        <View style={styles.cardSection}>
+          <Text style={styles.cardSectionTitle}>Payment Method</Text>
+          <Animated.View style={[styles.cardFieldSkeleton, { opacity: skeletonAnim }]}>
+            <View style={styles.cardFieldSkeletonShimmer} />
+          </Animated.View>
+        </View>
+      );
+    }
 
     if (!paymentsEnabled) {
       return (
@@ -525,7 +600,7 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
           </View>
         )}
 
-        {/* Stripe Card Input (one-off only) */}
+        {/* Stripe Card Input (client one-off only — coaches use membership) */}
         {renderCardSection()}
 
         {/* Payment Summary */}
@@ -537,7 +612,7 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
             <Text style={styles.summaryValue}>{summary.subtotalFormatted}</Text>
           </View>
 
-          {!isMembershipBooking && (
+          {!isMembershipBooking && !isCoach && (
             <View style={{ marginTop: 4 }}>
               <View style={styles.confirmRow}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -585,22 +660,26 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
             <Text style={{ marginLeft: 8, color: colors.textSecondary }}>{loadingMessage}</Text>
           </View>
         ) : (
-          <Button
-            mode="contained"
+          <TouchableOpacity
+            style={[styles.continueButton, !canConfirm && styles.continueButtonDisabled]}
             onPress={handleConfirm}
             disabled={!canConfirm}
-            loading={isSubmitting}
-            style={styles.continueButton}
-            labelStyle={styles.continueButtonText}
+            activeOpacity={0.8}
           >
-            {isSubmitting
-              ? ''
-              : isMembershipBooking
-                ? 'Confirm (Membership)'
-                : paymentsEnabled
-                  ? `Pay ${summary.totalFormatted}`
-                  : 'Confirm Booking'}
-          </Button>
+            {isSubmitting ? (
+              <ActivityIndicator color={colors.textInverse} />
+            ) : (
+              <Text style={styles.continueButtonText}>
+                {isMembershipBooking
+                  ? 'Confirm (Membership)'
+                  : isCoach
+                    ? 'Membership Required'
+                    : paymentsEnabled
+                      ? `Pay ${summary.totalFormatted}`
+                      : 'Confirm Booking'}
+              </Text>
+            )}
+          </TouchableOpacity>
         )}
       </View>
     </SafeAreaView>
