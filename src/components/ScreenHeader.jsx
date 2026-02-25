@@ -7,7 +7,7 @@ const ScreenHeader = ({ title, subtitle, onBack, rightAction }) => {
   return (
     <Appbar.Header style={styles.header} statusBarHeight={0}>
       {onBack ? (
-        <Appbar.BackAction onPress={onBack} color={colors.textPrimary} />
+        <Appbar.BackAction onPress={onBack} iconColor={colors.textPrimary} />
       ) : (
         <Appbar.Action icon={() => null} disabled style={styles.placeholder} />
       )}
