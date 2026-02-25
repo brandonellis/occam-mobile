@@ -177,7 +177,8 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       const { groups, flat } = buildClassSessionGroups(result, selectedDayjs);
       setClassGroups(groups);
       setClassSlots(flat);
-    } catch {
+    } catch (err) {
+      console.warn('Failed to load class sessions:', err.message);
       setClassSlots([]);
       setClassGroups([]);
     } finally {
@@ -202,7 +203,8 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       });
 
       setTimeSlots(slots);
-    } catch {
+    } catch (err) {
+      console.warn('Failed to load time slots:', err.message);
       setTimeSlots([]);
     } finally {
       setIsLoading(false);
@@ -341,9 +343,9 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
             </Text>
           ) : (
             classGroups.map((group, gIdx) => (
-              <View key={gIdx} style={{ marginBottom: 16 }}>
+              <View key={gIdx} style={styles.classGroupContainer}>
                 {group.coach?.name && (
-                  <Text style={[styles.sectionHeader, { fontSize: 14, marginBottom: 8 }]}>
+                  <Text style={styles.classGroupCoachName}>
                     {group.coach.name}
                   </Text>
                 )}
@@ -359,8 +361,8 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
                         style={[
                           styles.timeSlot,
                           isSelected && styles.timeSlotSelected,
-                          isDisabled && { opacity: 0.4 },
-                          isFull && !isDisabled && { borderColor: colors.warning, borderWidth: 1 },
+                          isDisabled && styles.classSlotDisabled,
+                          isFull && !isDisabled && styles.classSlotFull,
                         ]}
                         onPress={() => !isDisabled && handleSelectSlot(slot)}
                         activeOpacity={isDisabled ? 1 : 0.7}
@@ -375,12 +377,12 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
                           {slot.display_time}
                         </Text>
                         {isFull && !isPast && (
-                          <Text style={{ fontSize: 10, color: colors.warning, marginTop: 2 }}>
+                          <Text style={[styles.classSlotSubtext, styles.classSlotFullText]}>
                             Full
                           </Text>
                         )}
                         {slot.available != null && !isFull && !isPast && (
-                          <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 2 }}>
+                          <Text style={[styles.classSlotSubtext, styles.classSlotAvailableText]}>
                             {slot.available} spot{slot.available !== 1 ? 's' : ''}
                           </Text>
                         )}

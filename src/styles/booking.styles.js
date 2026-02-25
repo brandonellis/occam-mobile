@@ -501,4 +501,32 @@ export const bookingStyles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
   },
+
+  // Class session styles
+  classGroupContainer: {
+    marginBottom: spacing.lg,
+  },
+  classGroupCoachName: {
+    ...typography.bodyMedium,
+    fontWeight: '600',
+    fontSize: 14,
+    marginBottom: spacing.sm,
+  },
+  classSlotDisabled: {
+    opacity: 0.4,
+  },
+  classSlotFull: {
+    borderColor: colors.warning,
+    borderWidth: 1,
+  },
+  classSlotSubtext: {
+    fontSize: 10,
+    marginTop: 2,
+  },
+  classSlotFullText: {
+    color: colors.warning,
+  },
+  classSlotAvailableText: {
+    color: colors.textSecondary,
+  },
 });

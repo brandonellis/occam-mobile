@@ -1,7 +1,7 @@
 import dayjs, { getEffectiveTimezone } from '../utils/dayjs';
 import { getCoachSchedule, getBookingsCompact } from './bookings.api';
 import { processAvailabilityData, generateTimeSlots } from '../utils/timeSlotGenerator';
-import { isSlotBlockedByClosure } from '../helpers/closure.helper';
+import { filterSlotsByClosures } from '../helpers/closure.helper';
 
 /**
  * Mobile Availability Service
@@ -17,33 +17,6 @@ import { isSlotBlockedByClosure } from '../helpers/closure.helper';
  * 5. filterSlotsByClosures() — remove closure-blocked slots
  * 6. Return array of available time slot objects
  */
-
-/**
- * Filter time slots by resource closures.
- * Shared between getAvailableTimeSlots and getMonthlyAvailabilitySummary.
- */
-const filterSlotsByClosures = (slots, { service, selectedResource, resourcePool = [], company }) => {
-  const serviceType = service?.service_type;
-  const tz = getEffectiveTimezone(company);
-  if (!serviceType || (!selectedResource && resourcePool.length === 0)) return slots;
-  if (!Array.isArray(slots) || slots.length === 0) return slots;
-
-  return slots.filter(slot => {
-    const slotStart = slot.start_time || slot.start;
-    const slotEnd = slot.end_time || slot.end;
-    if (selectedResource) {
-      return !isSlotBlockedByClosure(selectedResource, slotStart, slotEnd, serviceType, tz);
-    }
-    if (resourcePool.length > 0) {
-      const available = resourcePool.filter(r =>
-        !isSlotBlockedByClosure(r, slotStart, slotEnd, serviceType, tz)
-      );
-      if (available.length === 0) return false;
-      slot.availableResourceIds = available.map(r => r.id);
-    }
-    return true;
-  });
-};
 
 /**
  * Fetch and process availability data for a booking

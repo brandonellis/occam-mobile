@@ -81,6 +81,15 @@ export const generateTimeSlots = (
     return dayjs(timeStr).valueOf();
   };
 
+  /**
+   * Convert an epoch-ms offset from dayStartMs into a "HH:mm" string.
+   */
+  const msOffsetToTimeStr = (offsetMs) => {
+    const hours = String(Math.floor(offsetMs / 3600000)).padStart(2, '0');
+    const minutes = String(Math.floor((offsetMs % 3600000) / 60000)).padStart(2, '0');
+    return `${hours}:${minutes}`;
+  };
+
   const intervalMs = Math.max(startInterval, 1) * 60000;
   const durationMs = serviceDuration * 60000;
   const bufferMs = Math.max(bufferMinutes, 0) * 60000;
@@ -143,16 +152,8 @@ export const generateTimeSlots = (
         if (ms < dayStartMs || ms >= dayEndMs) return; // wrong day
 
         // Only create dayjs objects for display formatting
-        const start = parseDateTimeInTz(
-          selectedDateStr,
-          `${String(Math.floor((ms - dayStartMs) / 3600000)).padStart(2, '0')}:${String(Math.floor(((ms - dayStartMs) % 3600000) / 60000)).padStart(2, '0')}`,
-          companyTimezone
-        );
-        const end = parseDateTimeInTz(
-          selectedDateStr,
-          `${String(Math.floor((endMs - dayStartMs) / 3600000)).padStart(2, '0')}:${String(Math.floor(((endMs - dayStartMs) % 3600000) / 60000)).padStart(2, '0')}`,
-          companyTimezone
-        );
+        const start = parseDateTimeInTz(selectedDateStr, msOffsetToTimeStr(ms - dayStartMs), companyTimezone);
+        const end = parseDateTimeInTz(selectedDateStr, msOffsetToTimeStr(endMs - dayStartMs), companyTimezone);
         potentialSlots.push({
           start,
           end,
@@ -414,7 +415,7 @@ export const processAvailabilityData = (service, coach, selectedResource, locati
         allBookings = [...allBookings, ...classSessions];
       }
     } catch (e) {
-      // swallow - non-fatal if coachData shape changes
+      console.warn('Failed to extract class sessions from coach data:', e.message);
     }
 
     // Handle resource requirements

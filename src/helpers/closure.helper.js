@@ -16,7 +16,7 @@
  * - Web client: src/utils/closureHelpers.js
  * - Mobile: this file
  */
-import dayjs from '../utils/dayjs';
+import dayjs, { getEffectiveTimezone } from '../utils/dayjs';
 
 /**
  * Parse a "YYYY-MM-DD HH:mm" or "YYYY-MM-DD HH:mm:ss" local-time string
@@ -269,7 +269,7 @@ export const filterResourcesNotFullyBlocked = (resources, selectedDate, serviceT
  */
 export const filterSlotsByClosures = (slots, { service, selectedResource, resourcePool = [], company }) => {
   const serviceType = service?.service_type;
-  const tz = company?.timezone || 'UTC';
+  const tz = getEffectiveTimezone(company);
   if (!serviceType || (!selectedResource && resourcePool.length === 0)) return slots;
   if (!Array.isArray(slots) || slots.length === 0) return slots;
 
