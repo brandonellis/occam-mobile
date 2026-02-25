@@ -16,17 +16,7 @@
  * - Web client: src/utils/closureHelpers.js
  * - Mobile: this file
  */
-import dayjs, { getEffectiveTimezone } from '../utils/dayjs';
-
-/**
- * Parse a "YYYY-MM-DD HH:mm" or "YYYY-MM-DD HH:mm:ss" local-time string
- * in the given timezone. Uses the three-argument dayjs.tz() form so the
- * string is interpreted IN the timezone, not parsed as UTC.
- */
-const parseDateTimeInTz = (dateStr, timeStr, tz) => {
-  const normalizedTime = timeStr ? timeStr.substring(0, 5) : '00:00';
-  return dayjs.tz(`${dateStr} ${normalizedTime}`, 'YYYY-MM-DD HH:mm', tz);
-};
+import dayjs, { getEffectiveTimezone, parseDateTimeInTz } from '../utils/dayjs';
 
 /**
  * Check if a time slot is blocked by any active closure for a given service type
@@ -280,11 +270,19 @@ export const filterSlotsByClosures = (slots, { service, selectedResource, resour
       return !isSlotBlockedByClosure(selectedResource, slotStart, slotEnd, serviceType, tz);
     }
     if (resourcePool.length > 0) {
-      const available = resourcePool.filter(r =>
-        !isSlotBlockedByClosure(r, slotStart, slotEnd, serviceType, tz)
-      );
-      if (available.length === 0) return false;
-      slot.available_resource_ids = available.map(r => r.id);
+      const notBlockedIds = resourcePool
+        .filter(r => !isSlotBlockedByClosure(r, slotStart, slotEnd, serviceType, tz))
+        .map(r => r.id);
+      if (notBlockedIds.length === 0) return false;
+      // Intersect with existing available_resource_ids from booking-conflict filtering
+      // to avoid re-adding resources that were already excluded as booked
+      if (Array.isArray(slot.available_resource_ids) && slot.available_resource_ids.length > 0) {
+        const existingSet = new Set(slot.available_resource_ids.map(id => id.toString()));
+        slot.available_resource_ids = notBlockedIds.filter(id => existingSet.has(id.toString()));
+      } else {
+        slot.available_resource_ids = notBlockedIds;
+      }
+      if (slot.available_resource_ids.length === 0) return false;
     }
     return true;
   });

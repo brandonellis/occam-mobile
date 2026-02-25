@@ -226,7 +226,7 @@ const LoginScreen = () => {
 
               {!selectedOrg && orgQuery.length === 0 && (
                 <Text style={styles.fieldHint}>
-                  Type your gym, academy, or studio name
+                  Type your business, academy, or facility name
                 </Text>
               )}
             </View>

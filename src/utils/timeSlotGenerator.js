@@ -1,16 +1,6 @@
-import dayjs, { getEffectiveTimezone } from './dayjs';
+import dayjs, { getEffectiveTimezone, parseDateTimeInTz } from './dayjs';
 import { EVENT_TYPES } from '../constants/events.constants';
 import { isClassLike } from '../helpers/normalizers.helper';
-
-/**
- * Parse a "YYYY-MM-DD HH:mm" or "YYYY-MM-DD HH:mm:ss" local-time string
- * in the given timezone. Uses the three-argument dayjs.tz() form so the
- * string is interpreted IN the timezone, not parsed as UTC.
- */
-const parseDateTimeInTz = (dateStr, timeStr, tz) => {
-  const normalizedTime = timeStr ? timeStr.substring(0, 5) : '00:00';
-  return dayjs.tz(`${dateStr} ${normalizedTime}`, 'YYYY-MM-DD HH:mm', tz);
-};
 
 /**
  * Generate available time slots based on availability windows and existing bookings

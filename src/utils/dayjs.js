@@ -22,4 +22,14 @@ export const getEffectiveTimezone = (company) => {
   return company?.timezone || DEFAULT_TIMEZONE;
 };
 
+/**
+ * Parse a "YYYY-MM-DD HH:mm" or "YYYY-MM-DD HH:mm:ss" local-time string
+ * in the given timezone. Uses the three-argument dayjs.tz() form so the
+ * string is interpreted IN the timezone, not parsed as UTC.
+ */
+export const parseDateTimeInTz = (dateStr, timeStr, tz) => {
+  const normalizedTime = timeStr ? timeStr.substring(0, 5) : '00:00';
+  return dayjs.tz(`${dateStr} ${normalizedTime}`, 'YYYY-MM-DD HH:mm', tz);
+};
+
 export default dayjs;

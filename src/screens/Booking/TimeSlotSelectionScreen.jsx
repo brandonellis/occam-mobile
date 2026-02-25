@@ -1,10 +1,10 @@
-import React, { useEffect, useCallback, useState, useMemo } from 'react';
-import { View, ScrollView, TouchableOpacity, FlatList } from 'react-native';
-import { Text, ActivityIndicator } from 'react-native-paper';
+import React, { useEffect, useCallback, useState, useMemo, useRef } from 'react';
+import { View, ScrollView, TouchableOpacity, FlatList, Animated } from 'react-native';
+import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
-import { globalStyles } from '../../styles/global.styles';
+
 import { getAvailableTimeSlots } from '../../services/availability.service';
 import { getAvailabilityMonthlySummary, getResources, getAvailableClassSessionsByCoach } from '../../services/bookings.api';
 import { filterResourcesNotFullyBlocked } from '../../helpers/closure.helper';
@@ -40,6 +40,28 @@ const AVAILABILITY_COLORS = {
   unknown: colors.gray400,
 };
 
+const SKELETON_COUNT = 9;
+
+const TimeSlotSkeleton = ({ opacity }) => (
+  <View style={styles.timeSlotGrid}>
+    {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
+      <Animated.View
+        key={i}
+        style={[
+          styles.timeSlot,
+          {
+            opacity,
+            borderColor: colors.borderLight,
+            backgroundColor: colors.gray100 || '#F3F4F6',
+          },
+        ]}
+      >
+        <View style={{ width: 48, height: 14, borderRadius: 4, backgroundColor: colors.gray200 || '#E5E7EB' }} />
+      </Animated.View>
+    ))}
+  </View>
+);
+
 const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const { bookingData = {} } = route.params || {};
   const { service, coach, location } = bookingData;
@@ -57,6 +79,20 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const [classSlots, setClassSlots] = useState([]);
   const [classGroups, setClassGroups] = useState([]);
   const [classLoading, setClassLoading] = useState(false);
+
+  // Skeleton pulse animation
+  const skeletonAnim = useRef(new Animated.Value(0.3)).current;
+  useEffect(() => {
+    if (!isLoading && !classLoading) return;
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(skeletonAnim, { toValue: 1, duration: 800, useNativeDriver: true }),
+        Animated.timing(skeletonAnim, { toValue: 0.3, duration: 800, useNativeDriver: true }),
+      ])
+    );
+    pulse.start();
+    return () => pulse.stop();
+  }, [isLoading, classLoading, skeletonAnim]);
 
   // Build date range in company timezone (rebuilds when company loads)
   const companyTz = useMemo(() => getEffectiveTimezone(company), [company]);
@@ -334,9 +370,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         {isClassService ? (
           // Class session rendering — grouped by coach
           classLoading ? (
-            <View style={globalStyles.loadingContainerInline}>
-              <ActivityIndicator size="large" color={colors.primary} />
-            </View>
+            <TimeSlotSkeleton opacity={skeletonAnim} />
           ) : classSlots.length === 0 ? (
             <Text style={styles.noSlotsText}>
               No class sessions available for this date.
@@ -396,9 +430,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         ) : (
           // Regular time slot rendering
           isLoading ? (
-            <View style={globalStyles.loadingContainerInline}>
-              <ActivityIndicator size="large" color={colors.primary} />
-            </View>
+            <TimeSlotSkeleton opacity={skeletonAnim} />
           ) : timeSlots.length === 0 ? (
             <Text style={styles.noSlotsText}>
               No available time slots for this date.

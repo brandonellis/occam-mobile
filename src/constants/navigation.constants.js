@@ -12,7 +12,7 @@ export const SCREENS = {
   // Client tabs
   CLIENT_TABS: 'ClientTabs',
   CLIENT_HOME: 'ClientHome',
-  CLIENT_BOOKINGS: 'ClientBookings',
+
   CLIENT_PROGRESS: 'ClientProgress',
   CLIENT_PROFILE: 'ClientProfile',
 

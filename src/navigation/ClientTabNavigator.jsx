@@ -5,7 +5,6 @@ import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import ClientHomeScreen from '../screens/Client/ClientHomeScreen';
-import ClientBookingsScreen from '../screens/Client/ClientBookingsScreen';
 import ClientProgressScreen from '../screens/Client/ClientProgressScreen';
 import ClientProfileScreen from '../screens/Client/ClientProfileScreen';
 
@@ -13,7 +12,6 @@ const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
   [SCREENS.CLIENT_HOME]: { focused: 'home', unfocused: 'home-outline' },
-  [SCREENS.CLIENT_BOOKINGS]: { focused: 'calendar', unfocused: 'calendar-outline' },
   [SCREENS.CLIENT_PROGRESS]: { focused: 'trending-up', unfocused: 'trending-up-outline' },
   [SCREENS.CLIENT_PROFILE]: { focused: 'person-circle', unfocused: 'person-circle-outline' },
 };
@@ -49,11 +47,6 @@ const ClientTabNavigator = () => {
         name={SCREENS.CLIENT_HOME}
         component={ClientHomeScreen}
         options={{ tabBarLabel: 'Home' }}
-      />
-      <Tab.Screen
-        name={SCREENS.CLIENT_BOOKINGS}
-        component={ClientBookingsScreen}
-        options={{ tabBarLabel: 'Bookings' }}
       />
       <Tab.Screen
         name={SCREENS.CLIENT_PROGRESS}

@@ -18,7 +18,7 @@ import { getBookings, cancelBooking } from '../../services/bookings.api';
 import { scheduleStyles as styles } from '../../styles/schedule.styles';
 import { globalStyles } from '../../styles/global.styles';
 import EmptyState from '../../components/EmptyState';
-import { colors } from '../../theme';
+import { colors, spacing } from '../../theme';
 
 const generateWeekDates = () => {
   const dates = [];
@@ -165,9 +165,7 @@ const CoachScheduleScreen = ({ navigation }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.dateStrip}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
-        initialScrollIndex={dates.findIndex((d) => d.key === selectedDate.key)}
-        getItemLayout={(_, index) => ({ length: 60, offset: 60 * index, index })}
+        contentContainerStyle={{ paddingHorizontal: spacing.lg }}
       />
 
       {isLoading ? (

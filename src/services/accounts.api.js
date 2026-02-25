@@ -106,9 +106,10 @@ export const deleteClientModule = async (clientId, moduleId) => {
   return response.data;
 };
 
-export const toggleLesson = async (clientId, lessonId) => {
+export const toggleLesson = async (clientId, lessonId, completed) => {
   const response = await apiClient.post(
-    `/clients/${clientId}/performance/lessons/${lessonId}/toggle`
+    `/clients/${clientId}/performance/lessons/${lessonId}/toggle`,
+    { completed }
   );
   return response.data;
 };

@@ -63,24 +63,30 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
   }, [loadCurriculum]);
 
   const handleToggleLesson = useCallback(async (lessonId) => {
-    // True optimistic update — update UI first, rollback on error
+    // Find current state to determine new value
+    let newCompleted = true;
+    for (const mod of modules) {
+      const lesson = (mod.lessons || []).find((l) => l.id === lessonId);
+      if (lesson) {
+        newCompleted = !lesson.completed;
+        break;
+      }
+    }
+
+    // Optimistic update — update UI first, rollback on error
     const previousModules = modules;
     setModules((prev) =>
       prev.map((mod) => ({
         ...mod,
         lessons: (mod.lessons || []).map((l) =>
           l.id === lessonId
-            ? {
-                ...l,
-                completed_at: l.completed_at ? null : new Date().toISOString(),
-                is_completed: !l.completed_at,
-              }
+            ? { ...l, completed: newCompleted }
             : l
         ),
       }))
     );
     try {
-      await toggleLesson(clientId, lessonId);
+      await toggleLesson(clientId, lessonId, newCompleted);
     } catch {
       setModules(previousModules);
       Alert.alert('Error', 'Failed to update lesson.');
@@ -173,7 +179,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
 
   const renderModule = (mod) => {
     const lessons = mod.lessons || [];
-    const completed = lessons.filter((l) => l.completed_at || l.is_completed).length;
+    const completed = lessons.filter((l) => l.completed).length;
     const isExpanded = expandedModules[mod.id];
     const progress = lessons.length > 0 ? completed / lessons.length : 0;
 
@@ -191,7 +197,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
               color={colors.textSecondary}
             />
             <View style={styles.moduleInfo}>
-              <Text style={styles.moduleName}>{mod.name}</Text>
+              <Text style={styles.moduleName}>{mod.title || mod.name}</Text>
               <Text style={styles.moduleProgress}>
                 {completed} / {lessons.length} lessons
               </Text>
@@ -215,7 +221,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
         {isExpanded && lessons.length > 0 && (
           <View style={styles.lessonList}>
             {lessons.map((lesson) => {
-              const isDone = !!lesson.completed_at || !!lesson.is_completed;
+              const isDone = !!lesson.completed;
               return (
                 <TouchableOpacity
                   key={lesson.id}
@@ -234,7 +240,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
                       isDone && styles.lessonNameDone,
                     ]}
                   >
-                    {lesson.name}
+                    {lesson.title || lesson.name}
                   </Text>
                 </TouchableOpacity>
               );

@@ -34,7 +34,8 @@ const ClientDetailScreen = ({ route, navigation }) => {
   const { clientId } = route.params;
   const [client, setClient] = useState(null);
   const [modules, setModules] = useState([]);
-  const [recentBookings, setRecentBookings] = useState([]);
+  const [upcomingBookings, setUpcomingBookings] = useState([]);
+  const [pastBookings, setPastBookings] = useState([]);
   const [sharedMedia, setSharedMedia] = useState([]);
   const [snapshots, setSnapshots] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -51,7 +52,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
       const [clientRes, curriculumRes, bookingsRes, sharedRes, snapshotsRes] = await Promise.allSettled([
         getClient(clientId),
         getClientPerformanceCurriculum(clientId),
-        getBookings({ client_id: clientId, limit: 5 }),
+        getBookings({ client_id: clientId, per_page: 25, status: 'all' }),
         getClientSharedMedia(clientId),
         getClientPerformanceSnapshots(clientId),
       ]);
@@ -64,7 +65,16 @@ const ClientDetailScreen = ({ route, navigation }) => {
         setModules(data?.modules || data || []);
       }
       if (bookingsRes.status === 'fulfilled') {
-        setRecentBookings(bookingsRes.value.data || []);
+        const all = bookingsRes.value.data || [];
+        const now = new Date();
+        const upcoming = all
+          .filter((b) => b.start_time && new Date(b.start_time) > now)
+          .sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+        const past = all
+          .filter((b) => !b.start_time || new Date(b.start_time) <= now)
+          .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
+        setUpcomingBookings(upcoming.slice(0, 5));
+        setPastBookings(past.slice(0, 5));
       }
       if (sharedRes.status === 'fulfilled') {
         setSharedMedia(sharedRes.value.data || []);
@@ -138,6 +148,35 @@ const ClientDetailScreen = ({ route, navigation }) => {
     ]);
   }, [clientId, loadData]);
 
+  const renderBookingItem = (booking) => {
+    const serviceName = Array.isArray(booking.services) && booking.services.length > 0
+      ? booking.services.map((s) => s.name).join(', ')
+      : booking.service?.name || 'Session';
+    const coachName = Array.isArray(booking.coaches) && booking.coaches.length > 0
+      ? booking.coaches.map((c) => `${c.first_name || ''} ${c.last_name || ''}`.trim()).join(', ')
+      : null;
+    const locationName = booking.location?.name || null;
+    const startTime = booking.start_time;
+    const dateDisplay = startTime
+      ? new Date(startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+      : booking.date
+        ? new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+        : '';
+    return (
+      <View key={booking.id} style={styles.bookingItem}>
+        <Text style={styles.bookingService}>{serviceName}</Text>
+        <Text style={styles.bookingDate}>
+          {dateDisplay}{startTime ? ` at ${formatTime(startTime)}` : ''}
+        </Text>
+        {(coachName || locationName) && (
+          <Text style={styles.bookingDate}>
+            {[coachName, locationName].filter(Boolean).join(' · ')}
+          </Text>
+        )}
+      </View>
+    );
+  };
+
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -171,7 +210,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
           <Avatar uri={client?.avatar_url} name={fullName} size={72} />
           <Text style={styles.clientName}>{fullName}</Text>
           <Text style={styles.clientEmail}>{client?.email}</Text>
-          {client?.membership && (
+          {client?.membership?.is_active && (
             <View style={styles.membershipBadge}>
               <Text style={styles.membershipText}>
                 {client.membership.plan?.name || 'Member'}
@@ -186,20 +225,22 @@ const ClientDetailScreen = ({ route, navigation }) => {
             <Text style={styles.statLabel}>Modules</Text>
           </View>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{recentBookings.length}</Text>
-            <Text style={styles.statLabel}>Bookings</Text>
+            <Text style={styles.statValue}>{upcomingBookings.length}</Text>
+            <Text style={styles.statLabel}>Upcoming</Text>
           </View>
         </View>
 
         <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={styles.actionButton}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate(SCREENS.LOCATION_SELECTION, { bookingData: { client } })}
-          >
-            <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-            <Text style={styles.actionButtonText}>Book Session</Text>
-          </TouchableOpacity>
+          {!!client?.membership?.is_active && (
+            <TouchableOpacity
+              style={styles.actionButton}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate(SCREENS.LOCATION_SELECTION, { bookingData: { client } })}
+            >
+              <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+              <Text style={styles.actionButtonText}>Book Session</Text>
+            </TouchableOpacity>
+          )}
           <TouchableOpacity
             style={styles.actionButton}
             activeOpacity={0.7}
@@ -236,9 +277,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
           ) : (
             modules.slice(0, 3).map((mod) => {
               const lessons = mod.lessons || [];
-              const completed = lessons.filter(
-                (l) => l.completed_at || l.is_completed
-              ).length;
+              const completed = lessons.filter((l) => l.completed).length;
               return (
                 <TouchableOpacity
                   key={mod.id}
@@ -251,7 +290,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                   }
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.moduleName}>{mod.name}</Text>
+                  <Text style={styles.moduleName}>{mod.title || mod.name}</Text>
                   <Text style={styles.moduleProgress}>
                     {completed} / {lessons.length} lessons
                   </Text>
@@ -264,10 +303,14 @@ const ClientDetailScreen = ({ route, navigation }) => {
         {sharedMedia.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Shared Resources</Text>
-            {sharedMedia.map((item) => (
+            {sharedMedia.map((item) => {
+              const mime = item.upload?.mime_type || '';
+              const typeLabel = mime.startsWith('video/') ? 'Video' : mime.startsWith('image/') ? 'Image' : 'Document';
+              const typeIcon = mime.startsWith('video/') ? 'videocam' : mime.startsWith('image/') ? 'image' : 'document';
+              return (
               <View key={item.id} style={styles.sharedItem}>
                 <View style={styles.sharedItemContent}>
-                  {item.upload?.thumb_url || (item.upload?.url && item.upload?.mime_type?.startsWith('image/')) ? (
+                  {item.upload?.thumb_url || (item.upload?.url && mime.startsWith('image/')) ? (
                     <Image
                       source={{ uri: item.upload.thumb_url || item.upload.url }}
                       style={styles.sharedItemThumb}
@@ -275,7 +318,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                   ) : (
                     <View style={styles.sharedItemThumbPlaceholder}>
                       <Ionicons
-                        name={item.upload?.mime_type?.startsWith('video/') ? 'videocam' : 'document'}
+                        name={typeIcon}
                         size={18}
                         color={colors.textTertiary}
                       />
@@ -285,11 +328,9 @@ const ClientDetailScreen = ({ route, navigation }) => {
                     <Text style={styles.sharedItemName} numberOfLines={1}>
                       {item.upload?.original_filename || 'Resource'}
                     </Text>
-                    {item.notes && (
-                      <Text style={styles.sharedItemNotes} numberOfLines={1}>
-                        {item.notes}
-                      </Text>
-                    )}
+                    <Text style={styles.sharedItemNotes} numberOfLines={1}>
+                      {typeLabel}{item.notes ? ` · ${item.notes}` : ''}
+                    </Text>
                   </View>
                 </View>
                 <View style={styles.sharedMediaActions}>
@@ -315,7 +356,8 @@ const ClientDetailScreen = ({ route, navigation }) => {
                   </TouchableOpacity>
                 </View>
               </View>
-            ))}
+              );
+            })}
           </View>
         )}
 
@@ -365,24 +407,17 @@ const ClientDetailScreen = ({ route, navigation }) => {
           )}
         </View>
 
-        {recentBookings.length > 0 && (
+        {upcomingBookings.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Upcoming Bookings</Text>
+            {upcomingBookings.map((booking) => renderBookingItem(booking))}
+          </View>
+        )}
+
+        {pastBookings.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Recent Bookings</Text>
-            {recentBookings.map((booking) => (
-              <View key={booking.id} style={styles.bookingItem}>
-                <Text style={styles.bookingService}>
-                  {booking.service?.name || 'Session'}
-                </Text>
-                <Text style={styles.bookingDate}>
-                  {booking.date &&
-                    new Date(booking.date + 'T00:00:00').toLocaleDateString(
-                      'en-US',
-                      { month: 'short', day: 'numeric' }
-                    )}{' '}
-                  {booking.start_time ? `at ${formatTime(booking.start_time)}` : ''}
-                </Text>
-              </View>
-            ))}
+            {pastBookings.map((booking) => renderBookingItem(booking))}
           </View>
         )}
       </ScrollView>
