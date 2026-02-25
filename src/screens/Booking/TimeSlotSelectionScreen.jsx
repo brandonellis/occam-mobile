@@ -6,23 +6,29 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { getAvailableTimeSlots } from '../../services/availability.service';
-import { getAvailabilityMonthlySummary, getResources, getCompany } from '../../services/bookings.api';
-import { filterResourcesNotFullyBlocked, filterSlotsByClosures } from '../../helpers/closure.helper';
+import { getAvailabilityMonthlySummary, getResources, getAvailableClassSessionsByCoach } from '../../services/bookings.api';
+import { filterResourcesNotFullyBlocked } from '../../helpers/closure.helper';
+import { isClassLike } from '../../helpers/normalizers.helper';
+import { buildClassSessionGroups } from '../../helpers/classSession.helper';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
+import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
+import useAuth from '../../hooks/useAuth';
 
-const generateDateRange = (days = 14) => {
+/**
+ * Generate a date range using the company timezone so that "today" and all
+ * subsequent dates are correct regardless of the device's local timezone.
+ */
+const generateDateRange = (tz, days = 14) => {
   const dates = [];
-  const today = new Date();
+  const today = tz ? dayjs().tz(tz) : dayjs();
   for (let i = 0; i < days; i++) {
-    const date = new Date(today);
-    date.setDate(today.getDate() + i);
+    const date = today.add(i, 'day');
     dates.push({
-      key: date.toISOString().split('T')[0],
-      dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
-      dayNumber: date.getDate(),
-      month: date.toLocaleDateString('en-US', { month: 'short' }),
-      full: date,
+      key: date.format('YYYY-MM-DD'),
+      dayName: date.format('ddd'),
+      dayNumber: date.date(),
+      month: date.format('MMM'),
     });
   }
   return dates;
@@ -38,33 +44,34 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const { bookingData = {} } = route.params || {};
   const { service, coach, location } = bookingData;
 
-  const [dates] = useState(() => generateDateRange());
-  const [selectedDate, setSelectedDate] = useState(dates[0]);
+  const { company, user } = useAuth();
+  const isClassService = useMemo(() => isClassLike(service), [service]);
+
+  const [selectedDate, setSelectedDate] = useState(null);
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [availabilityMap, setAvailabilityMap] = useState({});
   const [resourcePool, setResourcePool] = useState([]);
-  const [company, setCompany] = useState(null);
+  // Class session state
+  const [classSlots, setClassSlots] = useState([]);
+  const [classGroups, setClassGroups] = useState([]);
+  const [classLoading, setClassLoading] = useState(false);
 
-  // Fetch company for timezone
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const resp = await getCompany();
-        const companyData = resp?.data || resp;
-        if (!cancelled) setCompany(companyData);
-      } catch (err) {
-        console.warn('Failed to fetch company:', err.message);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+  // Build date range in company timezone (rebuilds when company loads)
+  const companyTz = useMemo(() => getEffectiveTimezone(company), [company]);
+  const dates = useMemo(() => generateDateRange(companyTz), [companyTz]);
 
-  // Fetch resources when service requires them (for auto-selection)
+  // Select first date on mount (company is already available from auth context)
   useEffect(() => {
-    if (!service?.requires_resource || !location?.id) {
+    if (dates.length > 0 && !selectedDate) {
+      setSelectedDate(dates[0]);
+    }
+  }, [dates]);
+
+  // Fetch resources when service requires them (for auto-selection, skip for class services)
+  useEffect(() => {
+    if (isClassService || !service?.requires_resource || !location?.id) {
       setResourcePool([]);
       return;
     }
@@ -94,7 +101,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       }
     })();
     return () => { cancelled = true; };
-  }, [service?.requires_resource, service?.resource_type_ids, service?.resource_type_id, service?.resource_type?.id, location?.id]);
+  }, [isClassService, service?.requires_resource, service?.resource_type_ids, service?.resource_type_id, service?.resource_type?.id, location?.id]);
 
   // Determine which months we need to fetch summaries for
   const monthsToFetch = useMemo(() => {
@@ -140,34 +147,59 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     if (!service?.requires_resource || resourcePool.length === 0 || !selectedDate?.key) {
       return resourcePool;
     }
+    const selectedDayjs = dayjs.tz(selectedDate.key, 'YYYY-MM-DD', companyTz);
     return filterResourcesNotFullyBlocked(
       resourcePool,
-      selectedDate.key,
+      selectedDayjs,
       service.service_type,
-      location
+      location,
+      companyTz
     );
-  }, [resourcePool, selectedDate?.key, service?.requires_resource, service?.service_type, location]);
+  }, [resourcePool, selectedDate?.key, service?.requires_resource, service?.service_type, location, companyTz]);
 
-  const loadTimeSlots = useCallback(async (dateKey) => {
+  // Fetch class sessions for class/group services
+  const loadClassSessions = useCallback(async (dateItem) => {
+    if (!service?.id || !location?.id) return;
+    setClassLoading(true);
+    try {
+      const selectedDayjs = dayjs.tz(dateItem.key, 'YYYY-MM-DD', companyTz);
+      // Build UTC day window (Hermes-safe: use valueOf then native Date)
+      const dayStartMs = selectedDayjs.valueOf();
+      const dayEndMs = dayStartMs + 86400000;
+      const params = {
+        service_id: service.id,
+        location_id: location.id,
+        after: new Date(dayStartMs).toISOString(),
+        before: new Date(dayEndMs).toISOString(),
+        client_id: bookingData?.client?.id || user?.id || undefined,
+      };
+      const result = await getAvailableClassSessionsByCoach(params);
+      const { groups, flat } = buildClassSessionGroups(result, selectedDayjs);
+      setClassGroups(groups);
+      setClassSlots(flat);
+    } catch {
+      setClassSlots([]);
+      setClassGroups([]);
+    } finally {
+      setClassLoading(false);
+    }
+  }, [service?.id, location?.id, bookingData?.client?.id, user?.id, companyTz]);
+
+  const loadTimeSlots = useCallback(async (dateItem) => {
     try {
       setIsLoading(true);
-      let slots = await getAvailableTimeSlots({
+      // Construct selectedDate in company timezone from the date key string
+      const selectedDayjs = dayjs.tz(dateItem.key, 'YYYY-MM-DD', companyTz);
+      const slots = await getAvailableTimeSlots({
         service,
         coach,
+        selectedResource: bookingData.selectedResource || null,
         location,
-        dateStr: dateKey,
-        durationMinutes: bookingData.duration_minutes || null,
-        resourcePool: effectiveResourcePool,
+        selectedDate: selectedDayjs,
         company,
+        resourcePool: effectiveResourcePool,
+        durationMinutes: bookingData.duration_minutes || null,
       });
-
-      // Apply per-slot closure filtering (removes slots where all resources are blocked)
-      if (service?.requires_resource && effectiveResourcePool.length > 0) {
-        slots = filterSlotsByClosures(slots, {
-          service,
-          resourcePool: effectiveResourcePool,
-        });
-      }
 
       setTimeSlots(slots);
     } catch {
@@ -175,14 +207,18 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [service, coach, location, bookingData.duration_minutes, effectiveResourcePool, company]);
+  }, [service, coach, location, bookingData.duration_minutes, bookingData.selectedResource, effectiveResourcePool, company, companyTz]);
 
   useEffect(() => {
-    if (selectedDate) {
+    if (selectedDate && company) {
       setSelectedSlot(null);
-      loadTimeSlots(selectedDate.key);
+      if (isClassService) {
+        loadClassSessions(selectedDate);
+      } else {
+        loadTimeSlots(selectedDate);
+      }
     }
-  }, [selectedDate, loadTimeSlots]);
+  }, [selectedDate, isClassService, loadClassSessions, loadTimeSlots, company]);
 
   const handleSelectSlot = useCallback((slot) => {
     setSelectedSlot(slot);
@@ -190,6 +226,22 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
 
   const handleContinue = useCallback(() => {
     if (!selectedSlot) return;
+
+    // For class services, pass selectedClassSession and coach from the session
+    if (isClassService) {
+      navigation.navigate(SCREENS.BOOKING_CONFIRMATION, {
+        bookingData: {
+          ...bookingData,
+          date: selectedDate.key,
+          timeSlot: selectedSlot,
+          selectedClassSession: { id: selectedSlot.class_session_id },
+          coach: selectedSlot.coach || bookingData.coach || null,
+          ...(selectedSlot.resource_id ? { selectedResource: { id: selectedSlot.resource_id } } : {}),
+        },
+      });
+      return;
+    }
+
     // Auto-assign first available resource from the selected time slot
     let selectedResource = null;
     if (service?.requires_resource && selectedSlot?.available_resource_ids?.length > 0) {
@@ -207,7 +259,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         ...(selectedResource ? { selectedResource } : {}),
       },
     });
-  }, [navigation, bookingData, selectedDate, selectedSlot, service, effectiveResourcePool]);
+  }, [navigation, bookingData, selectedDate, selectedSlot, service, effectiveResourcePool, isClassService]);
 
   const getDateIndicatorColor = useCallback(
     (dateKey) => {
@@ -273,44 +325,110 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionHeader}>
-          {selectedDate?.month} {selectedDate?.dayNumber} — Available Times
+          {selectedDate?.month} {selectedDate?.dayNumber} —{' '}
+          {isClassService ? 'Class Sessions' : 'Available Times'}
         </Text>
 
-        {isLoading ? (
-          <View style={globalStyles.loadingContainerInline}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
-        ) : timeSlots.length === 0 ? (
-          <Text style={styles.noSlotsText}>
-            No available time slots for this date.
-          </Text>
-        ) : (
-          <View style={styles.timeSlotGrid}>
-            {timeSlots.map((slot, index) => {
-              const isSelected =
-                selectedSlot?.start_time === slot.start_time;
-              return (
-                <TouchableOpacity
-                  key={`${slot.start_time}-${index}`}
-                  style={[
-                    styles.timeSlot,
-                    isSelected && styles.timeSlotSelected,
-                  ]}
-                  onPress={() => handleSelectSlot(slot)}
-                  activeOpacity={0.7}
-                >
-                  <Text
-                    style={[
-                      styles.timeSlotText,
-                      isSelected && styles.timeSlotTextSelected,
-                    ]}
-                  >
-                    {slot.display_time}
+        {isClassService ? (
+          // Class session rendering — grouped by coach
+          classLoading ? (
+            <View style={globalStyles.loadingContainerInline}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : classSlots.length === 0 ? (
+            <Text style={styles.noSlotsText}>
+              No class sessions available for this date.
+            </Text>
+          ) : (
+            classGroups.map((group, gIdx) => (
+              <View key={gIdx} style={{ marginBottom: 16 }}>
+                {group.coach?.name && (
+                  <Text style={[styles.sectionHeader, { fontSize: 14, marginBottom: 8 }]}>
+                    {group.coach.name}
                   </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                )}
+                <View style={styles.timeSlotGrid}>
+                  {group.slots.map((slot, index) => {
+                    const isSelected = selectedSlot?.class_session_id === slot.class_session_id;
+                    const isFull = slot.is_full;
+                    const isPast = slot.is_past;
+                    const isDisabled = isPast;
+                    return (
+                      <TouchableOpacity
+                        key={`${slot.class_session_id}-${index}`}
+                        style={[
+                          styles.timeSlot,
+                          isSelected && styles.timeSlotSelected,
+                          isDisabled && { opacity: 0.4 },
+                          isFull && !isDisabled && { borderColor: colors.warning, borderWidth: 1 },
+                        ]}
+                        onPress={() => !isDisabled && handleSelectSlot(slot)}
+                        activeOpacity={isDisabled ? 1 : 0.7}
+                        disabled={isDisabled}
+                      >
+                        <Text
+                          style={[
+                            styles.timeSlotText,
+                            isSelected && styles.timeSlotTextSelected,
+                          ]}
+                        >
+                          {slot.display_time}
+                        </Text>
+                        {isFull && !isPast && (
+                          <Text style={{ fontSize: 10, color: colors.warning, marginTop: 2 }}>
+                            Full
+                          </Text>
+                        )}
+                        {slot.available != null && !isFull && !isPast && (
+                          <Text style={{ fontSize: 10, color: colors.textSecondary, marginTop: 2 }}>
+                            {slot.available} spot{slot.available !== 1 ? 's' : ''}
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            ))
+          )
+        ) : (
+          // Regular time slot rendering
+          isLoading ? (
+            <View style={globalStyles.loadingContainerInline}>
+              <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+          ) : timeSlots.length === 0 ? (
+            <Text style={styles.noSlotsText}>
+              No available time slots for this date.
+            </Text>
+          ) : (
+            <View style={styles.timeSlotGrid}>
+              {timeSlots.map((slot, index) => {
+                const isSelected =
+                  selectedSlot?.start_time === slot.start_time;
+                return (
+                  <TouchableOpacity
+                    key={`${slot.start_time}-${index}`}
+                    style={[
+                      styles.timeSlot,
+                      isSelected && styles.timeSlotSelected,
+                    ]}
+                    onPress={() => handleSelectSlot(slot)}
+                    activeOpacity={0.7}
+                  >
+                    <Text
+                      style={[
+                        styles.timeSlotText,
+                        isSelected && styles.timeSlotTextSelected,
+                      ]}
+                    >
+                      {slot.display_time}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )
         )}
       </ScrollView>
 

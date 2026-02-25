@@ -8,6 +8,7 @@ import { globalStyles } from '../../styles/global.styles';
 import { formatDuration } from '../../constants/booking.constants';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { getServices } from '../../services/bookings.api';
+import { isClassLike } from '../../helpers/normalizers.helper';
 import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
@@ -58,6 +59,14 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
       if (service.is_variable_duration && service.allowed_durations?.length > 0) {
         navigation.navigate(SCREENS.DURATION_SELECTION, {
           bookingData: updatedData,
+        });
+        return;
+      }
+
+      // Class/group services skip coach selection — sessions already have coaches assigned
+      if (isClassLike(service)) {
+        navigation.navigate(SCREENS.TIME_SLOT_SELECTION, {
+          bookingData: { ...updatedData, coach: null },
         });
         return;
       }

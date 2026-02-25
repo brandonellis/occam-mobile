@@ -53,11 +53,28 @@ export const removeActiveRole = async () => {
   await SecureStore.deleteItemAsync(STORAGE_KEYS.ACTIVE_ROLE);
 };
 
+export const setCompanyData = async (companyData) => {
+  await SecureStore.setItemAsync(
+    STORAGE_KEYS.COMPANY_DATA,
+    JSON.stringify(companyData)
+  );
+};
+
+export const getCompanyData = async () => {
+  const data = await SecureStore.getItemAsync(STORAGE_KEYS.COMPANY_DATA);
+  return data ? JSON.parse(data) : null;
+};
+
+export const removeCompanyData = async () => {
+  await SecureStore.deleteItemAsync(STORAGE_KEYS.COMPANY_DATA);
+};
+
 export const clearAllStorage = async () => {
   await Promise.all([
     removeToken(),
     removeUserData(),
     removeTenantId(),
     removeActiveRole(),
+    removeCompanyData(),
   ]);
 };

@@ -189,6 +189,12 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       payload.membership_plan_service_id = membershipStatus.membershipPlanServiceId;
     }
 
+    // Class/group session booking — attach the class_session_id so the backend
+    // links this booking to the correct session occurrence.
+    if (bookingData.selectedClassSession?.id) {
+      payload.class_session_id = bookingData.selectedClassSession.id;
+    }
+
     return payload;
   }, [clientId, isMembershipBooking, location, service, coach, timeSlot, bookingData, membershipStatus]);
 

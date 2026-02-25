@@ -74,3 +74,16 @@ export const getCompany = async () => {
   const response = await apiClient.get('/company');
   return response.data;
 };
+
+/**
+ * List available class sessions grouped by coach for booking UI.
+ * @param {{service_id:number, location_id:number, after?:string, before?:string, client_id?:number}} params
+ * @param {object} [options] - Optional axios config (e.g. { signal })
+ */
+export const getAvailableClassSessionsByCoach = async (params, options = {}) => {
+  const response = await apiClient.get('/class-sessions/available/by-coach', {
+    params,
+    ...(options.signal ? { signal: options.signal } : {}),
+  });
+  return response.data;
+};

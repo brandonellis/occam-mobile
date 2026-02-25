@@ -7,12 +7,15 @@ import {
   setTenantId,
   setUserData,
   setActiveRole as persistActiveRole,
+  setCompanyData,
   getToken,
   getUserData,
   getActiveRole as loadActiveRole,
+  getCompanyData,
   clearAllStorage,
 } from '../helpers/storage.helper';
 import * as authApi from '../services/auth.api';
+import { getCompany } from '../services/bookings.api';
 
 const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
@@ -34,6 +37,17 @@ const AuthProvider = ({ children }) => {
     return hasCoachOrAdmin && hasClient;
   };
 
+  const fetchAndStoreCompany = useCallback(async () => {
+    try {
+      const resp = await getCompany();
+      const companyData = resp?.data || resp;
+      await setCompanyData(companyData);
+      dispatch({ type: AUTH_ACTIONS.SET_COMPANY, payload: companyData });
+    } catch (err) {
+      console.warn('Failed to fetch company:', err.message);
+    }
+  }, []);
+
   const restoreSession = useCallback(async () => {
     try {
       const token = await getToken();
@@ -42,9 +56,10 @@ const AuthProvider = ({ children }) => {
         return;
       }
 
-      const [cachedUser, savedActiveRole] = await Promise.all([
+      const [cachedUser, savedActiveRole, cachedCompany] = await Promise.all([
         getUserData(),
         loadActiveRole(),
+        getCompanyData(),
       ]);
 
       if (cachedUser) {
@@ -59,6 +74,10 @@ const AuthProvider = ({ children }) => {
         });
       }
 
+      if (cachedCompany) {
+        dispatch({ type: AUTH_ACTIONS.SET_COMPANY, payload: cachedCompany });
+      }
+
       const { data: freshUser } = await authApi.getUser();
       const role = resolveRole(freshUser);
       await setUserData(freshUser);
@@ -70,11 +89,13 @@ const AuthProvider = ({ children }) => {
           activeRole: savedActiveRole || role,
         },
       });
+
+      fetchAndStoreCompany();
     } catch {
       await clearAllStorage();
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     }
-  }, []);
+  }, [fetchAndStoreCompany]);
 
   useEffect(() => {
     restoreSession();
@@ -97,6 +118,8 @@ const AuthProvider = ({ children }) => {
         payload: { user, role },
       });
 
+      fetchAndStoreCompany();
+
       return { success: true };
     } catch (error) {
       const message =
@@ -104,7 +127,7 @@ const AuthProvider = ({ children }) => {
       dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: message });
       return { success: false, error: message };
     }
-  }, []);
+  }, [fetchAndStoreCompany]);
 
   const loginWithGoogle = useCallback(async (accessToken, userData, tenantSlug) => {
     dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
@@ -124,13 +147,15 @@ const AuthProvider = ({ children }) => {
         payload: { user: userData, role },
       });
 
+      fetchAndStoreCompany();
+
       return { success: true };
     } catch (error) {
       const message = 'Google sign-in failed. Please try again.';
       dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: message });
       return { success: false, error: message };
     }
-  }, []);
+  }, [fetchAndStoreCompany]);
 
   const switchRole = useCallback(async (newRole) => {
     await persistActiveRole(newRole);

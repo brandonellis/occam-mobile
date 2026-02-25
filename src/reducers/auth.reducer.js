@@ -7,6 +7,7 @@ export const AUTH_ACTIONS = {
   CLEAR_ERROR: 'CLEAR_ERROR',
   RESTORE_SESSION: 'RESTORE_SESSION',
   SWITCH_ROLE: 'SWITCH_ROLE',
+  SET_COMPANY: 'SET_COMPANY',
 };
 
 export const initialAuthState = {
@@ -15,6 +16,7 @@ export const initialAuthState = {
   user: null,
   role: null,
   activeRole: null,
+  company: null,
   error: null,
 };
 
@@ -72,6 +74,12 @@ export const authReducer = (state, action) => {
       return {
         ...state,
         activeRole: action.payload,
+      };
+
+    case AUTH_ACTIONS.SET_COMPANY:
+      return {
+        ...state,
+        company: action.payload,
       };
 
     default:
