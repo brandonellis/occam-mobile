@@ -10,7 +10,7 @@ import { getAvailabilityMonthlySummary, getResources, getAvailableClassSessionsB
 import { filterResourcesNotFullyBlocked } from '../../helpers/closure.helper';
 import { isClassLike } from '../../helpers/normalizers.helper';
 import { buildClassSessionGroups } from '../../helpers/classSession.helper';
-import { colors } from '../../theme';
+import { colors, spacing } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
 import useAuth from '../../hooks/useAuth';
@@ -47,16 +47,9 @@ const TimeSlotSkeleton = ({ opacity }) => (
     {Array.from({ length: SKELETON_COUNT }).map((_, i) => (
       <Animated.View
         key={i}
-        style={[
-          styles.timeSlot,
-          {
-            opacity,
-            borderColor: colors.borderLight,
-            backgroundColor: colors.gray100 || '#F3F4F6',
-          },
-        ]}
+        style={[styles.timeSlot, styles.skeletonSlot, { opacity }]}
       >
-        <View style={{ width: 48, height: 14, borderRadius: 4, backgroundColor: colors.gray200 || '#E5E7EB' }} />
+        <View style={styles.skeletonTextBlock} />
       </Animated.View>
     ))}
   </View>
@@ -169,8 +162,8 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
             map[dateKey] = info?.hasAvailability ?? false;
           });
         });
-      } catch {
-        // Non-fatal — dates will show as unknown
+      } catch (err) {
+        console.warn('Failed to fetch availability summary:', err.message);
       }
       setAvailabilityMap(map);
     };
@@ -358,7 +351,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.dateSelector}
-        contentContainerStyle={{ paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingHorizontal: spacing.lg }}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

@@ -50,7 +50,8 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
       const res = await getClientPerformanceCurriculum(clientId);
       const data = res.data;
       setModules(data?.modules || data || []);
-    } catch {
+    } catch (err) {
+      console.warn('Failed to load curriculum:', err.message);
       setModules([]);
     } finally {
       setIsLoading(false);
@@ -87,7 +88,8 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
     );
     try {
       await toggleLesson(clientId, lessonId, newCompleted);
-    } catch {
+    } catch (err) {
+      console.warn('Failed to toggle lesson:', err.message);
       setModules(previousModules);
       Alert.alert('Error', 'Failed to update lesson.');
     }
@@ -106,7 +108,8 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
             try {
               await deleteClientModule(clientId, moduleId);
               loadCurriculum(true);
-            } catch {
+            } catch (err) {
+              console.warn('Failed to delete module:', err.message);
               Alert.alert('Error', 'Failed to remove module.');
             }
           },
@@ -136,8 +139,8 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
       if (packagesRes.status === 'fulfilled') {
         setPackages(packagesRes.value.data || []);
       }
-    } catch {
-      // Partial data is fine
+    } catch (err) {
+      console.warn('Failed to load templates/packages:', err.message);
     } finally {
       setIsLoadingAdd(false);
     }

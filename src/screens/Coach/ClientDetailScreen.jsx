@@ -82,8 +82,8 @@ const ClientDetailScreen = ({ route, navigation }) => {
       if (snapshotsRes.status === 'fulfilled') {
         setSnapshots(snapshotsRes.value.data || []);
       }
-    } catch {
-      // Partial data is fine
+    } catch (err) {
+      console.warn('Failed to load client data:', err.message);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -140,7 +140,8 @@ const ClientDetailScreen = ({ route, navigation }) => {
           try {
             await unshareMediaFromClient(clientId, sharedMediaId);
             loadData(true);
-          } catch {
+          } catch (err) {
+            console.warn('Failed to unshare media:', err.message);
             Alert.alert('Error', 'Failed to remove shared resource.');
           }
         },

@@ -152,15 +152,15 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {state.membershipFiltered && (
-            <View style={{ paddingHorizontal: 16, paddingBottom: 8 }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+            <View style={styles.membershipHint}>
+              <Text style={styles.membershipHintText}>
                 Showing services covered by {state.membershipPlanName}
               </Text>
             </View>
           )}
           {state.services.length === 0 && !state.isLoading && (
-            <View style={{ padding: 24, alignItems: 'center' }}>
-              <Text style={{ color: colors.textSecondary, fontSize: 14, textAlign: 'center' }}>
+            <View style={styles.emptyServiceContainer}>
+              <Text style={styles.emptyServiceText}>
                 {state.membershipFiltered
                   ? 'No services with remaining uses on this membership.'
                   : 'No services available.'}

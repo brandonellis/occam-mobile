@@ -529,4 +529,37 @@ export const bookingStyles = StyleSheet.create({
   classSlotAvailableText: {
     color: colors.textSecondary,
   },
+
+  // Skeleton loading
+  skeletonSlot: {
+    borderColor: colors.borderLight,
+    backgroundColor: colors.gray100,
+  },
+  skeletonTextBlock: {
+    width: 48,
+    height: 14,
+    borderRadius: 4,
+    backgroundColor: colors.gray200,
+  },
+
+  // Membership filter hint
+  membershipHint: {
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  membershipHintText: {
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+
+  // Empty service state
+  emptyServiceContainer: {
+    padding: spacing.xl,
+    alignItems: 'center',
+  },
+  emptyServiceText: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    textAlign: 'center',
+  },
 });
