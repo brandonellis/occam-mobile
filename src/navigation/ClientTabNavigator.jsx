@@ -1,0 +1,72 @@
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { Ionicons } from '@expo/vector-icons';
+import { SCREENS } from '../constants/navigation.constants';
+import { colors } from '../theme/colors';
+import { typography } from '../theme/typography';
+import ClientHomeScreen from '../screens/Client/ClientHomeScreen';
+import ClientBookingsScreen from '../screens/Client/ClientBookingsScreen';
+import ClientProgressScreen from '../screens/Client/ClientProgressScreen';
+import ClientProfileScreen from '../screens/Client/ClientProfileScreen';
+
+const Tab = createBottomTabNavigator();
+
+const TAB_ICONS = {
+  [SCREENS.CLIENT_HOME]: { focused: 'home', unfocused: 'home-outline' },
+  [SCREENS.CLIENT_BOOKINGS]: { focused: 'calendar', unfocused: 'calendar-outline' },
+  [SCREENS.CLIENT_PROGRESS]: { focused: 'trending-up', unfocused: 'trending-up-outline' },
+  [SCREENS.CLIENT_PROFILE]: { focused: 'person-circle', unfocused: 'person-circle-outline' },
+};
+
+const ClientTabNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarLabelStyle: {
+          ...typography.labelSmall,
+          fontSize: 10,
+          textTransform: 'none',
+        },
+        tabBarStyle: {
+          backgroundColor: colors.white,
+          borderTopColor: colors.borderLight,
+          borderTopWidth: 1,
+          paddingBottom: 4,
+          paddingTop: 4,
+          height: 56,
+        },
+        tabBarIcon: ({ focused, color, size }) => {
+          const icons = TAB_ICONS[route.name];
+          const iconName = focused ? icons.focused : icons.unfocused;
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+      })}
+    >
+      <Tab.Screen
+        name={SCREENS.CLIENT_HOME}
+        component={ClientHomeScreen}
+        options={{ tabBarLabel: 'Home' }}
+      />
+      <Tab.Screen
+        name={SCREENS.CLIENT_BOOKINGS}
+        component={ClientBookingsScreen}
+        options={{ tabBarLabel: 'Bookings' }}
+      />
+      <Tab.Screen
+        name={SCREENS.CLIENT_PROGRESS}
+        component={ClientProgressScreen}
+        options={{ tabBarLabel: 'Progress' }}
+      />
+      <Tab.Screen
+        name={SCREENS.CLIENT_PROFILE}
+        component={ClientProfileScreen}
+        options={{ tabBarLabel: 'Profile' }}
+      />
+    </Tab.Navigator>
+  );
+};
+
+export default ClientTabNavigator;

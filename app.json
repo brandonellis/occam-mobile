@@ -1,29 +1,88 @@
 {
   "expo": {
-    "name": "occam-mobile",
-    "slug": "occam-mobile",
+    "name": "Occam Golf",
+    "slug": "occam-golf",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "occamgolf",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/images/logo-color.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#191E24"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.occamgolf.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Occam Golf needs camera access to record coaching videos.",
+        "NSMicrophoneUsageDescription": "Occam Golf needs microphone access to record audio with coaching videos.",
+        "NSPhotoLibraryUsageDescription": "Occam Golf needs photo library access to upload media."
+      }
     },
     "android": {
+      "package": "com.occamgolf.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#191E24"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ]
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
+    "platforms": [
+      "ios",
+      "android"
+    ],
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#191E24"
+        }
+      ],
+      "expo-secure-store",
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Occam Golf needs camera access to record coaching videos.",
+          "microphonePermission": "Occam Golf needs microphone access to record audio with coaching videos.",
+          "recordAudioAndroid": {
+            "audioEncoder": "aac",
+            "outputFormat": "mpeg4"
+          }
+        }
+      ],
+      [
+        "expo-media-library",
+        {
+          "photosPermission": "Occam Golf needs photo library access to save and upload media.",
+          "savePhotosPermission": "Occam Golf needs permission to save recorded videos to your library."
+        }
+      ],
+      "expo-video",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.com.occamgolf.app",
+          "enableGooglePay": false
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
     }
   }
 }
