@@ -524,7 +524,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         onBack={() => navigation.goBack()}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: 8 }]}>
         {/* Client (shown only for coach booking) */}
         {isCoach && client && (
           <View style={styles.confirmSection}>
@@ -542,16 +542,16 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
-        {/* Location */}
-        {location && (
-          <View style={styles.confirmSection}>
-            <Text style={styles.confirmLabel}>LOCATION</Text>
-            <Text style={styles.confirmValue}>{location.name}</Text>
-          </View>
-        )}
-
-        {/* Service */}
+        {/* Booking Details — consolidated card */}
         <View style={styles.confirmSection}>
+          {location && (
+            <>
+              <Text style={styles.confirmLabel}>LOCATION</Text>
+              <Text style={styles.confirmValue}>{location.name}</Text>
+              <View style={styles.confirmDivider} />
+            </>
+          )}
+
           <Text style={styles.confirmLabel}>SERVICE</Text>
           <Text style={styles.confirmValue}>{service?.name}</Text>
           <View style={styles.confirmDivider} />
@@ -569,27 +569,25 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
               </Text>
             </View>
           </View>
-        </View>
 
-        {/* Coach */}
-        {coach && (
-          <View style={styles.confirmSection}>
-            <Text style={styles.confirmLabel}>COACH</Text>
-            <View style={styles.confirmRowWithAvatar}>
-              <Avatar
-                uri={coach.avatar_url}
-                name={`${coach.first_name} ${coach.last_name}`}
-                size={40}
-              />
-              <Text style={[styles.confirmValue, styles.confirmValueWithMargin]}>
-                {coach.first_name} {coach.last_name}
-              </Text>
-            </View>
-          </View>
-        )}
+          {coach && (
+            <>
+              <View style={styles.confirmDivider} />
+              <Text style={styles.confirmLabel}>COACH</Text>
+              <View style={styles.confirmRowWithAvatar}>
+                <Avatar
+                  uri={coach.avatar_url}
+                  name={`${coach.first_name} ${coach.last_name}`}
+                  size={32}
+                />
+                <Text style={[styles.confirmValue, styles.confirmValueWithMargin]}>
+                  {coach.first_name} {coach.last_name}
+                </Text>
+              </View>
+            </>
+          )}
 
-        {/* Date & Time */}
-        <View style={styles.confirmSection}>
+          <View style={styles.confirmDivider} />
           <Text style={styles.confirmLabel}>DATE & TIME</Text>
           <Text style={styles.confirmValue}>{formattedDate}</Text>
           <Text
@@ -609,7 +607,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             <Text style={[styles.confirmLabel, { color: colors.success }]}>
               NO PAYMENT REQUIRED
             </Text>
-            <Text style={[styles.confirmSubtext, { color: colors.textSecondary, marginTop: 4 }]}>
+            <Text style={[styles.confirmSubtext, { color: colors.textSecondary, marginTop: 2 }]}>
               This booking will be processed using your membership allotment.
             </Text>
           </View>

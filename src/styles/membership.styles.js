@@ -107,14 +107,14 @@ export const membershipStyles = StyleSheet.create({
   checkoutSection: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     ...shadows.sm,
   },
   checkoutLabel: {
     ...typography.labelSmall,
     color: colors.textTertiary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   checkoutValue: {
     ...typography.bodyLarge,
@@ -123,13 +123,13 @@ export const membershipStyles = StyleSheet.create({
   checkoutDivider: {
     height: 1,
     backgroundColor: colors.borderLight,
-    marginVertical: spacing.md,
+    marginVertical: spacing.sm,
   },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: spacing.md,
+    paddingTop: spacing.sm,
   },
   totalLabel: {
     ...typography.h3,
@@ -226,8 +226,8 @@ export const membershipStyles = StyleSheet.create({
   checkoutCardSection: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     ...shadows.sm,
   },
   checkoutCardTitle: {
@@ -235,11 +235,11 @@ export const membershipStyles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   checkoutCardField: {
     height: 50,
-    marginVertical: spacing.sm,
+    marginVertical: spacing.xs,
   },
   checkoutCardError: {
     ...typography.bodySmall,

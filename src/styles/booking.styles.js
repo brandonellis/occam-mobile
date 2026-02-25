@@ -117,6 +117,7 @@ export const bookingStyles = StyleSheet.create({
   dateSelector: {
     backgroundColor: colors.white,
     flexGrow: 0,
+    flexShrink: 0,
     paddingVertical: spacing.xs,
   },
   dateItem: {
@@ -191,14 +192,14 @@ export const bookingStyles = StyleSheet.create({
   confirmSection: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     ...shadows.sm,
   },
   confirmLabel: {
     ...typography.labelSmall,
     color: colors.textTertiary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   confirmValue: {
     ...typography.bodyLarge,
@@ -212,7 +213,7 @@ export const bookingStyles = StyleSheet.create({
   confirmDivider: {
     height: 1,
     backgroundColor: colors.borderLight,
-    marginVertical: spacing.md,
+    marginVertical: spacing.sm,
   },
   totalRow: {
     flexDirection: 'row',
@@ -340,8 +341,8 @@ export const bookingStyles = StyleSheet.create({
   allotmentSection: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     ...shadows.sm,
   },
   allotmentTitle: {
@@ -349,10 +350,10 @@ export const bookingStyles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   allotmentItem: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   allotmentItemCurrent: {
     borderLeftWidth: 3,
@@ -415,8 +416,8 @@ export const bookingStyles = StyleSheet.create({
   cardSection: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.lg,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     ...shadows.sm,
   },
   cardSectionTitle: {
@@ -424,11 +425,11 @@ export const bookingStyles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 14,
     fontWeight: '600',
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   cardField: {
     height: 50,
-    marginVertical: spacing.sm,
+    marginVertical: spacing.xs,
   },
   cardError: {
     ...typography.bodySmall,
@@ -479,7 +480,7 @@ export const bookingStyles = StyleSheet.create({
     fontSize: 14,
   },
   totalDivider: {
-    marginVertical: 12,
+    marginVertical: spacing.sm,
   },
   loadingBar: {
     flexDirection: 'row',

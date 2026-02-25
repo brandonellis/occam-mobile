@@ -1,12 +1,13 @@
+import dayjs, { getEffectiveTimezone } from '../utils/dayjs';
 import { getCoachSchedule, getBookingsCompact } from './bookings.api';
 import { hasOverlap } from '../helpers/closure.helper';
 
 /**
  * Mobile Availability Service
  *
- * Simplified version of the web app's availabilityService.js + timeSlotGenerator.js.
- * Uses the same backend endpoints (coach schedule, bookings compact) but with
- * streamlined client-side slot computation suitable for mobile.
+ * Timezone-aware version matching the web app's availabilityService.js + timeSlotGenerator.js.
+ * All date math is performed in the company's timezone using dayjs.tz to avoid
+ * device-timezone mismatches that cause slots to be dropped.
  *
  * Flow:
  * 1. Fetch coach's schedule for the selected date (availability windows + bookings)
@@ -17,53 +18,20 @@ import { hasOverlap } from '../helpers/closure.helper';
  */
 
 /**
- * Parse a time value into a Date object for the given date string.
+ * Parse a time value into a dayjs object in the company timezone.
  * Handles ISO strings, "HH:mm", and "HH:mm:ss" formats.
  */
-const parseTime = (timeValue, dateStr) => {
+const parseTimeTz = (timeValue, dateStr, tz) => {
   if (!timeValue) return null;
   const str = String(timeValue);
 
   // Already an ISO string with date component
   if (str.includes('T') || (str.includes(' ') && str.length > 8)) {
-    return new Date(str);
+    return dayjs(str).tz(tz);
   }
 
-  // Time-only string like "08:00" or "08:00:00"
-  const [hours, minutes] = str.split(':').map(Number);
-  const d = new Date(`${dateStr}T00:00:00`);
-  d.setHours(hours, minutes || 0, 0, 0);
-  return d;
-};
-
-/**
- * Format a Date object as ISO 8601 with timezone offset for the backend.
- * Uses the device's local timezone offset.
- */
-const toISO = (date) => {
-  const pad = (n) => String(n).padStart(2, '0');
-  const offset = -date.getTimezoneOffset();
-  const sign = offset >= 0 ? '+' : '-';
-  const absOffset = Math.abs(offset);
-  const tzHours = pad(Math.floor(absOffset / 60));
-  const tzMinutes = pad(absOffset % 60);
-
-  return (
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-    `T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}` +
-    `${sign}${tzHours}:${tzMinutes}`
-  );
-};
-
-/**
- * Format a Date as "h:mm AM/PM"
- */
-const formatDisplayTime = (date) => {
-  let hours = date.getHours();
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  hours = hours % 12 || 12;
-  return `${hours}:${minutes} ${ampm}`;
+  // Time-only string like "08:00" or "08:00:00" — interpret in company timezone
+  return dayjs.tz(`${dateStr} ${str}`, tz);
 };
 
 /**
@@ -77,6 +45,7 @@ const formatDisplayTime = (date) => {
  * @param {number} [params.durationMinutes] - Override duration for variable-duration services
  * @param {number} [params.slotInterval=15] - Interval between slot starts in minutes
  * @param {Array} [params.resourcePool=[]] - Resources of the required type at location (for auto-selection)
+ * @param {Object} [params.company=null] - Company object with timezone property
  * @returns {Promise<Array>} Array of { start_time, end_time, display_time, available_resource_ids? }
  */
 export const getAvailableTimeSlots = async ({
@@ -87,25 +56,24 @@ export const getAvailableTimeSlots = async ({
   durationMinutes = null,
   slotInterval = 15,
   resourcePool = [],
+  company = null,
 }) => {
   if (!service || !location) return [];
 
+  const tz = getEffectiveTimezone(company);
   const serviceDuration = durationMinutes || service.duration_minutes || 60;
-  const now = new Date();
+  const now = dayjs().tz(tz);
 
-  // --- Step 1: Get availability windows ---
+  // --- Step 1: Get availability windows (as dayjs objects in company tz) ---
   let availabilityWindows = [];
   let existingBookings = [];
 
   if (service.requires_coach && coach?.id) {
-    // Fetch coach schedule for the day (returns { events: [...], coach: {...} })
-    const startISO = new Date(`${dateStr}T00:00:00`).toISOString();
-    const endISO = new Date(`${dateStr}T23:59:59`).toISOString();
-
+    // Send the raw YYYY-MM-DD string so the backend applies the company timezone
     try {
       const scheduleData = await getCoachSchedule(coach.id, {
-        start: startISO,
-        end: endISO,
+        start: dateStr,
+        end: dateStr,
       });
 
       const events = scheduleData?.events || (Array.isArray(scheduleData) ? scheduleData : []);
@@ -118,8 +86,8 @@ export const getAvailableTimeSlots = async ({
           return id.startsWith('avail_') || title === 'Available' || title === 'Daily';
         })
         .map((e) => ({
-          start: parseTime(e.start_time || e.start, dateStr),
-          end: parseTime(e.end_time || e.end, dateStr),
+          start: parseTimeTz(e.start_time || e.start, dateStr, tz),
+          end: parseTimeTz(e.end_time || e.end, dateStr, tz),
         }))
         .filter((w) => w.start && w.end);
 
@@ -131,26 +99,24 @@ export const getAvailableTimeSlots = async ({
           return id.startsWith('book_') || type === 'class_session';
         })
         .map((e) => ({
-          start: new Date(e.start_time || e.start),
-          end: new Date(e.end_time || e.end),
+          start: dayjs(e.start_time || e.start).tz(tz),
+          end: dayjs(e.end_time || e.end).tz(tz),
           status: e.status || e.extendedProps?.status,
         }))
-        .filter((b) => b.start && b.end && b.status !== 'cancelled');
+        .filter((b) => b.start.isValid() && b.end.isValid() && b.status !== 'cancelled');
     } catch (error) {
       console.warn('Failed to fetch coach schedule:', error.message);
       return [];
     }
   } else {
     // No coach required — use location operating hours
-    const dayOfWeek = new Date(`${dateStr}T12:00:00`)
-      .toLocaleDateString('en-US', { weekday: 'long' })
-      .toLowerCase();
+    const dayOfWeek = dayjs.tz(`${dateStr} 12:00`, tz).format('dddd').toLowerCase();
 
     const dayHours = location.hours?.[dayOfWeek];
     if (dayHours?.is_open && dayHours.open_time && dayHours.close_time) {
       availabilityWindows.push({
-        start: parseTime(dayHours.open_time, dateStr),
-        end: parseTime(dayHours.close_time, dateStr),
+        start: dayjs.tz(`${dateStr} ${dayHours.open_time}`, tz),
+        end: dayjs.tz(`${dateStr} ${dayHours.close_time}`, tz),
       });
     }
   }
@@ -159,22 +125,20 @@ export const getAvailableTimeSlots = async ({
 
   // --- Step 1b: Intersect with location hours if coach is used ---
   if (service.requires_coach && location.hours) {
-    const dayOfWeek = new Date(`${dateStr}T12:00:00`)
-      .toLocaleDateString('en-US', { weekday: 'long' })
-      .toLowerCase();
+    const dayOfWeek = dayjs.tz(`${dateStr} 12:00`, tz).format('dddd').toLowerCase();
     const dayHours = location.hours?.[dayOfWeek];
 
     if (dayHours?.is_open && dayHours.open_time && dayHours.close_time) {
-      const locOpen = parseTime(dayHours.open_time, dateStr);
-      const locClose = parseTime(dayHours.close_time, dateStr);
+      const locOpen = dayjs.tz(`${dateStr} ${dayHours.open_time}`, tz);
+      const locClose = dayjs.tz(`${dateStr} ${dayHours.close_time}`, tz);
 
       // Intersect each coach window with location hours
       availabilityWindows = availabilityWindows
         .map((w) => ({
-          start: new Date(Math.max(w.start.getTime(), locOpen.getTime())),
-          end: new Date(Math.min(w.end.getTime(), locClose.getTime())),
+          start: w.start.isAfter(locOpen) ? w.start : locOpen,
+          end: w.end.isBefore(locClose) ? w.end : locClose,
         }))
-        .filter((w) => w.start < w.end);
+        .filter((w) => w.start.isBefore(w.end));
     } else if (dayHours && !dayHours.is_open) {
       // Location explicitly closed
       return [];
@@ -182,7 +146,6 @@ export const getAvailableTimeSlots = async ({
   }
 
   // --- Step 2: Fetch resource bookings if needed ---
-  // Build a map of resource_id -> array of booking time ranges for per-resource filtering
   const resourceBookingMap = {};
   if (service.requires_resource && resourcePool.length > 0) {
     try {
@@ -196,25 +159,22 @@ export const getAvailableTimeSlots = async ({
       const allResourceBookings = (resp?.data || [])
         .filter((b) => b.status !== 'cancelled');
 
-      // Group bookings by resource_id
       allResourceBookings.forEach((b) => {
         const rIds = b.resource_ids || (b.resource_id ? [b.resource_id] : []);
         const booking = {
-          start: new Date(b.start_time || b.start),
-          end: new Date(b.end_time || b.end),
+          start: dayjs(b.start_time || b.start).tz(tz),
+          end: dayjs(b.end_time || b.end).tz(tz),
         };
         rIds.forEach((rid) => {
           if (!resourceBookingMap[rid]) resourceBookingMap[rid] = [];
           resourceBookingMap[rid].push(booking);
         });
-        // Also add to global existingBookings for coach-based conflict detection
         existingBookings.push(booking);
       });
     } catch (err) {
       console.warn('Failed to fetch resource bookings:', err.message);
     }
   } else if (service.requires_resource) {
-    // No resource pool — fetch all bookings at location as fallback
     try {
       const resp = await getBookingsCompact({
         start_date: dateStr,
@@ -224,8 +184,8 @@ export const getAvailableTimeSlots = async ({
       const resourceBookings = (resp?.data || [])
         .filter((b) => b.status !== 'cancelled')
         .map((b) => ({
-          start: new Date(b.start_time || b.start),
-          end: new Date(b.end_time || b.end),
+          start: dayjs(b.start_time || b.start).tz(tz),
+          end: dayjs(b.end_time || b.end).tz(tz),
         }));
       existingBookings = [...existingBookings, ...resourceBookings];
     } catch (err) {
@@ -233,47 +193,48 @@ export const getAvailableTimeSlots = async ({
     }
   }
 
-  // --- Step 3: Generate candidate time slots ---
+  // --- Step 3: Generate candidate time slots (matching web timeSlotGenerator.js) ---
   const slots = [];
   const interval = Math.max(slotInterval, 1);
 
+  // Round up to nearest interval from windowStart (in company tz minutes)
+  const roundUpToInterval = (d, intervalMin) => {
+    const m = d.hour() * 60 + d.minute();
+    const rounded = Math.ceil(m / intervalMin) * intervalMin;
+    const delta = rounded - m;
+    return d.add(delta, 'minute');
+  };
+
   availabilityWindows.forEach((window) => {
-    // Round up window start to nearest interval
-    const windowStartMs = window.start.getTime();
-    const windowEndMs = window.end.getTime();
-    const intervalMs = interval * 60 * 1000;
-    const durationMs = serviceDuration * 60 * 1000;
+    const windowEnd = window.end;
 
-    // Align to interval grid
-    const midnight = new Date(`${dateStr}T00:00:00`).getTime();
-    const offsetFromMidnight = windowStartMs - midnight;
-    const roundedOffset = Math.ceil(offsetFromMidnight / intervalMs) * intervalMs;
-    let cursor = midnight + roundedOffset;
+    // Align cursor to interval grid in company timezone
+    let cursor = roundUpToInterval(window.start.startOf('minute'), interval);
 
-    while (cursor + durationMs <= windowEndMs) {
-      const slotStart = new Date(cursor);
-      const slotEnd = new Date(cursor + durationMs);
+    while (cursor.isBefore(windowEnd)) {
+      const slotEnd = cursor.add(serviceDuration, 'minute');
+
+      // Slot must fit within the window
+      if (slotEnd.isAfter(windowEnd)) break;
 
       // Skip past slots
-      if (slotStart > now) {
+      if (cursor.isAfter(now)) {
         // Check for conflicts with existing bookings
+        const cursorMs = cursor.valueOf();
+        const slotEndMs = slotEnd.valueOf();
+
         const hasConflict = existingBookings.some((booking) =>
-          hasOverlap(
-            slotStart.getTime(),
-            slotEnd.getTime(),
-            booking.start.getTime(),
-            booking.end.getTime()
-          )
+          hasOverlap(cursorMs, slotEndMs, booking.start.valueOf(), booking.end.valueOf())
         );
 
         if (!hasConflict) {
           const slot = {
-            start_time: toISO(slotStart),
-            end_time: toISO(slotEnd),
-            display_time: formatDisplayTime(slotStart),
+            start_time: cursor.format(),
+            end_time: slotEnd.format(),
+            display_time: cursor.format('h:mm A'),
           };
 
-          // When service requires_resource, determine which resources are free for this slot
+          // When service requires_resource, determine which resources are free
           let includeSlot = true;
           if (service.requires_resource && resourcePool.length > 0) {
             const availableResourceIds = resourcePool
@@ -281,11 +242,10 @@ export const getAvailableTimeSlots = async ({
               .filter((rid) => {
                 const bookings = resourceBookingMap[rid] || [];
                 return !bookings.some((b) =>
-                  hasOverlap(slotStart.getTime(), slotEnd.getTime(), b.start.getTime(), b.end.getTime())
+                  hasOverlap(cursorMs, slotEndMs, b.start.valueOf(), b.end.valueOf())
                 );
               });
             slot.available_resource_ids = availableResourceIds;
-            // Only include slot if at least one resource is free
             if (availableResourceIds.length === 0) {
               includeSlot = false;
             }
@@ -297,7 +257,7 @@ export const getAvailableTimeSlots = async ({
         }
       }
 
-      cursor += intervalMs;
+      cursor = cursor.add(interval, 'minute');
     }
   });
 

@@ -6,7 +6,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { getAvailableTimeSlots } from '../../services/availability.service';
-import { getAvailabilityMonthlySummary, getResources } from '../../services/bookings.api';
+import { getAvailabilityMonthlySummary, getResources, getCompany } from '../../services/bookings.api';
 import { filterResourcesNotFullyBlocked, filterSlotsByClosures } from '../../helpers/closure.helper';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
@@ -45,6 +45,22 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [availabilityMap, setAvailabilityMap] = useState({});
   const [resourcePool, setResourcePool] = useState([]);
+  const [company, setCompany] = useState(null);
+
+  // Fetch company for timezone
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await getCompany();
+        const companyData = resp?.data || resp;
+        if (!cancelled) setCompany(companyData);
+      } catch (err) {
+        console.warn('Failed to fetch company:', err.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Fetch resources when service requires them (for auto-selection)
   useEffect(() => {
@@ -142,6 +158,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         dateStr: dateKey,
         durationMinutes: bookingData.duration_minutes || null,
         resourcePool: effectiveResourcePool,
+        company,
       });
 
       // Apply per-slot closure filtering (removes slots where all resources are blocked)
@@ -158,7 +175,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [service, coach, location, bookingData.duration_minutes, effectiveResourcePool]);
+  }, [service, coach, location, bookingData.duration_minutes, effectiveResourcePool, company]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -251,7 +268,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.dateSelector}
-        contentContainerStyle={{ paddingHorizontal: 16, alignItems: 'center' }}
+        contentContainerStyle={{ paddingHorizontal: 16 }}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

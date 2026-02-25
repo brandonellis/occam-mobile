@@ -106,8 +106,8 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
         onBack={() => navigation.goBack()}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Plan info */}
+      <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: 8 }]}>
+        {/* Plan details — consolidated card */}
         <View style={styles.checkoutSection}>
           <Text style={styles.checkoutLabel}>MEMBERSHIP PLAN</Text>
           <Text style={styles.checkoutValue}>{plan.name}</Text>
@@ -121,44 +121,46 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
               {getBillingCycleLabel(billingCycle.billing_cycle)} billing
             </Text>
           )}
+
+          {/* Plan services */}
+          {planServices.length > 0 && (
+            <>
+              <View style={styles.checkoutDivider} />
+              <Text style={styles.checkoutLabel}>INCLUDES</Text>
+              <View style={styles.checkoutIncludesList}>
+                {planServices.map((ps, i) => (
+                  <View key={ps.id || i} style={styles.checkoutIncludesRow}>
+                    <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                    <Text style={styles.checkoutIncludesText}>
+                      {ps.service?.name || `Service ${ps.service_id}`}
+                    </Text>
+                    <Text style={styles.checkoutIncludesQty}>
+                      {ps.quantity}x/{billingCycle?.billing_cycle || 'month'}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* Fallback benefits */}
+          {planServices.length === 0 && plan.benefits && plan.benefits.length > 0 && (
+            <>
+              <View style={styles.checkoutDivider} />
+              <Text style={styles.checkoutLabel}>INCLUDES</Text>
+              <View style={styles.checkoutIncludesList}>
+                {plan.benefits.map((benefit, i) => (
+                  <View key={i} style={styles.checkoutIncludesRow}>
+                    <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                    <Text style={styles.checkoutIncludesText}>
+                      {typeof benefit === 'string' ? benefit : benefit.description || benefit.name}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
         </View>
-
-        {/* Plan services */}
-        {planServices.length > 0 && (
-          <View style={styles.checkoutSection}>
-            <Text style={styles.checkoutLabel}>INCLUDES</Text>
-            <View style={styles.checkoutIncludesList}>
-              {planServices.map((ps, i) => (
-                <View key={ps.id || i} style={styles.checkoutIncludesRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                  <Text style={styles.checkoutIncludesText}>
-                    {ps.service?.name || `Service ${ps.service_id}`}
-                  </Text>
-                  <Text style={styles.checkoutIncludesQty}>
-                    {ps.quantity}x/{billingCycle?.billing_cycle || 'month'}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
-
-        {/* Fallback benefits */}
-        {planServices.length === 0 && plan.benefits && plan.benefits.length > 0 && (
-          <View style={styles.checkoutSection}>
-            <Text style={styles.checkoutLabel}>INCLUDES</Text>
-            <View style={styles.checkoutIncludesList}>
-              {plan.benefits.map((benefit, i) => (
-                <View key={i} style={styles.checkoutIncludesRow}>
-                  <Ionicons name="checkmark-circle" size={16} color={colors.success} />
-                  <Text style={styles.checkoutIncludesText}>
-                    {typeof benefit === 'string' ? benefit : benefit.description || benefit.name}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </View>
-        )}
 
         {/* Payment method */}
         {paymentsEnabled ? (
