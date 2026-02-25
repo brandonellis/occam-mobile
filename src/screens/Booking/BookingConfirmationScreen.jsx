@@ -110,7 +110,8 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
         } else {
           setMembershipStatus({ hasActiveMembership: false, hasUsage: false });
         }
-      } catch {
+      } catch (err) {
+        console.warn('Failed to fetch membership status:', err.message);
         if (!cancelled) setMembershipStatus({ hasActiveMembership: false, hasUsage: false });
       } finally {
         if (!cancelled) setMembershipLoading(false);
@@ -514,13 +515,13 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
         {isCoach && client && (
           <View style={styles.confirmSection}>
             <Text style={styles.confirmLabel}>CLIENT</Text>
-            <View style={[styles.confirmRow, { marginTop: 4 }]}>
+            <View style={styles.confirmRowWithAvatar}>
               <Avatar
                 uri={client.avatar_url}
                 name={`${client.first_name} ${client.last_name}`}
                 size={40}
               />
-              <Text style={[styles.confirmValue, { marginLeft: 12, flex: 1 }]}>
+              <Text style={[styles.confirmValue, styles.confirmValueWithMargin]}>
                 {client.first_name} {client.last_name}
               </Text>
             </View>
@@ -547,7 +548,7 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
                 {formatDuration(effectiveDuration)}
               </Text>
             </View>
-            <View style={{ alignItems: 'flex-end' }}>
+            <View style={styles.confirmPriceColumn}>
               <Text style={styles.confirmLabel}>PRICE</Text>
               <Text style={styles.confirmValue}>
                 {summary.subtotalFormatted}
@@ -560,13 +561,13 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
         {coach && (
           <View style={styles.confirmSection}>
             <Text style={styles.confirmLabel}>COACH</Text>
-            <View style={[styles.confirmRow, { marginTop: 4 }]}>
+            <View style={styles.confirmRowWithAvatar}>
               <Avatar
                 uri={coach.avatar_url}
                 name={`${coach.first_name} ${coach.last_name}`}
                 size={40}
               />
-              <Text style={[styles.confirmValue, { marginLeft: 12, flex: 1 }]}>
+              <Text style={[styles.confirmValue, styles.confirmValueWithMargin]}>
                 {coach.first_name} {coach.last_name}
               </Text>
             </View>
@@ -578,7 +579,7 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
           <Text style={styles.confirmLabel}>DATE & TIME</Text>
           <Text style={styles.confirmValue}>{formattedDate}</Text>
           <Text
-            style={[styles.confirmValue, { marginTop: 4, color: colors.textSecondary }]}
+            style={[styles.confirmValue, styles.confirmTimeSubtext, { color: colors.textSecondary }]}
           >
             {formatSlotTime(timeSlot?.start_time)}
             {timeSlot?.end_time ? ` — ${formatSlotTime(timeSlot.end_time)}` : ''}
@@ -607,22 +608,22 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
         <View style={styles.confirmSection}>
           <Text style={styles.confirmLabel}>PAYMENT SUMMARY</Text>
 
-          <View style={[styles.confirmRow, { marginTop: 8 }]}>
+          <View style={[styles.confirmRow, styles.summaryFeesRow]}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
             <Text style={styles.summaryValue}>{summary.subtotalFormatted}</Text>
           </View>
 
           {!isMembershipBooking && !isCoach && (
-            <View style={{ marginTop: 4 }}>
+            <View style={styles.summaryFeesRow}>
               <View style={styles.confirmRow}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={styles.summaryFeesInner}>
                   <Text style={styles.summaryLabel}>Taxes and Fees</Text>
                   <TouchableOpacity
                     onPress={() => setFeeBreakdownVisible((v) => !v)}
                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={{ marginLeft: 6 }}
+                    style={styles.summaryInfoButton}
                   >
-                    <Text style={{ color: colors.primary, fontSize: 14 }}>ⓘ</Text>
+                    <Text style={[styles.summaryInfoIcon, { color: colors.primary }]}>ⓘ</Text>
                   </TouchableOpacity>
                 </View>
                 <Text style={styles.summaryValue}>
@@ -644,7 +645,7 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
             </View>
           )}
 
-          <View style={[styles.confirmDivider, { marginVertical: 12 }]} />
+          <View style={[styles.confirmDivider, styles.totalDivider]} />
 
           <View style={styles.confirmRow}>
             <Text style={styles.totalLabel}>Total</Text>
@@ -655,9 +656,9 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
 
       <View style={styles.bottomBar}>
         {loadingMessage ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 14 }}>
+          <View style={styles.loadingBar}>
             <ActivityIndicator size="small" color={colors.primary} />
-            <Text style={{ marginLeft: 8, color: colors.textSecondary }}>{loadingMessage}</Text>
+            <Text style={[styles.loadingBarText, { color: colors.textSecondary }]}>{loadingMessage}</Text>
           </View>
         ) : (
           <TouchableOpacity

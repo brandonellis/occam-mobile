@@ -32,7 +32,8 @@ const StripeConnectProvider = ({ children }) => {
         } else {
           setConnectAccountId(null);
         }
-      } catch {
+      } catch (err) {
+        console.warn('StripeConnectProvider: failed to fetch connect account:', err.message);
         if (!cancelled) setConnectAccountId(null);
       }
     })();

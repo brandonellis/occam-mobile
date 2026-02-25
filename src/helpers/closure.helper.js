@@ -42,7 +42,7 @@ const buildDateTime = (dateStr, timeStr) => {
 /**
  * Check if two time ranges overlap.
  */
-const hasOverlap = (startA, endA, startB, endB) => {
+export const hasOverlap = (startA, endA, startB, endB) => {
   return startA < endB && endA > startB;
 };
 
@@ -251,7 +251,7 @@ export const filterSlotsByClosures = (slots, { service, resourcePool = [] }) => 
   if (!serviceType || resourcePool.length === 0) return slots;
   if (!Array.isArray(slots) || slots.length === 0) return slots;
 
-  return slots.filter((slot) => {
+  return slots.map((slot) => {
     const slotStart = slot.start_time || slot.start;
     const slotEnd = slot.end_time || slot.end;
 
@@ -265,17 +265,17 @@ export const filterSlotsByClosures = (slots, { service, resourcePool = [] }) => 
         return !isSlotBlockedByClosure(resource, slotStart, slotEnd, serviceType);
       });
 
-      if (nonBlockedIds.length === 0) return false; // All resources blocked
-      slot.available_resource_ids = nonBlockedIds;
+      if (nonBlockedIds.length === 0) return null; // All resources blocked
+      return { ...slot, available_resource_ids: nonBlockedIds };
     } else if (resourcePool.length > 0) {
       // No available_resource_ids yet — build from pool minus closures
       const available = resourcePool.filter(
         (r) => !isSlotBlockedByClosure(r, slotStart, slotEnd, serviceType)
       );
-      if (available.length === 0) return false;
-      slot.available_resource_ids = available.map((r) => r.id || r.resource_id);
+      if (available.length === 0) return null;
+      return { ...slot, available_resource_ids: available.map((r) => r.id || r.resource_id) };
     }
 
-    return true;
-  });
+    return slot;
+  }).filter(Boolean);
 };

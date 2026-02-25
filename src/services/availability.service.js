@@ -1,4 +1,5 @@
 import { getCoachSchedule, getBookingsCompact } from './bookings.api';
+import { hasOverlap } from '../helpers/closure.helper';
 
 /**
  * Mobile Availability Service
@@ -24,7 +25,7 @@ const parseTime = (timeValue, dateStr) => {
   const str = String(timeValue);
 
   // Already an ISO string with date component
-  if (str.includes('T') || str.includes(' ') && str.length > 8) {
+  if (str.includes('T') || (str.includes(' ') && str.length > 8)) {
     return new Date(str);
   }
 
@@ -63,13 +64,6 @@ const formatDisplayTime = (date) => {
   const ampm = hours >= 12 ? 'PM' : 'AM';
   hours = hours % 12 || 12;
   return `${hours}:${minutes} ${ampm}`;
-};
-
-/**
- * Check if two time ranges overlap.
- */
-const hasOverlap = (startA, endA, startB, endB) => {
-  return startA < endB && endA > startB;
 };
 
 /**

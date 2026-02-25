@@ -449,6 +449,47 @@ export const bookingStyles = StyleSheet.create({
     opacity: 0.5,
     borderRadius: borderRadius.md,
   },
+  confirmRowWithAvatar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  confirmValueWithMargin: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  confirmPriceColumn: {
+    alignItems: 'flex-end',
+  },
+  confirmTimeSubtext: {
+    marginTop: 4,
+  },
+  summaryFeesRow: {
+    marginTop: 4,
+  },
+  summaryFeesInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  summaryInfoButton: {
+    marginLeft: 6,
+  },
+  summaryInfoIcon: {
+    fontSize: 14,
+  },
+  totalDivider: {
+    marginVertical: 12,
+  },
+  loadingBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  loadingBarText: {
+    marginLeft: 8,
+  },
   paymentDisabledBanner: {
     backgroundColor: 'rgba(24, 144, 255, 0.08)',
     borderRadius: borderRadius.md,
