@@ -2,12 +2,13 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { View, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
 import { Text, ProgressBar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { CardField, useConfirmPayment } from '@stripe/stripe-react-native';
+import { CardField, useConfirmPayment, StripeProvider } from '@stripe/stripe-react-native';
+import config from '../../config';
 import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { formatDuration } from '../../constants/booking.constants';
-import { createBooking } from '../../services/bookings.api';
+import { createBooking, cancelBooking } from '../../services/bookings.api';
 import { createServicePayment, handlePaymentSuccess } from '../../services/billing.api';
 import { getCurrentClientMembership } from '../../services/accounts.api';
 import {
@@ -20,12 +21,12 @@ import useEcommerceConfig from '../../hooks/useEcommerceConfig';
 import { colors } from '../../theme';
 import { COACH_ROLES } from '../../constants/auth.constants';
 
-const BookingConfirmationScreen = ({ route, navigation }) => {
+const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const { bookingData = {} } = route.params || {};
   const { service, coach, location, client, date, timeSlot, selectedResource } = bookingData;
   const { user, activeRole } = useAuth();
   const { confirmPayment } = useConfirmPayment();
-  const { platformFeeRate, feeDescription, paymentsEnabled, connectAccount, loading: ecommerceLoading } = useEcommerceConfig();
+  const { platformFeeRate, feeDescription, paymentsEnabled, connectAccount, loading: ecommerceLoading } = ecommerceConfig;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [feeBreakdownVisible, setFeeBreakdownVisible] = useState(false);
@@ -217,6 +218,8 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
       return;
     }
 
+    let pendingBookingId = null;
+
     try {
       setIsSubmitting(true);
 
@@ -224,14 +227,14 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
       setLoadingMessage('Creating booking...');
       const payload = buildBookingPayload('pending');
       const bookingResponse = await createBooking(payload);
-      const bookingId = bookingResponse?.data?.id || bookingResponse?.id;
+      pendingBookingId = bookingResponse?.data?.id || bookingResponse?.id;
 
       // PHASE 2: Create payment intent
       setLoadingMessage('Setting up payment...');
       const paymentData = {
         client_id: clientId,
         service_id: service?.id,
-        booking_id: bookingId,
+        booking_id: pendingBookingId,
       };
       const piResponse = await createServicePayment(paymentData);
 
@@ -261,10 +264,21 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
       setLoadingMessage('Finalizing...');
       await handlePaymentSuccess(paymentIntent.id);
 
+      // Payment succeeded — clear the pendingBookingId so catch block won't cancel it
+      pendingBookingId = null;
+
       Alert.alert('Payment Successful', 'Your booking has been confirmed and payment processed.', [
         { text: 'OK', onPress: () => navigation.popToTop() },
       ]);
     } catch (error) {
+      // Clean up the pending booking so the time slot isn't blocked
+      if (pendingBookingId) {
+        try {
+          await cancelBooking(pendingBookingId);
+        } catch (cancelErr) {
+          console.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
+        }
+      }
       Alert.alert('Payment Failed', extractErrorMessage(error));
     } finally {
       setIsSubmitting(false);
@@ -684,6 +698,26 @@ const BookingConfirmationScreen = ({ route, navigation }) => {
         )}
       </View>
     </SafeAreaView>
+  );
+};
+
+/**
+ * Outer wrapper that provides a StripeProvider scoped to the tenant's
+ * Stripe Connect account. This ensures useConfirmPayment() inside
+ * BookingConfirmationInner targets the correct connected account
+ * for direct charges.
+ */
+const BookingConfirmationScreen = (props) => {
+  const ecommerceConfig = useEcommerceConfig();
+  const { connectAccount, loading } = ecommerceConfig;
+
+  return (
+    <StripeProvider
+      publishableKey={config.stripePublishableKey}
+      stripeAccountId={connectAccount || undefined}
+    >
+      <BookingConfirmationInner {...props} ecommerceConfig={ecommerceConfig} />
+    </StripeProvider>
   );
 };
 
