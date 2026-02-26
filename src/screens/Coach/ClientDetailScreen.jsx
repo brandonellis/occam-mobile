@@ -43,6 +43,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
   const [showMediaPicker, setShowMediaPicker] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
   const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
+  const [showAllModules, setShowAllModules] = useState(false);
 
   const loadData = useCallback(async (showRefresh = false) => {
     try {
@@ -276,28 +277,46 @@ const ClientDetailScreen = ({ route, navigation }) => {
               </Text>
             </View>
           ) : (
-            modules.slice(0, 3).map((mod) => {
-              const lessons = mod.lessons || [];
-              const completed = lessons.filter((l) => l.completed).length;
-              return (
+            <>
+              {(showAllModules ? modules : modules.slice(0, 3)).map((mod) => {
+                const lessons = mod.lessons || [];
+                const completed = lessons.filter((l) => l.completed).length;
+                return (
+                  <TouchableOpacity
+                    key={mod.id}
+                    style={styles.moduleItem}
+                    onPress={() =>
+                      navigation.navigate(SCREENS.CURRICULUM_EDITOR, {
+                        clientId,
+                        clientName: fullName,
+                      })
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.moduleName}>{mod.title || mod.name}</Text>
+                    <Text style={styles.moduleProgress}>
+                      {completed} / {lessons.length} lessons
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+              {modules.length > 3 && (
                 <TouchableOpacity
-                  key={mod.id}
-                  style={styles.moduleItem}
-                  onPress={() =>
-                    navigation.navigate(SCREENS.CURRICULUM_EDITOR, {
-                      clientId,
-                      clientName: fullName,
-                    })
-                  }
+                  style={styles.showMoreButton}
+                  onPress={() => setShowAllModules((prev) => !prev)}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.moduleName}>{mod.title || mod.name}</Text>
-                  <Text style={styles.moduleProgress}>
-                    {completed} / {lessons.length} lessons
+                  <Text style={styles.showMoreText}>
+                    {showAllModules ? 'Show Less' : `Show ${modules.length - 3} More`}
                   </Text>
+                  <Ionicons
+                    name={showAllModules ? 'chevron-up' : 'chevron-down'}
+                    size={14}
+                    color={colors.accent}
+                  />
                 </TouchableOpacity>
-              );
-            })
+              )}
+            </>
           )}
         </View>
 

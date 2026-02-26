@@ -228,6 +228,21 @@ export const clientDetailStyles = StyleSheet.create({
     marginTop: 1,
   },
 
+  // Show more toggle
+  showMoreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.sm,
+    gap: spacing.xs,
+  },
+  showMoreText: {
+    ...typography.label,
+    color: colors.accent,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
   // Empty mini state
   emptyMini: {
     paddingVertical: spacing.lg,
