@@ -19,7 +19,14 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Occam Golf needs camera access to record coaching videos.",
         "NSMicrophoneUsageDescription": "Occam Golf needs microphone access to record audio with coaching videos.",
-        "NSPhotoLibraryUsageDescription": "Occam Golf needs photo library access to upload media."
+        "NSPhotoLibraryUsageDescription": "Occam Golf needs photo library access to upload media.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "com.googleusercontent.apps.826339810168-bd399kemauur3f1jjdqr5m2ldfs736er"
+            ]
+          }
+        ]
       }
     },
     "android": {
@@ -77,7 +84,8 @@
           "merchantIdentifier": "merchant.com.occamgolf.app",
           "enableGooglePay": false
         }
-      ]
+      ],
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {

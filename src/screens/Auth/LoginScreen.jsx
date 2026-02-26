@@ -13,18 +13,22 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+import {
+  GoogleSignin,
+  isErrorWithCode,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 import useAuth from '../../hooks/useAuth';
-import { getGoogleAuthUrl } from '../../services/auth.api';
+import { googleSignInNative } from '../../services/auth.api';
 import { searchTenants } from '../../services/tenants.api';
 import { loginStyles as styles } from '../../styles/login.styles';
 import { colors } from '../../theme';
+import config from '../../config';
 
-const logoColor = require('../../../assets/images/logo-color.png');
+const LOGO_COLOR_URI = 'https://storage.googleapis.com/occam_bucket_1/shared/assets/images/logo-color.webp';
 
 const LoginScreen = () => {
-  const { login, loginWithGoogle, isLoading, error, clearError } = useAuth();
+  const { login, loginWithGoogle, isLoading, error, clearError, setError } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [focusedField, setFocusedField] = useState(null);
@@ -95,6 +99,17 @@ const LoginScreen = () => {
 
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  // Configure Google Sign-In once on mount
+  useEffect(() => {
+    if (config.googleWebClientId) {
+      GoogleSignin.configure({
+        webClientId: config.googleWebClientId,
+        iosClientId: config.googleIosClientId,
+        offlineAccess: false,
+      });
+    }
+  }, []);
+
   const handleGoogleSignIn = useCallback(async () => {
     if (!selectedOrg) return;
 
@@ -102,35 +117,36 @@ const LoginScreen = () => {
     if (error) clearError();
 
     try {
-      const returnUrl = '/auth/google/callback';
-      const { redirect_url } = await getGoogleAuthUrl(selectedOrg.id, returnUrl);
+      const response = await GoogleSignin.signIn();
+      const idToken = response.data?.idToken;
 
-      if (!redirect_url) {
-        throw new Error('No redirect URL received');
+      if (!idToken) {
+        throw new Error('No ID token received from Google');
       }
 
-      const result = await WebBrowser.openAuthSessionAsync(
-        redirect_url,
-        'occamgolf://auth/google/callback'
-      );
+      // Send idToken to backend for verification + Sanctum token exchange
+      const { data } = await googleSignInNative(idToken, selectedOrg.id);
 
-      if (result.type === 'success' && result.url) {
-        const parsed = Linking.parse(result.url);
-        const accessToken = parsed.queryParams?.access_token;
-        const userParam = parsed.queryParams?.user;
-        const success = parsed.queryParams?.success;
-
-        if (success === 'true' && accessToken && userParam) {
-          const userData = JSON.parse(atob(userParam));
-          await loginWithGoogle(accessToken, userData, selectedOrg.id);
-        }
+      if (data?.token && data?.user) {
+        await loginWithGoogle(data.token, data.user, selectedOrg.id);
       }
     } catch (err) {
-      console.warn('Google sign-in error:', err);
+      if (isErrorWithCode(err)) {
+        if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+          // User cancelled — do nothing
+          return;
+        }
+        if (err.code === statusCodes.IN_PROGRESS) {
+          return;
+        }
+      }
+      const message = err?.response?.data?.message || err?.message || 'Google sign-in failed. Please try again.';
+      setError(message);
+      console.warn('Google sign-in error:', message);
     } finally {
       setGoogleLoading(false);
     }
-  }, [selectedOrg, error, clearError, loginWithGoogle]);
+  }, [selectedOrg, error, clearError, setError, loginWithGoogle]);
 
   const handleFieldChange = useCallback(
     (setter) => (value) => {
@@ -154,7 +170,7 @@ const LoginScreen = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.logoContainer}>
-            <Image source={logoColor} style={styles.logoImage} />
+            <Image source={{ uri: LOGO_COLOR_URI }} style={styles.logoImage} />
           </View>
 
           {error && (

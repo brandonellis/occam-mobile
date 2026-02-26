@@ -177,6 +177,10 @@ const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
   }, []);
 
+  const setError = useCallback((message) => {
+    dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: message });
+  }, []);
+
   const isDualRole = checkIsDualRole(state.user);
 
   const value = {
@@ -187,6 +191,7 @@ const AuthProvider = ({ children }) => {
     logout: logoutUser,
     switchRole,
     clearError,
+    setError,
     restoreSession,
   };
 

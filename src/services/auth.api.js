@@ -25,19 +25,16 @@ export const forgotPassword = async (email) => {
 };
 
 /**
- * Get the Google OAuth redirect URL for a given tenant.
+ * Authenticate with Google using a native idToken (from @react-native-google-signin).
+ * Sends the idToken to the backend which verifies it with Google and returns a Sanctum token.
+ * @param {string} idToken - The Google idToken from native sign-in
  * @param {string} tenantSlug - The tenant ID/slug
- * @param {string} returnUrl - The deep link URL for the callback
- * @returns {Promise<{redirect_url: string}>}
+ * @returns {Promise<{success: boolean, data: {token: string, user: object}}>}
  */
-export const getGoogleAuthUrl = async (tenantSlug, returnUrl) => {
-  const response = await centralClient.get('/auth/google/redirect', {
-    params: {
-      tenant: tenantSlug,
-      context: 'tenant',
-      return_url: returnUrl,
-      original_domain: '__mobile_app__',
-    },
+export const googleSignInNative = async (idToken, tenantSlug) => {
+  const response = await centralClient.post('/auth/google/authenticate-native', {
+    id_token: idToken,
+    tenant: tenantSlug,
   });
   return response.data;
 };

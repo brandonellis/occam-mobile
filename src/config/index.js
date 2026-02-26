@@ -1,21 +1,27 @@
 const ENV = {
   development: {
-    centralUrl: 'http://occam.localhost/api/central',
-    baseDomain: 'occam.localhost',
+    centralUrl: 'http://10.0.0.159/api/central',
+    baseDomain: '10.0.0.159',
     protocol: 'http',
     stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
+    googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+    googleIosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID || '',
   },
   staging: {
     centralUrl: 'https://helm.occam.golf/api/central',
     baseDomain: 'occam.golf',
     protocol: 'https',
     stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
+    googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+    googleIosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID || '',
   },
   production: {
     centralUrl: 'https://helm.occam.golf/api/central',
     baseDomain: 'occam.golf',
     protocol: 'https',
     stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
+    googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
+    googleIosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID || '',
   },
 };
 
