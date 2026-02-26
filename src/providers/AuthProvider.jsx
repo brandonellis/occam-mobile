@@ -111,6 +111,7 @@ const AuthProvider = ({ children }) => {
       const role = resolveRole(user);
 
       await setToken(token);
+      await setTenantId(tenantId);
       await setUserData(user);
 
       dispatch({

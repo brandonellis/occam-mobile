@@ -7,19 +7,8 @@ import { centralClient } from './apiClient';
  * @returns {Promise<Array<{id: string, name: string, domain: string}>>}
  */
 export const searchTenants = async (query) => {
-  console.log('[searchTenants] Searching for:', query);
-  try {
-    const response = await centralClient.get('/tenants/lookup', {
-      params: { q: query },
-    });
-    console.log('[searchTenants] Status:', response.status);
-    console.log('[searchTenants] Data:', JSON.stringify(response.data));
-    console.log('[searchTenants] Results count:', Array.isArray(response.data) ? response.data.length : 'not an array');
-    return response.data;
-  } catch (error) {
-    console.error('[searchTenants] Error:', error.message);
-    console.error('[searchTenants] Response status:', error.response?.status);
-    console.error('[searchTenants] Response data:', JSON.stringify(error.response?.data));
-    throw error;
-  }
+  const response = await centralClient.get('/tenants/lookup', {
+    params: { q: query },
+  });
+  return response.data;
 };
