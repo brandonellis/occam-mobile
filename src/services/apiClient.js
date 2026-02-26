@@ -37,6 +37,7 @@ apiClient.interceptors.request.use(
     const tenantId = await getTenantId();
     if (tenantId) {
       reqConfig.baseURL = getTenantApiUrl(tenantId);
+      reqConfig.headers['X-Tenant'] = tenantId;
     }
 
     return reqConfig;
