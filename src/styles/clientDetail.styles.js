@@ -108,7 +108,7 @@ export const clientDetailStyles = StyleSheet.create({
   },
   moduleProgress: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
+    color: colors.success,
     marginTop: 2,
   },
   bookingItem: {

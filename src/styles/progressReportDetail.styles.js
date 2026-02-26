@@ -87,7 +87,7 @@ export const progressReportDetailStyles = StyleSheet.create({
   },
   summaryPercent: {
     ...typography.h2,
-    color: colors.accent,
+    color: colors.success,
   },
   summaryLabel: {
     ...typography.body,
@@ -102,7 +102,7 @@ export const progressReportDetailStyles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.accent,
+    backgroundColor: colors.success,
     borderRadius: borderRadius.full,
   },
 
@@ -176,7 +176,7 @@ export const progressReportDetailStyles = StyleSheet.create({
   },
   scoreBarFill: {
     height: '100%',
-    backgroundColor: colors.accent,
+    backgroundColor: colors.info,
     borderRadius: borderRadius.full,
   },
   scoreValue: {

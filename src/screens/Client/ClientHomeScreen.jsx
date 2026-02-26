@@ -37,13 +37,13 @@ const ClientHomeScreen = ({ navigation }) => {
               onPress={() => navigation.navigate(SCREENS.LOCATION_SELECTION, { bookingData: {} })}
             >
               <View style={styles.quickActionIcon}>
-                <Ionicons name="calendar-outline" size={22} color={colors.primary} />
+                <Ionicons name="calendar-outline" size={22} color={colors.accent} />
               </View>
               <Text style={styles.quickActionLabel}>Book Session</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickActionButton} activeOpacity={0.7}>
               <View style={styles.quickActionIcon}>
-                <Ionicons name="play-circle-outline" size={22} color={colors.primary} />
+                <Ionicons name="play-circle-outline" size={22} color={colors.info} />
               </View>
               <Text style={styles.quickActionLabel}>My Videos</Text>
             </TouchableOpacity>
@@ -53,7 +53,7 @@ const ClientHomeScreen = ({ navigation }) => {
               onPress={() => navigation.navigate(SCREENS.MEMBERSHIP_PLANS)}
             >
               <View style={styles.quickActionIcon}>
-                <Ionicons name="card-outline" size={22} color={colors.primary} />
+                <Ionicons name="card-outline" size={22} color={colors.success} />
               </View>
               <Text style={styles.quickActionLabel}>Membership</Text>
             </TouchableOpacity>

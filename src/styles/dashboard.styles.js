@@ -89,7 +89,7 @@ export const dashboardStyles = StyleSheet.create({
   },
   bookingTimeValue: {
     ...typography.label,
-    color: colors.accent,
+    color: colors.info,
     fontSize: 13,
     fontWeight: '700',
   },

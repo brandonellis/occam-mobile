@@ -31,7 +31,7 @@ export const notificationsStyles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.accentLight,
+    backgroundColor: colors.infoLight,
     alignItems: 'center',
     justifyContent: 'center',
   },

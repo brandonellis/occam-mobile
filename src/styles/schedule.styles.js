@@ -109,7 +109,7 @@ export const scheduleStyles = StyleSheet.create({
     borderRadius: borderRadius.md,
     padding: spacing.md,
     borderLeftWidth: 3,
-    borderLeftColor: colors.accent,
+    borderLeftColor: colors.info,
     ...shadows.sm,
   },
   sessionService: {

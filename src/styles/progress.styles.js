@@ -63,7 +63,7 @@ export const progressStyles = StyleSheet.create({
   },
   programStatus: {
     ...typography.bodySmall,
-    color: colors.accent,
+    color: colors.success,
     marginTop: 2,
   },
   progressBarContainer: {
@@ -75,7 +75,7 @@ export const progressStyles = StyleSheet.create({
   },
   progressBarFill: {
     height: '100%',
-    backgroundColor: colors.accent,
+    backgroundColor: colors.success,
     borderRadius: 3,
   },
   progressText: {

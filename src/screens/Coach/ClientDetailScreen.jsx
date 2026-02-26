@@ -239,7 +239,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
               activeOpacity={0.7}
               onPress={() => navigation.navigate(SCREENS.LOCATION_SELECTION, { bookingData: { client } })}
             >
-              <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+              <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
               <Text style={styles.actionButtonText}>Book Session</Text>
             </TouchableOpacity>
           )}
@@ -248,7 +248,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
             activeOpacity={0.7}
             onPress={() => setShowMediaPicker(true)}
           >
-            <Ionicons name="share-outline" size={18} color={colors.primary} />
+            <Ionicons name="share-outline" size={18} color={colors.info} />
             <Text style={styles.actionButtonText}>Share Resource</Text>
           </TouchableOpacity>
         </View>
