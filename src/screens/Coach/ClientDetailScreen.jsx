@@ -408,7 +408,16 @@ const ClientDetailScreen = ({ route, navigation }) => {
             </View>
           ) : (
             snapshots.slice(0, 5).map((snap) => (
-              <View key={snap.id} style={styles.snapshotItem}>
+              <TouchableOpacity
+                key={snap.id}
+                style={styles.snapshotItem}
+                onPress={() =>
+                  navigation.navigate(SCREENS.PROGRESS_REPORT_DETAIL, {
+                    report: snap,
+                  })
+                }
+                activeOpacity={0.7}
+              >
                 <Ionicons name="document-text-outline" size={18} color={colors.accent} />
                 <View style={styles.snapshotInfo}>
                   <Text style={styles.snapshotTitle}>
@@ -422,7 +431,8 @@ const ClientDetailScreen = ({ route, navigation }) => {
                     })}
                   </Text>
                 </View>
-              </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+              </TouchableOpacity>
             ))
           )}
         </View>

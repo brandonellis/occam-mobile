@@ -19,6 +19,7 @@ import MembershipPlansScreen from '../screens/Membership/MembershipPlansScreen';
 import MembershipCheckoutScreen from '../screens/Membership/MembershipCheckoutScreen';
 import ClientDetailScreen from '../screens/Coach/ClientDetailScreen';
 import CurriculumEditorScreen from '../screens/Coach/CurriculumEditorScreen';
+import ProgressReportDetailScreen from '../screens/Coach/ProgressReportDetailScreen';
 import VideoRecordingScreen from '../screens/Coach/VideoRecordingScreen';
 import VideoReviewScreen from '../screens/Coach/VideoReviewScreen';
 import VideoAnnotationScreen from '../screens/Coach/VideoAnnotationScreen';
@@ -128,6 +129,13 @@ const RootNavigator = () => {
           <Stack.Screen
             name={SCREENS.CURRICULUM_EDITOR}
             component={CurriculumEditorScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+
+          {/* Progress report detail */}
+          <Stack.Screen
+            name={SCREENS.PROGRESS_REPORT_DETAIL}
+            component={ProgressReportDetailScreen}
             options={{ animation: 'slide_from_right' }}
           />
 

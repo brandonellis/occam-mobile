@@ -35,6 +35,9 @@ export const SCREENS = {
   // Curriculum
   CURRICULUM_EDITOR: 'CurriculumEditor',
 
+  // Progress reports
+  PROGRESS_REPORT_DETAIL: 'ProgressReportDetail',
+
   // Video recording
   VIDEO_RECORDING: 'VideoRecording',
   VIDEO_REVIEW: 'VideoReview',
