@@ -127,28 +127,30 @@ export const dashboardStyles = StyleSheet.create({
   // Quick actions
   quickActions: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   quickActionButton: {
     flex: 1,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
     alignItems: 'center',
     ...shadows.sm,
   },
   quickActionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: colors.accentLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   quickActionLabel: {
     ...typography.labelSmall,
     color: colors.textPrimary,
-    fontSize: 11,
+    fontSize: 10,
+    textAlign: 'center',
   },
 });

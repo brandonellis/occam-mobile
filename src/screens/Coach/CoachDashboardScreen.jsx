@@ -130,9 +130,9 @@ const CoachDashboardScreen = ({ navigation }) => {
                   onPress={() => navigation.navigate(SCREENS.CLIENT_SELECTION, { bookingData: {} })}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+                    <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
                   </View>
-                  <Text style={styles.quickActionLabel}>New Booking</Text>
+                  <Text style={styles.quickActionLabel} numberOfLines={1}>New Booking</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.quickActionButton}
@@ -140,9 +140,9 @@ const CoachDashboardScreen = ({ navigation }) => {
                   onPress={() => navigation.navigate(SCREENS.VIDEO_RECORDING)}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="videocam-outline" size={22} color={colors.info} />
+                    <Ionicons name="videocam-outline" size={18} color={colors.info} />
                   </View>
-                  <Text style={styles.quickActionLabel}>Record Video</Text>
+                  <Text style={styles.quickActionLabel} numberOfLines={1}>Record Video</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.quickActionButton}
@@ -150,9 +150,9 @@ const CoachDashboardScreen = ({ navigation }) => {
                   onPress={() => navigation.navigate(SCREENS.COACH_CLIENTS)}
                 >
                   <View style={styles.quickActionIcon}>
-                    <Ionicons name="people-outline" size={22} color={colors.success} />
+                    <Ionicons name="people-outline" size={18} color={colors.success} />
                   </View>
-                  <Text style={styles.quickActionLabel}>View Clients</Text>
+                  <Text style={styles.quickActionLabel} numberOfLines={1}>View Clients</Text>
                 </TouchableOpacity>
               </View>
             </View>
