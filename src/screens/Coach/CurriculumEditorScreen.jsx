@@ -150,7 +150,13 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
     setIsApplying(true);
     try {
       await storeClientModule(clientId, {
-        performance_module_id: template.id,
+        template_module_id: template.id,
+        name: template.title || template.name,
+        lessons: (template.lessons || []).map((l, i) => ({
+          name: l.title || l.name,
+          template_lesson_id: l.id,
+          sort_order: i + 1,
+        })),
       });
       setShowAddModal(false);
       loadCurriculum(true);
@@ -213,7 +219,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
               />
             </View>
             <TouchableOpacity
-              onPress={() => handleDeleteModule(mod.id, mod.name)}
+              onPress={() => handleDeleteModule(mod.id, mod.title || mod.name)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <Ionicons name="trash-outline" size={16} color={colors.error} />
@@ -363,10 +369,15 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
                   activeOpacity={0.7}
                 >
                   <View style={styles.templateInfo}>
-                    <Text style={styles.templateName}>{item.name}</Text>
+                    <Text style={styles.templateName}>{item.title || item.name}</Text>
                     {item.description && (
                       <Text style={styles.templateDesc} numberOfLines={2}>
                         {item.description}
+                      </Text>
+                    )}
+                    {addTab === 'templates' && item.lessons?.length > 0 && (
+                      <Text style={styles.templateModuleCount}>
+                        {item.lessons.length} lesson{item.lessons.length !== 1 ? 's' : ''}
                       </Text>
                     )}
                     {addTab === 'packages' && item.modules?.length > 0 && (
