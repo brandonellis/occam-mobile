@@ -130,7 +130,7 @@ export const bookingStyles = StyleSheet.create({
     height: 68,
   },
   dateItemSelected: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.primary,
   },
   dateItemDisabled: {
     opacity: 0.3,
@@ -174,8 +174,8 @@ export const bookingStyles = StyleSheet.create({
     alignItems: 'center',
   },
   timeSlotSelected: {
-    backgroundColor: colors.accent,
-    borderColor: colors.accent,
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
   },
   timeSlotText: {
     ...typography.label,
@@ -240,7 +240,7 @@ export const bookingStyles = StyleSheet.create({
     borderTopColor: colors.borderLight,
   },
   continueButton: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.primary,
     borderRadius: borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',
