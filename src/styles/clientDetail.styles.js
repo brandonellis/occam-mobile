@@ -31,14 +31,14 @@ export const clientDetailStyles = StyleSheet.create({
   },
   membershipBadge: {
     marginTop: spacing.md,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.lavenderMistLight,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
   },
   membershipText: {
     ...typography.labelSmall,
-    color: colors.textInverse,
+    color: colors.twilightPurple,
     fontSize: 11,
   },
   statsRow: {

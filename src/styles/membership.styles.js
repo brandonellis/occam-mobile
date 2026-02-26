@@ -32,13 +32,13 @@ export const membershipStyles = StyleSheet.create({
     borderColor: 'transparent',
   },
   planCardFeatured: {
-    borderColor: colors.accent,
+    borderColor: colors.lavenderMist,
   },
   featuredBadge: {
     position: 'absolute',
     top: -1,
     right: spacing.lg,
-    backgroundColor: colors.accent,
+    backgroundColor: colors.twilightPurple,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderBottomLeftRadius: borderRadius.sm,

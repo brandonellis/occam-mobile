@@ -36,14 +36,14 @@ const ClientHomeScreen = ({ navigation }) => {
               activeOpacity={0.7}
               onPress={() => navigation.navigate(SCREENS.LOCATION_SELECTION, { bookingData: {} })}
             >
-              <View style={styles.quickActionIcon}>
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.accentLight }]}>
                 <Ionicons name="calendar-outline" size={18} color={colors.accent} />
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={1}>Book Session</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.quickActionButton} activeOpacity={0.7}>
-              <View style={styles.quickActionIcon}>
-                <Ionicons name="play-circle-outline" size={18} color={colors.info} />
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.lavenderMistLight }]}>
+                <Ionicons name="play-circle-outline" size={18} color={colors.twilightPurple} />
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={1}>My Videos</Text>
             </TouchableOpacity>
@@ -52,7 +52,7 @@ const ClientHomeScreen = ({ navigation }) => {
               activeOpacity={0.7}
               onPress={() => navigation.navigate(SCREENS.MEMBERSHIP_PLANS)}
             >
-              <View style={styles.quickActionIcon}>
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.successLight }]}>
                 <Ionicons name="card-outline" size={18} color={colors.success} />
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={1}>Membership</Text>

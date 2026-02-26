@@ -36,7 +36,7 @@ export const bookingStyles = StyleSheet.create({
     borderRadius: 4,
   },
   stepDotCompleted: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.success,
   },
   stepConnector: {
     width: 16,

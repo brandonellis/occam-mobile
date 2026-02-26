@@ -13,6 +13,14 @@ export const colors = {
   aqua: '#59D8DB',
   aquaLight: '#8EE7E9',
 
+  // Extended Accent Colors — matches occam-client palette
+  peachGlow: '#FFD2A6',
+  peachGlowLight: 'rgba(255, 210, 166, 0.3)',
+  twilightPurple: '#7A288A',
+  twilightPurpleLight: 'rgba(122, 40, 138, 0.15)',
+  lavenderMist: '#C7B8EA',
+  lavenderMistLight: 'rgba(196, 181, 253, 0.3)',
+
   // Success / Warning / Error — matches occam-client palette
   success: '#34C759',
   successLight: '#E8F9ED',

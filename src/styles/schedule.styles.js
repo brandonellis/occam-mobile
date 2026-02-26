@@ -22,11 +22,11 @@ export const scheduleStyles = StyleSheet.create({
   newBookingButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.accent + '15',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.peachGlowLight,
   },
   newBookingText: {
     ...typography.label,

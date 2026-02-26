@@ -129,7 +129,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate(SCREENS.CLIENT_SELECTION, { bookingData: {} })}
                 >
-                  <View style={styles.quickActionIcon}>
+                  <View style={[styles.quickActionIcon, { backgroundColor: colors.accentLight }]}>
                     <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
                   </View>
                   <Text style={styles.quickActionLabel} numberOfLines={1}>New Booking</Text>
@@ -139,8 +139,8 @@ const CoachDashboardScreen = ({ navigation }) => {
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate(SCREENS.VIDEO_RECORDING)}
                 >
-                  <View style={styles.quickActionIcon}>
-                    <Ionicons name="videocam-outline" size={18} color={colors.info} />
+                  <View style={[styles.quickActionIcon, { backgroundColor: colors.lavenderMistLight }]}>
+                    <Ionicons name="videocam-outline" size={18} color={colors.twilightPurple} />
                   </View>
                   <Text style={styles.quickActionLabel} numberOfLines={1}>Record Video</Text>
                 </TouchableOpacity>
@@ -149,7 +149,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate(SCREENS.COACH_CLIENTS)}
                 >
-                  <View style={styles.quickActionIcon}>
+                  <View style={[styles.quickActionIcon, { backgroundColor: colors.successLight }]}>
                     <Ionicons name="people-outline" size={18} color={colors.success} />
                   </View>
                   <Text style={styles.quickActionLabel} numberOfLines={1}>View Clients</Text>

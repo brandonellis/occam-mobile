@@ -43,7 +43,7 @@ export const progressReportDetailStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'flex-start',
-    backgroundColor: colors.accentLight,
+    backgroundColor: colors.lavenderMistLight,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
@@ -52,7 +52,7 @@ export const progressReportDetailStyles = StyleSheet.create({
   },
   programBadgeText: {
     ...typography.labelSmall,
-    color: colors.accent,
+    color: colors.twilightPurple,
     textTransform: 'none',
     fontSize: 13,
     fontWeight: '600',
