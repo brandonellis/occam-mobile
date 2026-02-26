@@ -57,7 +57,7 @@ export const clientDetailStyles = StyleSheet.create({
   },
   statValue: {
     ...typography.h3,
-    color: colors.primary,
+    color: colors.accent,
   },
   statLabel: {
     ...typography.bodySmall,
@@ -85,15 +85,14 @@ export const clientDetailStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.accentLight,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     gap: spacing.sm,
-    ...shadows.sm,
   },
   actionButtonText: {
     ...typography.label,
-    color: colors.primary,
+    color: colors.accent,
     fontSize: 13,
   },
   moduleItem: {

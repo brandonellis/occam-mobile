@@ -65,7 +65,7 @@ export const membershipStyles = StyleSheet.create({
   },
   planPrice: {
     ...typography.h1,
-    color: colors.primary,
+    color: colors.accent,
     fontSize: 36,
   },
   planPeriod: {
@@ -88,7 +88,7 @@ export const membershipStyles = StyleSheet.create({
     flex: 1,
   },
   selectPlanButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     alignItems: 'center',
@@ -137,7 +137,7 @@ export const membershipStyles = StyleSheet.create({
   },
   totalPrice: {
     ...typography.h2,
-    color: colors.primary,
+    color: colors.accent,
   },
   bottomBar: {
     backgroundColor: colors.white,
@@ -148,7 +148,7 @@ export const membershipStyles = StyleSheet.create({
     borderTopColor: colors.borderLight,
   },
   purchaseButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',
@@ -181,7 +181,7 @@ export const membershipStyles = StyleSheet.create({
     borderColor: colors.borderLight,
   },
   billingCycleOptionSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     backgroundColor: colors.white,
   },
   billingCyclePrice: {
@@ -191,7 +191,7 @@ export const membershipStyles = StyleSheet.create({
     fontWeight: '700',
   },
   billingCyclePriceSelected: {
-    color: colors.primary,
+    color: colors.accent,
   },
   billingCycleLabel: {
     ...typography.bodySmall,

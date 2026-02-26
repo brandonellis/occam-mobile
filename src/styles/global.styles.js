@@ -38,7 +38,7 @@ export const globalStyles = StyleSheet.create({
 
   // Buttons
   buttonPrimary: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
@@ -54,7 +54,7 @@ export const globalStyles = StyleSheet.create({
     backgroundColor: 'transparent',
     borderRadius: borderRadius.md,
     borderWidth: 1.5,
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xl,
     alignItems: 'center',
@@ -63,7 +63,7 @@ export const globalStyles = StyleSheet.create({
   },
   buttonSecondaryText: {
     ...typography.button,
-    color: colors.primary,
+    color: colors.accent,
   },
   buttonDisabled: {
     opacity: 0.5,

@@ -22,14 +22,14 @@ export const bookingsListStyles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: colors.primary,
+    borderBottomColor: colors.accent,
   },
   tabText: {
     ...typography.label,
     color: colors.textTertiary,
   },
   tabTextActive: {
-    color: colors.primary,
+    color: colors.accent,
   },
   listContent: {
     paddingHorizontal: spacing.lg,
@@ -119,7 +119,7 @@ export const bookingsListStyles = StyleSheet.create({
     fontSize: 13,
   },
   rebookButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.sm,

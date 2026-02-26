@@ -33,7 +33,7 @@ export const progressStyles = StyleSheet.create({
     borderBottomColor: 'transparent',
   },
   tabActive: {
-    borderBottomColor: colors.primary,
+    borderBottomColor: colors.accent,
   },
   tabText: {
     ...typography.label,
@@ -41,7 +41,7 @@ export const progressStyles = StyleSheet.create({
     fontSize: 13,
   },
   tabTextActive: {
-    color: colors.primary,
+    color: colors.accent,
   },
   scrollContent: {
     paddingHorizontal: spacing.lg,

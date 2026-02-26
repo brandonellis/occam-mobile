@@ -49,7 +49,7 @@ export const dashboardStyles = StyleSheet.create({
   },
   statValue: {
     ...typography.h2,
-    color: colors.primary,
+    color: colors.accent,
   },
   statLabel: {
     ...typography.bodySmall,
@@ -141,7 +141,7 @@ export const dashboardStyles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: colors.background,
+    backgroundColor: colors.accentLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,

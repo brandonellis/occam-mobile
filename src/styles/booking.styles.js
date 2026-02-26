@@ -31,7 +31,7 @@ export const bookingStyles = StyleSheet.create({
     backgroundColor: colors.border,
   },
   stepDotActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     width: 24,
     borderRadius: 4,
   },
@@ -55,7 +55,7 @@ export const bookingStyles = StyleSheet.create({
     borderColor: 'transparent',
   },
   serviceCardSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     backgroundColor: colors.white,
   },
   serviceName: {
@@ -75,7 +75,7 @@ export const bookingStyles = StyleSheet.create({
   },
   servicePrice: {
     ...typography.label,
-    color: colors.primary,
+    color: colors.accent,
     fontSize: 16,
   },
   serviceDuration: {
@@ -96,7 +96,7 @@ export const bookingStyles = StyleSheet.create({
     borderColor: 'transparent',
   },
   coachCardSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.accent,
   },
   coachInfo: {
     flex: 1,
@@ -130,7 +130,7 @@ export const bookingStyles = StyleSheet.create({
     height: 68,
   },
   dateItemSelected: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
   },
   dateItemDisabled: {
     opacity: 0.3,
@@ -174,8 +174,8 @@ export const bookingStyles = StyleSheet.create({
     alignItems: 'center',
   },
   timeSlotSelected: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
   timeSlotText: {
     ...typography.label,
@@ -227,7 +227,7 @@ export const bookingStyles = StyleSheet.create({
   },
   totalPrice: {
     ...typography.h2,
-    color: colors.primary,
+    color: colors.accent,
   },
 
   // Bottom action bar
@@ -240,7 +240,7 @@ export const bookingStyles = StyleSheet.create({
     borderTopColor: colors.borderLight,
   },
   continueButton: {
-    backgroundColor: colors.primary,
+    backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
     paddingVertical: 14,
     alignItems: 'center',
@@ -323,7 +323,7 @@ export const bookingStyles = StyleSheet.create({
     borderColor: 'transparent',
   },
   durationCardSelected: {
-    borderColor: colors.primary,
+    borderColor: colors.accent,
     backgroundColor: colors.white,
   },
   durationLabel: {
@@ -333,7 +333,7 @@ export const bookingStyles = StyleSheet.create({
   },
   durationPrice: {
     ...typography.label,
-    color: colors.primary,
+    color: colors.accent,
     fontSize: 16,
   },
 
@@ -357,7 +357,7 @@ export const bookingStyles = StyleSheet.create({
   },
   allotmentItemCurrent: {
     borderLeftWidth: 3,
-    borderLeftColor: colors.primary,
+    borderLeftColor: colors.accent,
     paddingLeft: spacing.sm,
   },
   allotmentServiceRow: {
@@ -372,7 +372,7 @@ export const bookingStyles = StyleSheet.create({
     fontSize: 13,
   },
   allotmentServiceNameCurrent: {
-    color: colors.primary,
+    color: colors.accent,
     fontWeight: '600',
   },
   allotmentUsageText: {
