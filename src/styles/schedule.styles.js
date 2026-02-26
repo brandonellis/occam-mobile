@@ -58,7 +58,7 @@ export const scheduleStyles = StyleSheet.create({
     height: 52,
   },
   dateItemSelected: {
-    backgroundColor: colors.accent,
+    backgroundColor: colors.primary,
   },
   dateItemToday: {
     borderWidth: 1,
