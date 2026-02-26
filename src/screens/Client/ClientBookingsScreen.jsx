@@ -38,8 +38,21 @@ const ClientBookingsScreen = ({ navigation }) => {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
 
-      const { data } = await getBookings({ filter: activeTab });
-      setBookings(data || []);
+      const { data } = await getBookings({ per_page: 50 });
+      const all = data || [];
+      const now = new Date();
+
+      if (activeTab === TABS.UPCOMING) {
+        const upcoming = all
+          .filter((b) => b.start_time && new Date(b.start_time) >= now)
+          .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+        setBookings(upcoming);
+      } else {
+        const past = all
+          .filter((b) => !b.start_time || new Date(b.start_time) < now)
+          .sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
+        setBookings(past);
+      }
     } catch {
       setBookings([]);
     } finally {
@@ -55,7 +68,7 @@ const ClientBookingsScreen = ({ navigation }) => {
   const handleCancel = useCallback((booking) => {
     Alert.alert(
       'Cancel Booking',
-      `Are you sure you want to cancel your ${booking.service?.name || 'booking'}?`,
+      `Are you sure you want to cancel your ${booking.services?.[0]?.name || 'booking'}?`,
       [
         { text: 'Keep', style: 'cancel' },
         {
@@ -74,9 +87,10 @@ const ClientBookingsScreen = ({ navigation }) => {
     );
   }, [loadBookings]);
 
-  const formatBookingDate = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr + 'T00:00:00');
+  const formatBookingDate = (isoStr) => {
+    if (!isoStr) return '';
+    const date = new Date(isoStr);
+    if (isNaN(date.getTime())) return '';
     return date.toLocaleDateString('en-US', {
       weekday: 'short',
       month: 'short',
@@ -92,7 +106,7 @@ const ClientBookingsScreen = ({ navigation }) => {
       <View style={styles.bookingCard}>
         <View style={styles.bookingHeader}>
           <Text style={styles.bookingService}>
-            {item.service?.name || 'Session'}
+            {item.services?.[0]?.name || 'Session'}
           </Text>
           <View style={[styles.statusBadge, status.style]}>
             <Text style={[styles.statusText, status.textStyle]}>
@@ -105,7 +119,7 @@ const ClientBookingsScreen = ({ navigation }) => {
           <View style={styles.bookingRow}>
             <Ionicons name="calendar-outline" size={14} color={colors.textTertiary} />
             <Text style={styles.bookingDetailText}>
-              {formatBookingDate(item.date)}
+              {formatBookingDate(item.start_time)}
             </Text>
           </View>
           <View style={styles.bookingRow}>
@@ -115,11 +129,11 @@ const ClientBookingsScreen = ({ navigation }) => {
               {item.end_time ? ` — ${formatTime(item.end_time)}` : ''}
             </Text>
           </View>
-          {item.coach && (
+          {item.coaches?.[0] && (
             <View style={styles.bookingRow}>
               <Ionicons name="person-outline" size={14} color={colors.textTertiary} />
               <Text style={styles.bookingDetailText}>
-                {item.coach.first_name} {item.coach.last_name}
+                {item.coaches[0].first_name} {item.coaches[0].last_name}
               </Text>
             </View>
           )}

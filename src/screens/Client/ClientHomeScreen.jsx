@@ -17,10 +17,23 @@ const ClientHomeScreen = ({ navigation }) => {
   const [sessions, setSessions] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const todayKey = new Date().toISOString().split('T')[0];
+  const futureKey = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  })();
+
   const loadBookings = useCallback(async (showRefresh = false) => {
     try {
       if (showRefresh) setIsRefreshing(true);
-      const { data } = await getBookings({ filter: 'upcoming' });
+      const { data } = await getBookings({
+        start_date: todayKey,
+        end_date: futureKey,
+      });
+      if (__DEV__ && data?.length) {
+        console.log('[ClientHome] First booking sample:', JSON.stringify(data[0], null, 2));
+      }
       const sorted = (data || []).sort((a, b) =>
         (a.start_time || '').localeCompare(b.start_time || '')
       );
@@ -30,7 +43,7 @@ const ClientHomeScreen = ({ navigation }) => {
     } finally {
       setIsRefreshing(false);
     }
-  }, []);
+  }, [todayKey, futureKey]);
 
   // Refetch every time the screen comes into focus (e.g. after booking)
   useEffect(() => {
@@ -39,6 +52,14 @@ const ClientHomeScreen = ({ navigation }) => {
     });
     return unsubscribe;
   }, [navigation, loadBookings]);
+
+  // Filter to only upcoming sessions
+  const now = new Date();
+  const upcomingSessions = sessions.filter((s) => {
+    if (!s.start_time) return true;
+    const startDate = new Date(s.start_time);
+    return isNaN(startDate.getTime()) || startDate >= now;
+  });
 
   const formatBookingDate = (dateStr) => {
     if (!dateStr) return '';
@@ -119,51 +140,54 @@ const ClientHomeScreen = ({ navigation }) => {
               <Text style={styles.seeAllLink}>See All</Text>
             </TouchableOpacity>
           </View>
-          {sessions.length === 0 ? (
+          {upcomingSessions.length === 0 ? (
             <EmptyState
               icon="calendar-outline"
               title="No Upcoming Sessions"
               message="Book a session to get started."
             />
           ) : (
-            sessions.slice(0, 5).map((session) => (
-              <TouchableOpacity
-                key={session.id}
-                style={styles.bookingCard}
-                activeOpacity={0.7}
-              >
-                <View style={styles.bookingCardRow}>
-                  <View style={styles.bookingTimeBlock}>
-                    <Text style={styles.bookingTimeValue}>
-                      {formatTime(session.start_time)}
-                    </Text>
-                    <Text style={styles.bookingTimeDate}>
-                      {formatBookingDate(session.start_time)}
-                    </Text>
-                  </View>
-                  <View style={styles.bookingCardContent}>
-                    <Text style={styles.bookingService}>
-                      {session.services?.[0]?.name || session.service?.name || 'Session'}
-                    </Text>
-                    {session.coach && (
-                      <Text style={styles.bookingCoach}>
-                        {session.coach.first_name} {session.coach.last_name}
+            upcomingSessions.slice(0, 5).map((session) => {
+              const coach = session.coaches?.[0] || null;
+              return (
+                <TouchableOpacity
+                  key={session.id}
+                  style={styles.bookingCard}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.bookingCardRow}>
+                    <View style={styles.bookingTimeBlock}>
+                      <Text style={styles.bookingTimeValue}>
+                        {formatTime(session.start_time)}
                       </Text>
-                    )}
-                    {session.location && (
-                      <Text style={styles.bookingTime}>
-                        {session.location.name}
+                      <Text style={styles.bookingTimeDate}>
+                        {formatBookingDate(session.start_time)}
                       </Text>
-                    )}
+                    </View>
+                    <View style={styles.bookingCardContent}>
+                      <Text style={styles.bookingService}>
+                        {session.services?.[0]?.name || 'Session'}
+                      </Text>
+                      {coach && (
+                        <Text style={styles.bookingCoach}>
+                          {coach.first_name} {coach.last_name}
+                        </Text>
+                      )}
+                      {session.location && (
+                        <Text style={styles.bookingTime}>
+                          {session.location.name}
+                        </Text>
+                      )}
+                    </View>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={colors.textTertiary}
+                    />
                   </View>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={18}
-                    color={colors.textTertiary}
-                  />
-                </View>
-              </TouchableOpacity>
-            ))
+                </TouchableOpacity>
+              );
+            })
           )}
         </View>
 
