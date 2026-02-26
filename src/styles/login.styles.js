@@ -46,10 +46,10 @@ export const loginStyles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.lg,
-    paddingVertical: 16,
+    paddingVertical: 14,
     ...typography.body,
     color: colors.textInverse,
-    minHeight: 56,
+    minHeight: 48,
   },
   inputFocused: {
     borderColor: colors.accent,
