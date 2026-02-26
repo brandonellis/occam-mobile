@@ -24,10 +24,13 @@ const ClientTabNavigator = () => {
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarLabelStyle: {
-          ...typography.labelSmall,
+          fontFamily: typography.fontFamily,
           fontSize: 10,
-          textTransform: 'none',
+          fontWeight: '600',
+          lineHeight: 14,
+          letterSpacing: 0,
         },
+        tabBarAllowFontScaling: false,
         tabBarStyle: {
           backgroundColor: colors.white,
           borderTopColor: colors.borderLight,
