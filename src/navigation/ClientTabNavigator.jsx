@@ -22,7 +22,7 @@ const ClientTabNavigator = () => {
       screenOptions={({ route }) => ({
         headerShown: false,
         tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textTertiary,
+        tabBarInactiveTintColor: colors.textInverseMuted,
         tabBarLabelStyle: {
           fontFamily: typography.fontFamily,
           fontSize: 10,
@@ -32,8 +32,8 @@ const ClientTabNavigator = () => {
         },
         tabBarAllowFontScaling: false,
         tabBarStyle: {
-          backgroundColor: colors.white,
-          borderTopColor: colors.borderLight,
+          backgroundColor: colors.primary,
+          borderTopColor: colors.gray800,
           borderTopWidth: 1,
           paddingBottom: 4,
           paddingTop: 4,
