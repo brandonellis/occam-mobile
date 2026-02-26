@@ -27,10 +27,12 @@ import {
 import { getBookings } from '../../services/bookings.api';
 import { clientDetailStyles as styles } from '../../styles/clientDetail.styles';
 import { globalStyles } from '../../styles/global.styles';
-import { formatTime } from '../../constants/booking.constants';
+import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
+import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
 
 const ClientDetailScreen = ({ route, navigation }) => {
+  const { company } = useAuth();
   const { clientId } = route.params;
   const [client, setClient] = useState(null);
   const [modules, setModules] = useState([]);
@@ -160,15 +162,13 @@ const ClientDetailScreen = ({ route, navigation }) => {
     const locationName = booking.location?.name || null;
     const startTime = booking.start_time;
     const dateDisplay = startTime
-      ? new Date(startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      : booking.date
-        ? new Date(booking.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-        : '';
+      ? formatDateInTz(startTime, company, 'short')
+      : '';
     return (
       <View key={booking.id} style={styles.bookingItem}>
         <Text style={styles.bookingService}>{serviceName}</Text>
         <Text style={styles.bookingDate}>
-          {dateDisplay}{startTime ? ` at ${formatTime(startTime)}` : ''}
+          {dateDisplay}{startTime ? ` at ${formatTimeInTz(startTime, company)}` : ''}
         </Text>
         {(coachName || locationName) && (
           <Text style={styles.bookingDate}>

@@ -13,39 +13,19 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
-import { formatTime } from '../../constants/booking.constants';
 import { getBookings, cancelBooking } from '../../services/bookings.api';
+import { formatTimeInTz, generateDateRangeInTz, getTodayKey } from '../../helpers/timezone.helper';
+import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
 import { scheduleStyles as styles } from '../../styles/schedule.styles';
 import { globalStyles } from '../../styles/global.styles';
 import EmptyState from '../../components/EmptyState';
 import { colors, spacing } from '../../theme';
 
-const generateWeekDates = () => {
-  const dates = [];
-  const today = new Date();
-  const startOfWeek = new Date(today);
-  startOfWeek.setDate(today.getDate() - today.getDay());
-
-  for (let i = 0; i < 14; i++) {
-    const date = new Date(startOfWeek);
-    date.setDate(startOfWeek.getDate() + i);
-    const key = date.toISOString().split('T')[0];
-    const todayKey = today.toISOString().split('T')[0];
-    dates.push({
-      key,
-      dayName: date.toLocaleDateString('en-US', { weekday: 'short' }),
-      dayNumber: date.getDate(),
-      isToday: key === todayKey,
-    });
-  }
-  return dates;
-};
-
 const CoachScheduleScreen = ({ navigation }) => {
-  const { user } = useAuth();
-  const [dates] = useState(() => generateWeekDates());
+  const { user, company } = useAuth();
+  const [dates] = useState(() => generateDateRangeInTz(company));
   const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayKey(company);
     return dates.find((d) => d.key === today) || dates[0];
   });
   const [sessions, setSessions] = useState([]);
@@ -104,10 +84,9 @@ const CoachScheduleScreen = ({ navigation }) => {
     );
   }, [loadSessions]);
 
-  const formattedHeader = new Date(selectedDate.key + 'T00:00:00').toLocaleDateString(
-    'en-US',
-    { weekday: 'long', month: 'long', day: 'numeric' }
-  );
+  const formattedHeader = dayjs
+    .tz(selectedDate.key, 'YYYY-MM-DD', getEffectiveTimezone(company))
+    .format('dddd, MMMM D');
 
   const renderDateItem = ({ item }) => {
     const isSelected = item.key === selectedDate.key;
@@ -199,7 +178,7 @@ const CoachScheduleScreen = ({ navigation }) => {
                 <View key={session.id} style={styles.timelineRow}>
                   <View style={styles.timeLabel}>
                     <Text style={styles.timeLabelText}>
-                      {formatTime(session.start_time)}
+                      {formatTimeInTz(session.start_time, company)}
                     </Text>
                   </View>
                   <View style={styles.timelineContent}>
@@ -213,8 +192,8 @@ const CoachScheduleScreen = ({ navigation }) => {
                             </Text>
                           )}
                           <Text style={styles.sessionTime}>
-                            {formatTime(session.start_time)}
-                            {session.end_time ? ` — ${formatTime(session.end_time)}` : ''}
+                            {formatTimeInTz(session.start_time, company)}
+                            {session.end_time ? ` — ${formatTimeInTz(session.end_time, company)}` : ''}
                           </Text>
                         </View>
                         <TouchableOpacity

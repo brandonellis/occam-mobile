@@ -15,6 +15,13 @@ export const formatDuration = (minutes) => {
   return `${hrs} hr ${mins} min`;
 };
 
+/**
+ * Format a time string using device-local timezone.
+ *
+ * IMPORTANT: For displaying booking/session times, prefer formatTimeInTz()
+ * from helpers/timezone.helper.js which uses the company timezone instead
+ * of the device timezone.
+ */
 export const formatTime = (timeString) => {
   if (!timeString) return '';
 

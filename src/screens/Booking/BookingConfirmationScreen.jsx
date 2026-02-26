@@ -18,13 +18,14 @@ import {
 import { extractErrorMessage } from '../../helpers/error.helper';
 import useAuth from '../../hooks/useAuth';
 import useEcommerceConfig from '../../hooks/useEcommerceConfig';
+import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import { colors } from '../../theme';
 import { COACH_ROLES } from '../../constants/auth.constants';
 
 const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const { bookingData = {} } = route.params || {};
   const { service, coach, location, client, date, timeSlot, selectedResource } = bookingData;
-  const { user, activeRole } = useAuth();
+  const { user, activeRole, company } = useAuth();
   const { confirmPayment } = useConfirmPayment();
   const { platformFeeRate, feeDescription, paymentsEnabled, connectAccount, loading: ecommerceLoading } = ecommerceConfig;
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -135,24 +136,16 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     isMembershipBooking: !!isMembershipBooking,
   });
 
-  const formattedDate = date
-    ? new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : '';
-
-  const formatSlotTime = (isoStr) => {
-    if (!isoStr) return '';
-    const d = new Date(isoStr);
-    let hours = d.getHours();
-    const minutes = String(d.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12 || 12;
-    return `${hours}:${minutes} ${ampm}`;
-  };
+  const formattedDate = timeSlot?.start_time
+    ? formatDateInTz(timeSlot.start_time, company, 'long')
+    : date
+      ? new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      : '';
 
   // Build the booking payload (shared between membership and payment flows)
   const buildBookingPayload = useCallback((status = 'confirmed') => {
@@ -599,8 +592,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           <Text
             style={[styles.confirmValue, styles.confirmTimeSubtext, { color: colors.textSecondary }]}
           >
-            {formatSlotTime(timeSlot?.start_time)}
-            {timeSlot?.end_time ? ` — ${formatSlotTime(timeSlot.end_time)}` : ''}
+            {formatTimeInTz(timeSlot?.start_time, company)}
+            {timeSlot?.end_time ? ` — ${formatTimeInTz(timeSlot.end_time, company)}` : ''}
           </Text>
         </View>
 

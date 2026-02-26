@@ -11,7 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
-import { formatTime } from '../../constants/booking.constants';
+import { formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
 import { getBookings } from '../../services/bookings.api';
 import { getClients } from '../../services/accounts.api';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
@@ -20,7 +20,7 @@ import EmptyState from '../../components/EmptyState';
 import { colors } from '../../theme';
 
 const CoachDashboardScreen = ({ navigation }) => {
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const firstName = user?.first_name || user?.name?.split(' ')[0] || 'Coach';
 
   const [sessions, setSessions] = useState([]);
@@ -28,7 +28,7 @@ const CoachDashboardScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const todayKey = new Date().toISOString().split('T')[0];
+  const todayKey = getTodayKey(company);
 
   const loadDashboard = useCallback(async (showRefresh = false) => {
     try {
@@ -183,7 +183,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                     <View style={styles.bookingCardRow}>
                       <View style={styles.bookingTimeBlock}>
                         <Text style={styles.bookingTimeValue}>
-                          {formatTime(session.start_time)}
+                          {formatTimeInTz(session.start_time, company)}
                         </Text>
                       </View>
                       <View style={styles.bookingCardContent}>
@@ -196,8 +196,8 @@ const CoachDashboardScreen = ({ navigation }) => {
                           </Text>
                         )}
                         <Text style={styles.bookingTime}>
-                          {formatTime(session.start_time)}
-                          {session.end_time ? ` — ${formatTime(session.end_time)}` : ''}
+                          {formatTimeInTz(session.start_time, company)}
+                          {session.end_time ? ` — ${formatTimeInTz(session.end_time, company)}` : ''}
                         </Text>
                       </View>
                       <Ionicons

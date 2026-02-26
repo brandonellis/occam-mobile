@@ -11,8 +11,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { SCREENS } from '../../constants/navigation.constants';
-import { formatTime } from '../../constants/booking.constants';
 import { getBookings, cancelBooking } from '../../services/bookings.api';
+import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
+import useAuth from '../../hooks/useAuth';
 import { bookingsListStyles as styles } from '../../styles/bookingsList.styles';
 import { globalStyles } from '../../styles/global.styles';
 import EmptyState from '../../components/EmptyState';
@@ -28,6 +29,7 @@ const STATUS_MAP = {
 };
 
 const ClientBookingsScreen = ({ navigation }) => {
+  const { company } = useAuth();
   const [activeTab, setActiveTab] = useState(TABS.UPCOMING);
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,16 +89,6 @@ const ClientBookingsScreen = ({ navigation }) => {
     );
   }, [loadBookings]);
 
-  const formatBookingDate = (isoStr) => {
-    if (!isoStr) return '';
-    const date = new Date(isoStr);
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
 
   const renderBooking = ({ item }) => {
     const status = STATUS_MAP[item.status] || STATUS_MAP.confirmed;
@@ -119,14 +111,14 @@ const ClientBookingsScreen = ({ navigation }) => {
           <View style={styles.bookingRow}>
             <Ionicons name="calendar-outline" size={14} color={colors.textTertiary} />
             <Text style={styles.bookingDetailText}>
-              {formatBookingDate(item.start_time)}
+              {formatDateInTz(item.start_time, company)}
             </Text>
           </View>
           <View style={styles.bookingRow}>
             <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
             <Text style={styles.bookingDetailText}>
-              {formatTime(item.start_time)}
-              {item.end_time ? ` — ${formatTime(item.end_time)}` : ''}
+              {formatTimeInTz(item.start_time, company)}
+              {item.end_time ? ` — ${formatTimeInTz(item.end_time, company)}` : ''}
             </Text>
           </View>
           {item.coaches?.[0] && (

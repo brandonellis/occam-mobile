@@ -4,25 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
-import { formatTime } from '../../constants/booking.constants';
 import { getBookings } from '../../services/bookings.api';
+import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
 import EmptyState from '../../components/EmptyState';
 import { colors } from '../../theme';
 
 const ClientHomeScreen = ({ navigation }) => {
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const firstName = user?.first_name || user?.name?.split(' ')[0] || '';
 
   const [sessions, setSessions] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const todayKey = new Date().toISOString().split('T')[0];
-  const futureKey = (() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 30);
-    return d.toISOString().split('T')[0];
-  })();
+  const todayKey = getTodayKey(company);
+  const futureKey = getFutureDateKey(company, 30);
 
   const loadBookings = useCallback(async (showRefresh = false) => {
     try {
@@ -31,9 +27,6 @@ const ClientHomeScreen = ({ navigation }) => {
         start_date: todayKey,
         end_date: futureKey,
       });
-      if (__DEV__ && data?.length) {
-        console.log('[ClientHome] First booking sample:', JSON.stringify(data[0], null, 2));
-      }
       const sorted = (data || []).sort((a, b) =>
         (a.start_time || '').localeCompare(b.start_time || '')
       );
@@ -60,17 +53,6 @@ const ClientHomeScreen = ({ navigation }) => {
     const startDate = new Date(s.start_time);
     return isNaN(startDate.getTime()) || startDate >= now;
   });
-
-  const formatBookingDate = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    if (isNaN(date.getTime())) return '';
-    return date.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-    });
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -158,10 +140,10 @@ const ClientHomeScreen = ({ navigation }) => {
                   <View style={styles.bookingCardRow}>
                     <View style={styles.bookingTimeBlock}>
                       <Text style={styles.bookingTimeValue}>
-                        {formatTime(session.start_time)}
+                        {formatTimeInTz(session.start_time, company)}
                       </Text>
                       <Text style={styles.bookingTimeDate}>
-                        {formatBookingDate(session.start_time)}
+                        {formatDateInTz(session.start_time, company)}
                       </Text>
                     </View>
                     <View style={styles.bookingCardContent}>
