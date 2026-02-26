@@ -35,7 +35,10 @@ const ClientProgressScreen = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const loadData = useCallback(async (showRefresh = false) => {
-    if (!clientId) return;
+    if (!clientId) {
+      setIsLoading(false);
+      return;
+    }
     try {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
@@ -72,7 +75,7 @@ const ClientProgressScreen = () => {
     modules.forEach((mod) => {
       const lessons = mod.lessons || [];
       total += lessons.length;
-      completed += lessons.filter((l) => l.completed_at || l.is_completed).length;
+      completed += lessons.filter((l) => l.completed || l.completed_at || l.is_completed).length;
     });
     return total === 0 ? 0 : Math.round((completed / total) * 100);
   };
@@ -108,15 +111,15 @@ const ClientProgressScreen = () => {
 
         {modules.map((mod) => {
           const lessons = mod.lessons || [];
-          const modCompleted = lessons.filter((l) => l.completed_at || l.is_completed).length;
+          const modCompleted = lessons.filter((l) => l.completed || l.completed_at || l.is_completed).length;
           return (
             <View key={mod.id} style={styles.moduleCard}>
-              <Text style={styles.moduleName}>{mod.name}</Text>
+              <Text style={styles.moduleName}>{mod.title || mod.name}</Text>
               <Text style={styles.moduleProgress}>
                 {modCompleted} / {lessons.length} lessons
               </Text>
               {lessons.map((lesson) => {
-                const done = lesson.completed_at || lesson.is_completed;
+                const done = lesson.completed || lesson.completed_at || lesson.is_completed;
                 return (
                   <View key={lesson.id} style={styles.lessonRow}>
                     <Ionicons
@@ -130,7 +133,7 @@ const ClientProgressScreen = () => {
                         done && styles.lessonTextComplete,
                       ]}
                     >
-                      {lesson.name}
+                      {lesson.title || lesson.name}
                     </Text>
                   </View>
                 );
