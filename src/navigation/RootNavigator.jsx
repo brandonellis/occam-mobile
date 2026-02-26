@@ -23,6 +23,7 @@ import ProgressReportDetailScreen from '../screens/Coach/ProgressReportDetailScr
 import VideoRecordingScreen from '../screens/Coach/VideoRecordingScreen';
 import VideoReviewScreen from '../screens/Coach/VideoReviewScreen';
 import VideoAnnotationScreen from '../screens/Coach/VideoAnnotationScreen';
+import ClientBookingsScreen from '../screens/Client/ClientBookingsScreen';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 
 const Stack = createNativeStackNavigator();
@@ -155,6 +156,13 @@ const RootNavigator = () => {
           <Stack.Screen
             name={SCREENS.VIDEO_ANNOTATION}
             component={VideoAnnotationScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+
+          {/* Client bookings list */}
+          <Stack.Screen
+            name={SCREENS.CLIENT_BOOKINGS}
+            component={ClientBookingsScreen}
             options={{ animation: 'slide_from_right' }}
           />
 

@@ -93,6 +93,12 @@ export const dashboardStyles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  bookingTimeDate: {
+    ...typography.labelSmall,
+    color: colors.textTertiary,
+    fontSize: 10,
+    marginTop: 2,
+  },
   bookingCardContent: {
     flex: 1,
   },
