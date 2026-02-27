@@ -227,4 +227,49 @@ export const progressStyles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.textTertiary,
   },
+
+  // Resource sections
+  resourceSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    marginTop: spacing.lg,
+  },
+  resourceSectionHeaderFirst: {
+    marginTop: 0,
+  },
+  resourceSectionIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resourceSectionTitle: {
+    ...typography.label,
+    color: colors.textPrimary,
+    fontSize: 15,
+    flex: 1,
+  },
+  resourceSectionCount: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+  },
+  resourceGroupBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.accentLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.xs,
+    alignSelf: 'flex-start',
+    marginBottom: spacing.xs,
+  },
+  resourceGroupBadgeText: {
+    ...typography.labelSmall,
+    color: colors.accent,
+    fontSize: 11,
+  },
 });

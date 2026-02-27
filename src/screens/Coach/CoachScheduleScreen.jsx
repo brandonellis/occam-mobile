@@ -14,8 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings, cancelBooking } from '../../services/bookings.api';
-import { formatTimeInTz, generateDateRangeInTz, getTodayKey } from '../../helpers/timezone.helper';
-import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
+import { formatTimeInTz, generateDateRangeInTz, getTodayKey, formatDateKeyLong } from '../../helpers/timezone.helper';
 import { scheduleStyles as styles } from '../../styles/schedule.styles';
 import { globalStyles } from '../../styles/global.styles';
 import EmptyState from '../../components/EmptyState';
@@ -84,9 +83,7 @@ const CoachScheduleScreen = ({ navigation }) => {
     );
   }, [loadSessions]);
 
-  const formattedHeader = dayjs
-    .tz(selectedDate.key, 'YYYY-MM-DD', getEffectiveTimezone(company))
-    .format('dddd, MMMM D');
+  const formattedHeader = formatDateKeyLong(selectedDate.key);
 
   const renderDateItem = ({ item }) => {
     const isSelected = item.key === selectedDate.key;

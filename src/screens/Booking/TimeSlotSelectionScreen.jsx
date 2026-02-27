@@ -13,26 +13,9 @@ import { buildClassSessionGroups } from '../../helpers/classSession.helper';
 import { colors, spacing } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
+import { generateDateRangeInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 
-/**
- * Generate a date range using the company timezone so that "today" and all
- * subsequent dates are correct regardless of the device's local timezone.
- */
-const generateDateRange = (tz, days = 14) => {
-  const dates = [];
-  const today = tz ? dayjs().tz(tz) : dayjs();
-  for (let i = 0; i < days; i++) {
-    const date = today.add(i, 'day');
-    dates.push({
-      key: date.format('YYYY-MM-DD'),
-      dayName: date.format('ddd'),
-      dayNumber: date.date(),
-      month: date.format('MMM'),
-    });
-  }
-  return dates;
-};
 
 const AVAILABILITY_COLORS = {
   available: colors.success,
@@ -89,7 +72,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
 
   // Build date range in company timezone (rebuilds when company loads)
   const companyTz = useMemo(() => getEffectiveTimezone(company), [company]);
-  const dates = useMemo(() => generateDateRange(companyTz), [companyTz]);
+  const dates = useMemo(() => generateDateRangeInTz(company), [company]);
 
   // Select first date on mount (company is already available from auth context)
   useEffect(() => {

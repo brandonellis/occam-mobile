@@ -65,8 +65,14 @@ const BookingDetailScreen = ({ navigation, route }) => {
               await cancelBooking(booking.id);
               navigation.goBack();
             } catch (err) {
-              console.warn('Failed to cancel booking:', err?.message || err);
-              Alert.alert('Error', 'Failed to cancel booking.');
+              const status = err?.response?.status;
+              const serverMsg = err?.response?.data?.message;
+              if (status === 403 && serverMsg) {
+                Alert.alert('Cannot Cancel', serverMsg);
+              } else {
+                console.warn('Failed to cancel booking:', err?.message || err);
+                Alert.alert('Error', 'Failed to cancel booking.');
+              }
             }
           },
         },
@@ -101,7 +107,12 @@ const BookingDetailScreen = ({ navigation, route }) => {
   const coach = booking.coaches?.[0];
   const location = booking.location;
   const resources = booking.resources || [];
-  const isUpcoming = booking.status === 'confirmed' || booking.status === 'pending';
+  const isPastBooking = booking.start_time && new Date(booking.start_time).getTime() < Date.now();
+  const windowHours = company?.cancellation_window_hours ?? 24;
+  const isWithinCancellationWindow = windowHours > 0 && booking.start_time &&
+    new Date(booking.start_time).getTime() < Date.now() + windowHours * 3600000;
+  const canCancel = !isPastBooking && !isWithinCancellationWindow &&
+    (booking.status === 'confirmed' || booking.status === 'pending');
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -196,7 +207,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
         )}
 
         {/* Cancel action */}
-        {isUpcoming && booking.status !== 'cancelled' && (
+        {canCancel && (
           <TouchableOpacity
             style={styles.cancelButton}
             onPress={handleCancel}

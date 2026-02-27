@@ -1,5 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { CommonActions } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
@@ -56,7 +57,25 @@ const CoachTabNavigator = () => {
       <Tab.Screen
         name="ScheduleTab"
         component={CoachScheduleStack}
-        options={{ tabBarLabel: 'Schedule', unmountOnBlur: true }}
+        options={{ tabBarLabel: 'Schedule' }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: 'ScheduleTab',
+                    state: {
+                      routes: [{ name: SCREENS.COACH_SCHEDULE }],
+                    },
+                  },
+                ],
+              })
+            );
+          },
+        })}
       />
       <Tab.Screen
         name={SCREENS.COACH_CLIENTS}

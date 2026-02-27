@@ -43,9 +43,9 @@ const ResourceCard = ({ resource, navigation }) => {
 
   const handleVideoPress = () => {
     if (mediaUrl) {
-      navigation.navigate('HomeTab', {
-        screen: SCREENS.VIDEO_PLAYER,
-        params: { videoUrl: mediaUrl, videoTitle: resource.filename || 'Video' },
+      navigation.navigate(SCREENS.VIDEO_PLAYER, {
+        videoUrl: mediaUrl,
+        videoTitle: resource.filename || 'Video',
       });
     }
   };
@@ -147,6 +147,11 @@ const ClientProgressScreen = () => {
   const [resources, setResources] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [collapsedSections, setCollapsedSections] = useState({});
+
+  const toggleSection = useCallback((sectionKey) => {
+    setCollapsedSections((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
+  }, []);
 
   const loadData = useCallback(async (showRefresh = false) => {
     if (!clientId) {
@@ -282,10 +287,7 @@ const ClientProgressScreen = () => {
           style={styles.reportCard}
           activeOpacity={0.7}
           onPress={() =>
-            navigation.navigate('HomeTab', {
-              screen: SCREENS.PROGRESS_REPORT_DETAIL,
-              params: { report },
-            })
+            navigation.navigate(SCREENS.PROGRESS_REPORT_DETAIL, { report })
           }
         >
           <View style={styles.reportCardRow}>
@@ -333,9 +335,92 @@ const ClientProgressScreen = () => {
       );
     }
 
-    return resources.map((resource) => (
-      <ResourceCard key={resource.id} resource={resource} navigation={navigation} />
-    ));
+    // Split into personal and group resources
+    const personalResources = resources.filter((r) => r.source !== 'group');
+    const groupResources = resources.filter((r) => r.source === 'group');
+
+    // Group the group resources by group name
+    const groupedByGroup = groupResources.reduce((acc, resource) => {
+      const groupName = resource.group?.name || 'Group';
+      const groupId = resource.group?.id || 'unknown';
+      const key = `${groupId}`;
+      if (!acc[key]) {
+        acc[key] = { name: groupName, id: groupId, items: [] };
+      }
+      acc[key].items.push(resource);
+      return acc;
+    }, {});
+
+    const groupSections = Object.values(groupedByGroup);
+    const hasPersonal = personalResources.length > 0;
+    const hasGroups = groupSections.length > 0;
+
+    // If all resources are personal (no groups), render flat like before
+    if (!hasGroups) {
+      return personalResources.map((resource) => (
+        <ResourceCard key={resource.id} resource={resource} navigation={navigation} />
+      ));
+    }
+
+    const personalCollapsed = !!collapsedSections['personal'];
+
+    return (
+      <>
+        {/* Individual / Personal resources */}
+        {hasPersonal && (
+          <>
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => toggleSection('personal')}
+              style={[styles.resourceSectionHeader, styles.resourceSectionHeaderFirst]}
+            >
+              <View style={[styles.resourceSectionIcon, { backgroundColor: colors.accentLight }]}>
+                <Ionicons name="person-outline" size={14} color={colors.accent} />
+              </View>
+              <Text style={styles.resourceSectionTitle}>My Resources</Text>
+              <Text style={styles.resourceSectionCount}>{personalResources.length}</Text>
+              <Ionicons
+                name={personalCollapsed ? 'chevron-forward' : 'chevron-down'}
+                size={16}
+                color={colors.textTertiary}
+              />
+            </TouchableOpacity>
+            {!personalCollapsed && personalResources.map((resource) => (
+              <ResourceCard key={resource.id} resource={resource} navigation={navigation} />
+            ))}
+          </>
+        )}
+
+        {/* Group resources — one section per group */}
+        {groupSections.map((group, index) => {
+          const sectionKey = `group_${group.id}`;
+          const isCollapsed = !!collapsedSections[sectionKey];
+          return (
+            <React.Fragment key={group.id}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={() => toggleSection(sectionKey)}
+                style={[styles.resourceSectionHeader, !hasPersonal && index === 0 && styles.resourceSectionHeaderFirst]}
+              >
+                <View style={[styles.resourceSectionIcon, { backgroundColor: colors.lavenderMistLight }]}>
+                  <Ionicons name="people-outline" size={14} color={colors.twilightPurple} />
+                </View>
+                <Text style={styles.resourceSectionTitle}>{group.name}</Text>
+                <Text style={styles.resourceSectionCount}>{group.items.length}</Text>
+                <Ionicons
+                  name={isCollapsed ? 'chevron-forward' : 'chevron-down'}
+                  size={16}
+                  color={colors.textTertiary}
+                />
+              </TouchableOpacity>
+              {!isCollapsed && group.items.map((resource) => (
+                <ResourceCard key={resource.id} resource={resource} navigation={navigation} />
+              ))}
+            </React.Fragment>
+          );
+        })}
+      </>
+    );
   };
 
   return (

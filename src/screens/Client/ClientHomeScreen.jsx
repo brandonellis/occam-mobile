@@ -6,8 +6,9 @@ import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
-import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
+import dayjs from '../../utils/dayjs';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
+import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import { colors } from '../../theme';
 
@@ -16,6 +17,7 @@ const ClientHomeScreen = ({ navigation }) => {
   const firstName = user?.first_name || user?.name?.split(' ')[0] || '';
 
   const [sessions, setSessions] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const todayKey = getTodayKey(company);
@@ -24,6 +26,7 @@ const ClientHomeScreen = ({ navigation }) => {
   const loadBookings = useCallback(async (showRefresh = false) => {
     try {
       if (showRefresh) setIsRefreshing(true);
+      else setIsLoading(true);
       const { data } = await getBookings({
         client_id: user?.id,
         start_date: todayKey,
@@ -36,6 +39,7 @@ const ClientHomeScreen = ({ navigation }) => {
     } catch (err) {
       console.warn('Failed to load bookings:', err?.message || err);
     } finally {
+      setIsLoading(false);
       setIsRefreshing(false);
     }
   }, [user?.id, todayKey, futureKey]);
@@ -48,14 +52,21 @@ const ClientHomeScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, loadBookings]);
 
-  // Filter to only upcoming sessions (using company timezone)
-  const tz = getEffectiveTimezone(company);
-  const nowTz = dayjs().tz(tz);
+  // Filter to only upcoming sessions (compare in UTC for reliability)
+  const nowUtc = dayjs.utc();
   const upcomingSessions = sessions.filter((s) => {
     if (!s.start_time) return true;
-    const startTz = dayjs(s.start_time).tz(tz);
-    return !startTz.isValid() || startTz.isSameOrAfter(nowTz);
+    const startUtc = dayjs.utc(s.start_time);
+    return !startUtc.isValid() || startUtc.isSameOrAfter(nowUtc);
   });
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <DashboardSkeleton />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -99,7 +110,7 @@ const ClientHomeScreen = ({ navigation }) => {
             <TouchableOpacity
               style={styles.quickActionButton}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREENS.CLIENT_PROGRESS, { initialTab: 'resources' })}
+              onPress={() => navigation.navigate('ProgressTab', { screen: SCREENS.CLIENT_PROGRESS, params: { initialTab: 'resources' } })}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.lavenderMistLight }]}>
                 <Ionicons name="play-circle-outline" size={18} color={colors.twilightPurple} />

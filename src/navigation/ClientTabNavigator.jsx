@@ -1,12 +1,13 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { CommonActions } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import ClientHomeStack from './ClientHomeStack';
 import ClientBookingsScreen from '../screens/Client/ClientBookingsScreen';
-import ClientProgressScreen from '../screens/Client/ClientProgressScreen';
+import ClientProgressStack from './ClientProgressStack';
 import ClientProfileScreen from '../screens/Client/ClientProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -14,7 +15,7 @@ const Tab = createBottomTabNavigator();
 const TAB_ICONS = {
   HomeTab: { focused: 'home', unfocused: 'home-outline' },
   [SCREENS.CLIENT_BOOKINGS]: { focused: 'calendar', unfocused: 'calendar-outline' },
-  [SCREENS.CLIENT_PROGRESS]: { focused: 'trending-up', unfocused: 'trending-up-outline' },
+  ProgressTab: { focused: 'trending-up', unfocused: 'trending-up-outline' },
   [SCREENS.CLIENT_PROFILE]: { focused: 'person-circle', unfocused: 'person-circle-outline' },
 };
 
@@ -51,7 +52,25 @@ const ClientTabNavigator = () => {
       <Tab.Screen
         name="HomeTab"
         component={ClientHomeStack}
-        options={{ tabBarLabel: 'Home', unmountOnBlur: true }}
+        options={{ tabBarLabel: 'Home' }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [
+                  {
+                    name: 'HomeTab',
+                    state: {
+                      routes: [{ name: SCREENS.CLIENT_HOME }],
+                    },
+                  },
+                ],
+              })
+            );
+          },
+        })}
       />
       <Tab.Screen
         name={SCREENS.CLIENT_BOOKINGS}
@@ -59,8 +78,8 @@ const ClientTabNavigator = () => {
         options={{ tabBarLabel: 'Bookings' }}
       />
       <Tab.Screen
-        name={SCREENS.CLIENT_PROGRESS}
-        component={ClientProgressScreen}
+        name="ProgressTab"
+        component={ClientProgressStack}
         options={{ tabBarLabel: 'Progress' }}
       />
       <Tab.Screen

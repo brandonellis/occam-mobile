@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,7 +14,7 @@ import { formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
 import { getBookings } from '../../services/bookings.api';
 import { getClients } from '../../services/accounts.api';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
-import { globalStyles } from '../../styles/global.styles';
+import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import { colors } from '../../theme';
 
@@ -103,9 +102,7 @@ const CoachDashboardScreen = ({ navigation }) => {
         </View>
 
         {isLoading ? (
-          <View style={globalStyles.loadingContainerInline}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
+          <CoachDashboardSkeleton />
         ) : (
           <>
             <View style={styles.statsRow}>

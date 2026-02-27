@@ -117,4 +117,18 @@ export const videoReviewStyles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.5)',
     fontSize: 14,
   },
+
+  // Sharing overlay
+  sharingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.md,
+  },
+  sharingText: {
+    ...typography.body,
+    color: colors.textInverse,
+    fontSize: 16,
+  },
 });

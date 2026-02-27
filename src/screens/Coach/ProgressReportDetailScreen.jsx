@@ -3,7 +3,6 @@ import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../../theme/colors';
-import { ASSESSMENT_CATEGORIES } from '../../constants/performance.constants';
 import { progressReportDetailStyles as styles } from '../../styles/progressReportDetail.styles';
 
 const ProgressReportDetailScreen = ({ navigation, route }) => {
@@ -152,20 +151,19 @@ const ProgressReportDetailScreen = ({ navigation, route }) => {
               <Text style={styles.sectionTitle}>Assessment Scores</Text>
             </View>
 
-            {ASSESSMENT_CATEGORIES.map((cat, index) => {
-              const score = assessment.scores?.[cat.key];
-              const delta = deltas?.scores?.[cat.key];
+            {Object.entries(assessment.scores || {}).map(([key, score], index, arr) => {
+              const delta = deltas?.scores?.[key];
               const safeScore =
                 typeof score === 'number' ? score : Number(score);
               const displayScore = Number.isFinite(safeScore) ? safeScore : null;
-              const isLast = index === ASSESSMENT_CATEGORIES.length - 1;
+              const isLast = index === arr.length - 1;
 
               return (
                 <View
-                  key={cat.key}
+                  key={key}
                   style={[styles.scoreRow, isLast && styles.scoreRowLast]}
                 >
-                  <Text style={styles.scoreLabel}>{cat.label}</Text>
+                  <Text style={styles.scoreLabel}>{key}</Text>
                   <View style={styles.scoreBarWrap}>
                     <View
                       style={[

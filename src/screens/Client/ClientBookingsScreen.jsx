@@ -12,8 +12,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings, cancelBooking } from '../../services/bookings.api';
-import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
-import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
+import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
+import dayjs from '../../utils/dayjs';
 import useAuth from '../../hooks/useAuth';
 import { bookingsListStyles as styles } from '../../styles/bookingsList.styles';
 import { globalStyles } from '../../styles/global.styles';
@@ -50,32 +50,33 @@ const ClientBookingsScreen = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const dateRange = useMemo(() => {
-    const tz = getEffectiveTimezone(company);
-    const today = dayjs().tz(tz);
-
     if (dateFilter === 'all') return {};
 
+    const todayStr = getTodayKey(company);
     const days = dateFilter === '7d' ? 7 : dateFilter === '30d' ? 30 : 90;
 
     if (activeTab === TABS.UPCOMING) {
       return {
-        start_date: today.format('YYYY-MM-DD'),
-        end_date: today.add(days, 'day').format('YYYY-MM-DD'),
+        start_date: todayStr,
+        end_date: getFutureDateKey(company, days),
       };
     }
     return {
-      start_date: today.subtract(days, 'day').format('YYYY-MM-DD'),
-      end_date: today.format('YYYY-MM-DD'),
+      start_date: getFutureDateKey(company, -days),
+      end_date: todayStr,
     };
   }, [company, dateFilter, activeTab]);
 
   const loadBookings = useCallback(async (showRefresh = false) => {
+    if (!company?.timezone) {
+      // Wait for company data before loading — prevents UTC fallback
+      return;
+    }
     try {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
 
-      const tz = getEffectiveTimezone(company);
-      const nowTz = dayjs().tz(tz);
+      const nowUtc = dayjs.utc();
 
       const params = { client_id: user?.id, per_page: 50, ...dateRange };
       const { data } = await getBookings(params);
@@ -83,12 +84,12 @@ const ClientBookingsScreen = ({ navigation }) => {
 
       if (activeTab === TABS.UPCOMING) {
         const upcoming = all
-          .filter((b) => b.start_time && dayjs(b.start_time).tz(tz).isSameOrAfter(nowTz))
+          .filter((b) => b.start_time && dayjs.utc(b.start_time).isSameOrAfter(nowUtc))
           .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
         setBookings(upcoming);
       } else {
         const past = all
-          .filter((b) => !b.start_time || dayjs(b.start_time).tz(tz).isBefore(nowTz))
+          .filter((b) => !b.start_time || dayjs.utc(b.start_time).isBefore(nowUtc))
           .sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
         setBookings(past);
       }
@@ -119,8 +120,14 @@ const ClientBookingsScreen = ({ navigation }) => {
               await cancelBooking(booking.id);
               loadBookings();
             } catch (err) {
-              console.warn('Failed to cancel booking:', err?.message || err);
-              Alert.alert('Error', 'Failed to cancel booking.');
+              const status = err?.response?.status;
+              const serverMsg = err?.response?.data?.message;
+              if (status === 403 && serverMsg) {
+                Alert.alert('Cannot Cancel', serverMsg);
+              } else {
+                console.warn('Failed to cancel booking:', err?.message || err);
+                Alert.alert('Error', 'Failed to cancel booking.');
+              }
             }
           },
         },

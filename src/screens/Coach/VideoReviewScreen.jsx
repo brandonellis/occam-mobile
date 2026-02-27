@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,8 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { uploadFile } from '../../services/uploads.api';
+import { shareMediaWithClient, shareMediaWithGroup } from '../../services/accounts.api';
+import ShareTargetSheet from '../../components/ShareTargetSheet';
 import { videoReviewStyles as styles } from '../../styles/videoReview.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
@@ -31,6 +33,9 @@ const VideoReviewScreen = ({ route, navigation }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadComplete, setUploadComplete] = useState(false);
+  const [uploadId, setUploadId] = useState(null);
+  const [isShareSheetVisible, setIsShareSheetVisible] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
 
   const handleUpload = useCallback(async () => {
     if (isUploading) return;
@@ -44,7 +49,7 @@ const VideoReviewScreen = ({ route, navigation }) => {
         ? `${title.trim().replace(/\s+/g, '_')}.mp4`
         : `coaching_video_${timestamp}.mp4`;
 
-      await uploadFile(videoUri, {
+      const uploadResult = await uploadFile(videoUri, {
         uploadableType: 'media_library',
         isLibrary: true,
         filename,
@@ -52,6 +57,8 @@ const VideoReviewScreen = ({ route, navigation }) => {
         onProgress: setUploadProgress,
       });
 
+      const resultUploadId = uploadResult?.data?.id || uploadResult?.id || null;
+      setUploadId(resultUploadId);
       setUploadComplete(true);
 
       setTimeout(() => {
@@ -63,6 +70,12 @@ const VideoReviewScreen = ({ route, navigation }) => {
               text: 'Done',
               onPress: () => navigation.popToTop(),
             },
+            ...(resultUploadId
+              ? [{
+                  text: 'Share',
+                  onPress: () => setIsShareSheetVisible(true),
+                }]
+              : []),
           ]
         );
       }, 400);
@@ -94,6 +107,40 @@ const VideoReviewScreen = ({ route, navigation }) => {
       ]
     );
   }, [navigation]);
+
+  const handleShareTargets = useCallback(async (targets) => {
+    if (!uploadId || targets.length === 0) return;
+    setIsShareSheetVisible(false);
+    setIsSharing(true);
+
+    try {
+      const sharePromises = targets.map((target) => {
+        const payload = { upload_id: uploadId, notes: title.trim() || null };
+        if (target.type === 'client') {
+          return shareMediaWithClient(target.id, payload);
+        }
+        return shareMediaWithGroup(target.id, payload);
+      });
+
+      await Promise.all(sharePromises);
+
+      const names = targets.map((t) => t.name).join(', ');
+      Alert.alert(
+        'Shared',
+        `Video shared with ${names}.`,
+        [{ text: 'Done', onPress: () => navigation.popToTop() }]
+      );
+    } catch (err) {
+      console.warn('Share failed:', err);
+      Alert.alert(
+        'Share Failed',
+        err.response?.data?.message || 'Could not share with one or more targets.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsSharing(false);
+    }
+  }, [uploadId, title, navigation]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -204,6 +251,26 @@ const VideoReviewScreen = ({ route, navigation }) => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {isSharing && (
+        <View style={styles.sharingOverlay}>
+          <ActivityIndicator size="large" color={colors.textInverse} />
+          <Text style={styles.sharingText}>Sharing...</Text>
+        </View>
+      )}
+
+      <ShareTargetSheet
+        visible={isShareSheetVisible}
+        onClose={() => {
+          setIsShareSheetVisible(false);
+          Alert.alert(
+            'Upload Complete',
+            'Your video has been saved to the Media Library.',
+            [{ text: 'Done', onPress: () => navigation.popToTop() }]
+          );
+        }}
+        onSelect={handleShareTargets}
+      />
     </SafeAreaView>
   );
 };

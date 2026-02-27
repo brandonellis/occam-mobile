@@ -139,3 +139,16 @@ export const getCurrentClientMembership = async (clientId) => {
   );
   return response.data;
 };
+
+export const getClientGroups = async () => {
+  const response = await apiClient.get('/client-groups');
+  return response.data;
+};
+
+export const shareMediaWithGroup = async (groupId, payload) => {
+  const response = await apiClient.post(
+    `/client-groups/${groupId}/media`,
+    payload
+  );
+  return response.data;
+};
