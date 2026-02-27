@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -44,9 +44,11 @@ const CoachClientsScreen = ({ navigation }) => {
   }, []);
 
   // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
+  const hasLoaded = useRef(false);
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      loadClients();
+      loadClients(hasLoaded.current);
+      hasLoaded.current = true;
     });
     return unsubscribe;
   }, [navigation, loadClients]);

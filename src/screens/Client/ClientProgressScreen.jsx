@@ -147,6 +147,7 @@ const ClientProgressScreen = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
+  const hasLoaded = useRef(false);
 
   const toggleSection = useCallback((sectionKey) => {
     setCollapsedSections((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
@@ -183,21 +184,20 @@ const ClientProgressScreen = () => {
   }, [clientId, activeTab]);
 
   // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
-  const hasFocused = useRef(false);
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      hasFocused.current = true;
-      loadData();
+      loadData(hasLoaded.current);
+      hasLoaded.current = true;
     });
     return unsubscribe;
   }, [navigation, loadData]);
 
   // Re-fetch when activeTab changes, but only after screen has been focused at least once
   useEffect(() => {
-    if (hasFocused.current) {
+    if (hasLoaded.current) {
       loadData();
     }
-  }, [activeTab]);
+  }, [activeTab, loadData]);
 
   const getCompletionPercent = (modules) => {
     if (!modules.length) return 0;

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useMemo } from 'react';
+import React, { useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -64,7 +64,7 @@ const ClientBookingsScreen = ({ navigation }) => {
       start_date: getFutureDateKey(company, -days),
       end_date: todayStr,
     };
-  }, [company, dateFilter, activeTab]);
+  }, [company?.timezone, dateFilter, activeTab]);
 
   const loadBookings = useCallback(async (showRefresh = false) => {
     if (!company?.timezone) {
@@ -102,9 +102,11 @@ const ClientBookingsScreen = ({ navigation }) => {
   }, [user?.id, company?.timezone, activeTab, dateRange]);
 
   // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
+  const hasLoaded = useRef(false);
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      loadBookings();
+      loadBookings(hasLoaded.current);
+      hasLoaded.current = true;
     });
     return unsubscribe;
   }, [navigation, loadBookings]);
