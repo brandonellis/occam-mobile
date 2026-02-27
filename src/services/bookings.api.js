@@ -35,11 +35,6 @@ export const getCoaches = async () => {
   return response.data;
 };
 
-export const getClients = async (params = {}) => {
-  const response = await apiClient.get('/clients', { params });
-  return response.data;
-};
-
 export const getAvailability = async (params) => {
   const response = await apiClient.get('/availability', { params });
   return response.data;

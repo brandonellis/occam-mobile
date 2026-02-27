@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -182,9 +182,22 @@ const ClientProgressScreen = () => {
     }
   }, [clientId, activeTab]);
 
+  // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
+  const hasFocused = useRef(false);
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    const unsubscribe = navigation.addListener('focus', () => {
+      hasFocused.current = true;
+      loadData();
+    });
+    return unsubscribe;
+  }, [navigation, loadData]);
+
+  // Re-fetch when activeTab changes, but only after screen has been focused at least once
+  useEffect(() => {
+    if (hasFocused.current) {
+      loadData();
+    }
+  }, [activeTab]);
 
   const getCompletionPercent = (modules) => {
     if (!modules.length) return 0;

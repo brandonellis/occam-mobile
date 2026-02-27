@@ -1,15 +1,23 @@
 import * as SecureStore from 'expo-secure-store';
 import { STORAGE_KEYS } from '../constants/auth.constants';
 
+// In-memory cache to avoid hitting SecureStore (native bridge) on every API call
+let cachedToken = null;
+let cachedTenantId = null;
+
 export const setToken = async (token) => {
+  cachedToken = token;
   await SecureStore.setItemAsync(STORAGE_KEYS.AUTH_TOKEN, token);
 };
 
 export const getToken = async () => {
-  return await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN);
+  if (cachedToken !== null) return cachedToken;
+  cachedToken = await SecureStore.getItemAsync(STORAGE_KEYS.AUTH_TOKEN);
+  return cachedToken;
 };
 
 export const removeToken = async () => {
+  cachedToken = null;
   await SecureStore.deleteItemAsync(STORAGE_KEYS.AUTH_TOKEN);
 };
 
@@ -30,14 +38,18 @@ export const removeUserData = async () => {
 };
 
 export const setTenantId = async (tenantId) => {
+  cachedTenantId = tenantId;
   await SecureStore.setItemAsync(STORAGE_KEYS.TENANT_ID, tenantId);
 };
 
 export const getTenantId = async () => {
-  return await SecureStore.getItemAsync(STORAGE_KEYS.TENANT_ID);
+  if (cachedTenantId !== null) return cachedTenantId;
+  cachedTenantId = await SecureStore.getItemAsync(STORAGE_KEYS.TENANT_ID);
+  return cachedTenantId;
 };
 
 export const removeTenantId = async () => {
+  cachedTenantId = null;
   await SecureStore.deleteItemAsync(STORAGE_KEYS.TENANT_ID);
 };
 
@@ -70,6 +82,8 @@ export const removeCompanyData = async () => {
 };
 
 export const clearAllStorage = async () => {
+  cachedToken = null;
+  cachedTenantId = null;
   await Promise.all([
     removeToken(),
     removeUserData(),

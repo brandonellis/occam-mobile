@@ -6,7 +6,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
-import { getClients } from '../../services/bookings.api';
+import { getClients } from '../../services/accounts.api';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 

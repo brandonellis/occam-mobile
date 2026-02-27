@@ -99,11 +99,15 @@ const ClientBookingsScreen = ({ navigation }) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [user?.id, company, activeTab, dateRange]);
+  }, [user?.id, company?.timezone, activeTab, dateRange]);
 
+  // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
   useEffect(() => {
-    loadBookings();
-  }, [loadBookings]);
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadBookings();
+    });
+    return unsubscribe;
+  }, [navigation, loadBookings]);
 
   const handleCancel = useCallback((booking) => {
     Alert.alert(

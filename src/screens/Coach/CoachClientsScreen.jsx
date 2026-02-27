@@ -43,9 +43,13 @@ const CoachClientsScreen = ({ navigation }) => {
     }
   }, []);
 
+  // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
   useEffect(() => {
-    loadClients();
-  }, [loadClients]);
+    const unsubscribe = navigation.addListener('focus', () => {
+      loadClients();
+    });
+    return unsubscribe;
+  }, [navigation, loadClients]);
 
   useEffect(() => {
     if (!search.trim()) {
