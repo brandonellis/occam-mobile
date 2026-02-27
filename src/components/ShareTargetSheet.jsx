@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
-import PropTypes from 'prop-types';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getClients, getClientGroups } from '../services/accounts.api';
@@ -256,10 +255,5 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
   );
 };
 
-ShareTargetSheet.propTypes = {
-  visible: PropTypes.bool.isRequired,
-  onClose: PropTypes.func.isRequired,
-  onSelect: PropTypes.func.isRequired,
-};
 
 export default ShareTargetSheet;
