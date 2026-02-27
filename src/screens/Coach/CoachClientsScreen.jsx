@@ -5,7 +5,6 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,8 +13,9 @@ import Avatar from '../../components/Avatar';
 import EmptyState from '../../components/EmptyState';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getClients } from '../../services/accounts.api';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
-import { StyleSheet } from 'react-native';
+import { colors } from '../../theme';
+import { coachClientsStyles as styles } from '../../styles/coachClients.styles';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 
 const CoachClientsScreen = ({ navigation }) => {
   const [clients, setClients] = useState([]);
@@ -112,9 +112,7 @@ const CoachClientsScreen = ({ navigation }) => {
       </View>
 
       {isLoading ? (
-        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ListSkeleton count={6} />
       ) : (
         <FlatList
           data={filtered}
@@ -147,76 +145,5 @@ const CoachClientsScreen = ({ navigation }) => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-  },
-  headerTitle: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
-  headerCount: {
-    ...typography.body,
-    color: colors.textTertiary,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.white,
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    minHeight: 44,
-    gap: spacing.sm,
-  },
-  searchInput: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-    paddingVertical: spacing.sm,
-  },
-  listContent: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.xxxl,
-  },
-  clientCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    ...shadows.sm,
-  },
-  clientInfo: {
-    flex: 1,
-    marginLeft: spacing.md,
-  },
-  clientName: {
-    ...typography.label,
-    color: colors.textPrimary,
-    fontSize: 15,
-  },
-  clientEmail: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    marginTop: 1,
-  },
-});
 
 export default CoachClientsScreen;

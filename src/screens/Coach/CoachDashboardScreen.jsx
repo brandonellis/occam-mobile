@@ -16,6 +16,7 @@ import { getClients } from '../../services/accounts.api';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
 import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
+import useUnreadNotifications from '../../hooks/useUnreadNotifications';
 import { colors } from '../../theme';
 
 const CoachDashboardScreen = ({ navigation }) => {
@@ -26,6 +27,8 @@ const CoachDashboardScreen = ({ navigation }) => {
   const [clientCount, setClientCount] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const { unreadCount } = useUnreadNotifications();
 
   const todayKey = getTodayKey(company);
 
@@ -39,6 +42,8 @@ const CoachDashboardScreen = ({ navigation }) => {
         getClients({ per_page: 1 }),
       ]);
 
+      setError(null);
+
       if (bookingsRes.status === 'fulfilled') {
         const data = bookingsRes.value?.data || [];
         const sorted = data.sort((a, b) =>
@@ -51,8 +56,8 @@ const CoachDashboardScreen = ({ navigation }) => {
         const meta = clientsRes.value?.meta || clientsRes.value;
         setClientCount(meta?.total ?? clientsRes.value?.data?.length ?? null);
       }
-    } catch {
-      // Keep existing state on error
+    } catch (err) {
+      setError('Unable to load your dashboard. Pull down to retry.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -98,11 +103,26 @@ const CoachDashboardScreen = ({ navigation }) => {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+            {unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
         {isLoading ? (
           <CoachDashboardSkeleton />
+        ) : error ? (
+          <EmptyState
+            icon="cloud-offline-outline"
+            title="Couldn't Load Dashboard"
+            message={error}
+            actionLabel="Retry"
+            onAction={() => loadDashboard()}
+          />
         ) : (
           <>
             <View style={styles.statsRow}>
@@ -158,7 +178,7 @@ const CoachDashboardScreen = ({ navigation }) => {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
                 <TouchableOpacity
-                  onPress={() => navigation.navigate(SCREENS.COACH_SCHEDULE)}
+                  onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.COACH_SCHEDULE })}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.seeAllLink}>See All</Text>
@@ -176,6 +196,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                     key={session.id}
                     style={styles.bookingCard}
                     activeOpacity={0.7}
+                    onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { booking: session })}
                   >
                     <View style={styles.bookingCardRow}>
                       <View style={styles.bookingTimeBlock}>
@@ -192,10 +213,11 @@ const CoachDashboardScreen = ({ navigation }) => {
                             {session.client.first_name} {session.client.last_name}
                           </Text>
                         )}
-                        <Text style={styles.bookingTime}>
-                          {formatTimeInTz(session.start_time, company)}
-                          {session.end_time ? ` — ${formatTimeInTz(session.end_time, company)}` : ''}
-                        </Text>
+                        {session.location && (
+                          <Text style={styles.bookingTime}>
+                            {session.location.name}
+                          </Text>
+                        )}
                       </View>
                       <Ionicons
                         name="chevron-forward"

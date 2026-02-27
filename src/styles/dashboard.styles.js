@@ -162,4 +162,24 @@ export const dashboardStyles = StyleSheet.create({
     fontSize: 10,
     textAlign: 'center',
   },
+
+  // Notification badge
+  notificationBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -6,
+    backgroundColor: colors.error,
+    borderRadius: borderRadius.full,
+    minWidth: 18,
+    height: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  notificationBadgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: '700',
+    lineHeight: 12,
+  },
 });

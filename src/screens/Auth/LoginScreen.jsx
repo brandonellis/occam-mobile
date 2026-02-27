@@ -10,6 +10,8 @@ import {
   ActivityIndicator,
   Image,
   StatusBar,
+  Linking,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -25,7 +27,8 @@ import { loginStyles as styles } from '../../styles/login.styles';
 import { colors } from '../../theme';
 import config from '../../config';
 
-const LOGO_COLOR_URI = 'https://storage.googleapis.com/occam_bucket_1/shared/assets/images/logo-color.webp';
+const logoColor = require('../../../assets/images/logo-color.png');
+const googleIcon = require('../../../assets/images/g-logo.png');
 
 const LoginScreen = () => {
   const { login, loginWithGoogle, isLoading, error, clearError, setError } = useAuth();
@@ -156,6 +159,18 @@ const LoginScreen = () => {
     [error, clearError]
   );
 
+  const handleForgotPassword = useCallback(() => {
+    if (!selectedOrg) {
+      Alert.alert('Organization Required', 'Please select your organization first so we can direct you to the correct password reset page.');
+      return;
+    }
+    const domain = selectedOrg.domain || `${selectedOrg.id}.occam.golf`;
+    const resetUrl = `https://${domain}/forgot-password`;
+    Linking.openURL(resetUrl).catch(() => {
+      Alert.alert('Unable to Open', 'Could not open the password reset page. Please visit your organization\'s website directly.');
+    });
+  }, [selectedOrg]);
+
   const isFormValid = email.trim() && password.trim() && selectedOrg;
 
   return (
@@ -170,7 +185,7 @@ const LoginScreen = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.logoContainer}>
-            <Image source={{ uri: LOGO_COLOR_URI }} style={styles.logoImage} />
+            <Image source={logoColor} style={styles.logoImage} />
           </View>
 
           {error && (
@@ -323,7 +338,7 @@ const LoginScreen = () => {
               ) : (
                 <>
                   <Image
-                    source={{ uri: 'https://developers.google.com/identity/images/g-logo.png' }}
+                    source={googleIcon}
                     style={styles.googleIcon}
                   />
                   <Text style={styles.googleButtonText}>Continue with Google</Text>
@@ -337,7 +352,7 @@ const LoginScreen = () => {
               </Text>
             )}
 
-            <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.6}>
+            <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.6} onPress={handleForgotPassword}>
               <Text style={styles.forgotPasswordText}>Forgot password?</Text>
             </TouchableOpacity>
           </View>

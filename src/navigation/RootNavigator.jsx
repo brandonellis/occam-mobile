@@ -50,7 +50,7 @@ const RootNavigator = () => {
   const isCoachOrAdmin = COACH_ROLES.includes(activeRole);
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       {!isAuthenticated ? (
         <Stack.Screen
           name={SCREENS.LOGIN}

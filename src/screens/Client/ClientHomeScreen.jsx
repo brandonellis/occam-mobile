@@ -10,6 +10,7 @@ import dayjs from '../../utils/dayjs';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
 import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
+import useUnreadNotifications from '../../hooks/useUnreadNotifications';
 import { colors } from '../../theme';
 
 const ClientHomeScreen = ({ navigation }) => {
@@ -19,6 +20,8 @@ const ClientHomeScreen = ({ navigation }) => {
   const [sessions, setSessions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const { unreadCount } = useUnreadNotifications();
 
   const todayKey = useMemo(() => getTodayKey(company), [company]);
   const futureKey = useMemo(() => getFutureDateKey(company, 30), [company]);
@@ -36,8 +39,10 @@ const ClientHomeScreen = ({ navigation }) => {
         (a.start_time || '').localeCompare(b.start_time || '')
       );
       setSessions(sorted);
+      setError(null);
     } catch (err) {
       console.warn('Failed to load bookings:', err?.message || err);
+      setError('Unable to load your sessions. Pull down to retry.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -68,6 +73,37 @@ const ClientHomeScreen = ({ navigation }) => {
     );
   }
 
+  if (error && sessions.length === 0) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => loadBookings(true)}
+              tintColor={colors.primary}
+            />
+          }
+        >
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.greeting}>Welcome, {firstName}</Text>
+              <Text style={styles.subtitle}>Ready to improve your game?</Text>
+            </View>
+          </View>
+          <EmptyState
+            icon="cloud-offline-outline"
+            title="Couldn't Load Sessions"
+            message={error}
+            actionLabel="Retry"
+            onAction={() => loadBookings()}
+          />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView
@@ -91,6 +127,13 @@ const ClientHomeScreen = ({ navigation }) => {
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+            {unreadCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </Text>
+              </View>
+            )}
           </TouchableOpacity>
         </View>
 
@@ -154,7 +197,7 @@ const ClientHomeScreen = ({ navigation }) => {
                   key={session.id}
                   style={styles.bookingCard}
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate(SCREENS.CLIENT_BOOKINGS)}
+                  onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { booking: session })}
                 >
                   <View style={styles.bookingCardRow}>
                     <View style={styles.bookingTimeBlock}>
@@ -192,14 +235,6 @@ const ClientHomeScreen = ({ navigation }) => {
           )}
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Recent Activity</Text>
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>
-              Your recent activity will appear here.
-            </Text>
-          </View>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

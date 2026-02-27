@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,7 +18,7 @@ import {
 } from '../../services/notifications.api';
 import { getTimeAgo } from '../../helpers/date.helper';
 import { notificationsStyles as styles } from '../../styles/notifications.styles';
-import { globalStyles } from '../../styles/global.styles';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 import { colors } from '../../theme';
 
 const ICON_MAP = {
@@ -143,9 +142,7 @@ const NotificationsScreen = ({ navigation }) => {
       />
 
       {isLoading ? (
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ListSkeleton count={5} />
       ) : (
         <FlatList
           data={notifications}

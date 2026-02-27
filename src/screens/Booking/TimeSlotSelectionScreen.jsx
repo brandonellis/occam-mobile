@@ -56,6 +56,9 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const [classGroups, setClassGroups] = useState([]);
   const [classLoading, setClassLoading] = useState(false);
 
+  // Track whether slots have already been fetched for the current date
+  const hasFetchedSlots = useRef(false);
+
   // Skeleton pulse animation
   const skeletonAnim = useRef(new Animated.Value(0.3)).current;
   useEffect(() => {
@@ -198,9 +201,9 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     }
   }, [service?.id, location?.id, bookingData?.client?.id, user?.id, companyTz]);
 
-  const loadTimeSlots = useCallback(async (dateItem) => {
+  const loadTimeSlots = useCallback(async (dateItem, { showSkeleton = true } = {}) => {
     try {
-      setIsLoading(true);
+      if (showSkeleton) setIsLoading(true);
       // Construct selectedDate in company timezone from the date key string
       const selectedDayjs = dayjs.tz(dateItem.key, 'YYYY-MM-DD', companyTz);
       const slots = await getAvailableTimeSlots({
@@ -223,14 +226,27 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     }
   }, [service, coach, location, bookingData.duration_minutes, bookingData.selectedResource, effectiveResourcePool, company, companyTz]);
 
+  // Reset hasFetchedSlots when date changes so the fetch effect shows skeleton
   useEffect(() => {
-    if (selectedDate && company) {
+    hasFetchedSlots.current = false;
+  }, [selectedDate]);
+
+  // Fetch slots when date changes (show skeleton) or when resource pool updates (silent refetch)
+  useEffect(() => {
+    if (!selectedDate || !company) return;
+
+    if (!hasFetchedSlots.current) {
+      // Fresh date selection — show skeleton
       setSelectedSlot(null);
+      hasFetchedSlots.current = true;
       if (isClassService) {
         loadClassSessions(selectedDate);
       } else {
-        loadTimeSlots(selectedDate);
+        loadTimeSlots(selectedDate, { showSkeleton: true });
       }
+    } else if (!isClassService) {
+      // Resource pool changed — silent refetch without skeleton
+      loadTimeSlots(selectedDate, { showSkeleton: false });
     }
   }, [selectedDate, isClassService, loadClassSessions, loadTimeSlots, company]);
 

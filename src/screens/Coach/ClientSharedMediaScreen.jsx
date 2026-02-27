@@ -210,7 +210,7 @@ const ClientSharedMediaScreen = ({ route, navigation }) => {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <ScreenHeader title="Shared Resources" navigation={navigation} />
+        <ScreenHeader title="Shared Resources" onBack={() => navigation.goBack()} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.accent} />
         </View>
@@ -222,7 +222,7 @@ const ClientSharedMediaScreen = ({ route, navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader
         title={clientName ? `${clientName}'s Resources` : 'Shared Resources'}
-        navigation={navigation}
+        onBack={() => navigation.goBack()}
       />
 
       <ScrollView

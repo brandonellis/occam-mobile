@@ -4,7 +4,6 @@ import {
   Text,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   Alert,
 } from 'react-native';
@@ -16,7 +15,7 @@ import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '.
 import dayjs from '../../utils/dayjs';
 import useAuth from '../../hooks/useAuth';
 import { bookingsListStyles as styles } from '../../styles/bookingsList.styles';
-import { globalStyles } from '../../styles/global.styles';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import { colors } from '../../theme';
 
@@ -260,9 +259,7 @@ const ClientBookingsScreen = ({ navigation }) => {
       </View>
 
       {isLoading ? (
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ListSkeleton count={5} />
       ) : (
         <FlatList
           data={bookings}

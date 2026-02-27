@@ -1,10 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import CustomTabBar from '../components/CustomTabBar';
 import ClientHomeStack from './ClientHomeStack';
 import ClientBookingsScreen from '../screens/Client/ClientBookingsScreen';
 import ClientProgressStack from './ClientProgressStack';
@@ -22,53 +21,33 @@ const TAB_ICONS = {
 const ClientTabNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textInverseMuted,
-        tabBarLabelStyle: {
-          fontFamily: typography.fontFamily,
-          fontSize: 10,
-          fontWeight: '600',
-          lineHeight: 14,
-          letterSpacing: 0,
-        },
-        tabBarAllowFontScaling: false,
-        tabBarStyle: {
-          backgroundColor: colors.primary,
-          borderTopColor: colors.gray800,
-          borderTopWidth: 1,
-          paddingBottom: 4,
-          paddingTop: 4,
-          height: 56,
-        },
-        tabBarIcon: ({ focused, color, size }) => {
-          const icons = TAB_ICONS[route.name];
-          const iconName = focused ? icons.focused : icons.unfocused;
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-      })}
+        freezeOnBlur: true,
+        sceneStyle: { backgroundColor: colors.background },
+        animation: 'shift',
+      }}
+      lazy={false}
+      detachInactiveScreens={false}
+      tabBar={(props) => <CustomTabBar {...props} tabIcons={TAB_ICONS} />}
     >
       <Tab.Screen
         name="HomeTab"
         component={ClientHomeStack}
         options={{ tabBarLabel: 'Home' }}
-        listeners={({ navigation }) => ({
+        listeners={({ navigation, route }) => ({
           tabPress: (e) => {
-            e.preventDefault();
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [
-                  {
-                    name: 'HomeTab',
-                    state: {
-                      routes: [{ name: SCREENS.CLIENT_HOME }],
-                    },
-                  },
-                ],
-              })
-            );
+            const state = navigation.getState();
+            const homeTabRoute = state.routes.find((r) => r.name === 'HomeTab');
+            const isOnHomeTab = state.index === state.routes.indexOf(homeTabRoute);
+            const isNested = homeTabRoute?.state?.routes?.length > 1;
+
+            if (isOnHomeTab && isNested) {
+              e.preventDefault();
+              navigation.navigate('HomeTab', {
+                screen: SCREENS.CLIENT_HOME,
+              });
+            }
           },
         })}
       />

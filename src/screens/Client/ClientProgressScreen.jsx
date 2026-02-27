@@ -4,7 +4,6 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   Image,
 } from 'react-native';
@@ -18,7 +17,7 @@ import {
   getClientSharedMedia,
 } from '../../services/accounts.api';
 import { progressStyles as styles } from '../../styles/progress.styles';
-import { globalStyles } from '../../styles/global.styles';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import { SCREENS } from '../../constants/navigation.constants';
 import { colors } from '../../theme';
@@ -454,9 +453,7 @@ const ClientProgressScreen = () => {
       </View>
 
       {isLoading ? (
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ListSkeleton count={4} />
       ) : (
         <ScrollView
           contentContainerStyle={styles.scrollContent}

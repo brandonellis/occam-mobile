@@ -72,7 +72,43 @@ export const clientDetailStyles = StyleSheet.create({
   sectionTitle: {
     ...typography.h3,
     color: colors.textPrimary,
-    marginBottom: spacing.md,
+  },
+  collapsibleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  collapsibleHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  collapsibleHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  countBadge: {
+    backgroundColor: colors.gray200,
+    borderRadius: borderRadius.full,
+    minWidth: 22,
+    height: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs,
+  },
+  countBadgeText: {
+    ...typography.labelSmall,
+    color: colors.textTertiary,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  sectionLoading: {
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
   },
   actionRow: {
     flexDirection: 'row',
@@ -209,6 +245,11 @@ export const clientDetailStyles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
+  },
+  loadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   shareProgressButton: {
     flexDirection: 'row',

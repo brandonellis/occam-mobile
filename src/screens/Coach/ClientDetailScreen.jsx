@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   RefreshControl,
   Alert,
-  Image,
   LayoutAnimation,
   UIManager,
   Platform,
@@ -154,6 +153,14 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
+const SECTIONS = {
+  CURRICULUM: 'curriculum',
+  RESOURCES: 'resources',
+  REPORTS: 'reports',
+  UPCOMING: 'upcoming',
+  PAST: 'past',
+};
+
 const ClientDetailScreen = ({ route, navigation }) => {
   const { company } = useAuth();
   const { clientId } = route.params;
@@ -172,25 +179,24 @@ const ClientDetailScreen = ({ route, navigation }) => {
   const [snackbar, setSnackbar] = useState({ visible: false, message: '', undoData: null });
   const undoTimerRef = useRef(null);
 
-  const loadData = useCallback(async (showRefresh = false) => {
+  // Track which sections are expanded and which have been loaded
+  const [expandedSections, setExpandedSections] = useState({});
+  const [loadedSections, setLoadedSections] = useState({});
+  const [loadingSections, setLoadingSections] = useState({});
+
+  // Load only client profile + bookings on mount (essential data)
+  const loadCoreData = useCallback(async (showRefresh = false) => {
     try {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
 
-      const [clientRes, curriculumRes, bookingsRes, sharedRes, snapshotsRes] = await Promise.allSettled([
+      const [clientRes, bookingsRes] = await Promise.allSettled([
         getClient(clientId),
-        getClientPerformanceCurriculum(clientId),
         getBookings({ client_id: clientId, per_page: 25, status: 'all' }),
-        getClientSharedMedia(clientId),
-        getClientPerformanceSnapshots(clientId),
       ]);
 
       if (clientRes.status === 'fulfilled') {
         setClient(clientRes.value.data);
-      }
-      if (curriculumRes.status === 'fulfilled') {
-        const data = curriculumRes.value.data;
-        setModules(data?.modules || data || []);
       }
       if (bookingsRes.status === 'fulfilled') {
         const all = bookingsRes.value.data || [];
@@ -204,34 +210,79 @@ const ClientDetailScreen = ({ route, navigation }) => {
         setUpcomingBookings(upcoming.slice(0, 5));
         setPastBookings(past.slice(0, 5));
       }
-      if (sharedRes.status === 'fulfilled') {
-        setSharedMedia(sharedRes.value.data || []);
-      }
-      if (snapshotsRes.status === 'fulfilled') {
-        setSnapshots(snapshotsRes.value.data || []);
-      }
     } catch (err) {
-      console.warn('Failed to load client data:', err.message);
+      console.warn('Failed to load client data:', err?.message || err);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
   }, [clientId]);
 
+  // Lazy loaders for each section
+  const loadSectionData = useCallback(async (section) => {
+    setLoadingSections((prev) => ({ ...prev, [section]: true }));
+    try {
+      if (section === SECTIONS.CURRICULUM) {
+        const res = await getClientPerformanceCurriculum(clientId);
+        const data = res.data;
+        setModules(data?.modules || data || []);
+      } else if (section === SECTIONS.RESOURCES) {
+        const res = await getClientSharedMedia(clientId);
+        setSharedMedia(res.data || []);
+      } else if (section === SECTIONS.REPORTS) {
+        const res = await getClientPerformanceSnapshots(clientId);
+        setSnapshots(res.data || []);
+      }
+      setLoadedSections((prev) => ({ ...prev, [section]: true }));
+    } catch (err) {
+      console.warn(`Failed to load ${section}:`, err?.message || err);
+    } finally {
+      setLoadingSections((prev) => ({ ...prev, [section]: false }));
+    }
+  }, [clientId]);
+
+  const toggleSection = useCallback((section) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedSections((prev) => {
+      const willExpand = !prev[section];
+      // Fetch data on first expand
+      if (willExpand && !loadedSections[section] && !loadingSections[section]) {
+        loadSectionData(section);
+      }
+      return { ...prev, [section]: willExpand };
+    });
+  }, [loadedSections, loadingSections, loadSectionData]);
+
+  // Refresh handler reloads core data + any already-expanded sections
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    await loadCoreData(true);
+    // Re-fetch data for any sections that are currently expanded
+    const expandedKeys = Object.keys(expandedSections).filter((k) => expandedSections[k]);
+    if (expandedKeys.length > 0) {
+      await Promise.allSettled(expandedKeys.map((s) => loadSectionData(s)));
+    }
+    setIsRefreshing(false);
+  }, [loadCoreData, expandedSections, loadSectionData]);
+
   // Load on mount + refresh when returning from curriculum editor or other screens
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      loadData();
+      loadCoreData();
+      // Re-fetch any already-loaded sections silently
+      Object.keys(loadedSections).forEach((section) => {
+        if (loadedSections[section]) loadSectionData(section);
+      });
     });
     return unsubscribe;
-  }, [navigation, loadData]);
+  }, [navigation, loadCoreData, loadedSections, loadSectionData]);
 
   const handleShareMedia = useCallback(async ({ upload_id, notes }) => {
     setIsSharing(true);
     try {
       await shareMediaWithClient(clientId, { upload_id, notes });
       setShowMediaPicker(false);
-      loadData(true);
+      loadSectionData(SECTIONS.RESOURCES);
     } catch (err) {
       const msg = err.response?.status === 409
         ? 'This resource is already shared with this client.'
@@ -240,7 +291,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
     } finally {
       setIsSharing(false);
     }
-  }, [clientId, loadData]);
+  }, [clientId, loadSectionData]);
 
   const handleCreateSnapshot = useCallback(() => {
     Alert.alert(
@@ -255,7 +306,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
             try {
               await createPerformanceSnapshot(clientId);
               Alert.alert('Success', 'Progress report shared with client.');
-              loadData(true);
+              loadSectionData(SECTIONS.REPORTS);
             } catch (err) {
               Alert.alert(
                 'Error',
@@ -268,7 +319,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
         },
       ]
     );
-  }, [clientId, loadData]);
+  }, [clientId, loadSectionData]);
 
   const handleUnshare = useCallback((sharedMediaId) => {
     // Find the item being removed so we can restore on undo
@@ -367,10 +418,11 @@ const ClientDetailScreen = ({ route, navigation }) => {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={() => loadData(true)}
+            onRefresh={handleRefresh}
             tintColor={colors.primary}
           />
         }
+        showsVerticalScrollIndicator={false}
       >
         <View style={styles.profileSection}>
           <Avatar uri={client?.avatar_url} name={fullName} size={72} />
@@ -387,12 +439,12 @@ const ClientDetailScreen = ({ route, navigation }) => {
 
         <View style={styles.statsRow}>
           <View style={styles.statCard}>
-            <Text style={styles.statValue}>{modules.length}</Text>
-            <Text style={styles.statLabel}>Modules</Text>
-          </View>
-          <View style={styles.statCard}>
             <Text style={styles.statValue}>{upcomingBookings.length}</Text>
             <Text style={styles.statLabel}>Upcoming</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statValue}>{pastBookings.length}</Text>
+            <Text style={styles.statLabel}>Past Sessions</Text>
           </View>
         </View>
 
@@ -401,7 +453,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
             <TouchableOpacity
               style={styles.actionButton}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.LOCATION_SELECTION, params: { bookingData: { client } } })}
+              onPress={() => navigation.navigate(SCREENS.COACH_TABS, { screen: 'ScheduleTab', params: { screen: SCREENS.LOCATION_SELECTION, params: { bookingData: { client } } } })}
             >
               <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
               <Text style={styles.actionButtonText}>Book Session</Text>
@@ -417,171 +469,304 @@ const ClientDetailScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Curriculum — collapsible, lazy-loaded */}
         <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Curriculum</Text>
-            <TouchableOpacity
-              onPress={() =>
-                navigation.navigate(SCREENS.CURRICULUM_EDITOR, {
-                  clientId,
-                  clientName: fullName,
-                })
-              }
-              activeOpacity={0.7}
-            >
-              <Text style={styles.shareProgressText}>
-                {modules.length > 0 ? 'Edit' : 'Add'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          {modules.length === 0 ? (
-            <View style={styles.emptyMini}>
-              <Text style={styles.emptyMiniText}>
-                No curriculum assigned. Tap "Add" to get started.
-              </Text>
+          <TouchableOpacity
+            style={styles.collapsibleHeader}
+            onPress={() => toggleSection(SECTIONS.CURRICULUM)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.collapsibleHeaderLeft}>
+              <Ionicons name="school-outline" size={18} color={colors.accent} />
+              <Text style={styles.sectionTitle}>Curriculum</Text>
+              {loadedSections[SECTIONS.CURRICULUM] && modules.length > 0 && (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{modules.length}</Text>
+                </View>
+              )}
             </View>
-          ) : (
-            <>
-              {(showAllModules ? modules : modules.slice(0, 3)).map((mod) => {
-                const lessons = mod.lessons || [];
-                const completed = lessons.filter((l) => l.completed).length;
-                return (
+            <View style={styles.collapsibleHeaderRight}>
+              {expandedSections[SECTIONS.CURRICULUM] && (
+                <TouchableOpacity
+                  onPress={() =>
+                    navigation.navigate(SCREENS.CURRICULUM_EDITOR, {
+                      clientId,
+                      clientName: fullName,
+                    })
+                  }
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Text style={styles.shareProgressText}>
+                    {modules.length > 0 ? 'Edit' : 'Add'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+              <Ionicons
+                name={expandedSections[SECTIONS.CURRICULUM] ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={colors.textTertiary}
+              />
+            </View>
+          </TouchableOpacity>
+
+          {expandedSections[SECTIONS.CURRICULUM] && (
+            loadingSections[SECTIONS.CURRICULUM] ? (
+              <View style={styles.sectionLoading}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : modules.length === 0 ? (
+              <View style={styles.emptyMini}>
+                <Text style={styles.emptyMiniText}>
+                  No curriculum assigned. Tap "Add" to get started.
+                </Text>
+              </View>
+            ) : (
+              <>
+                {(showAllModules ? modules : modules.slice(0, 3)).map((mod) => {
+                  const lessons = mod.lessons || [];
+                  const completed = lessons.filter((l) => l.completed).length;
+                  return (
+                    <TouchableOpacity
+                      key={mod.id}
+                      style={styles.moduleItem}
+                      onPress={() =>
+                        navigation.navigate(SCREENS.CURRICULUM_EDITOR, {
+                          clientId,
+                          clientName: fullName,
+                        })
+                      }
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.moduleName}>{mod.title || mod.name}</Text>
+                      <Text style={styles.moduleProgress}>
+                        {completed} / {lessons.length} lessons
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+                {modules.length > 3 && (
                   <TouchableOpacity
-                    key={mod.id}
-                    style={styles.moduleItem}
+                    style={styles.showMoreButton}
+                    onPress={() => setShowAllModules((prev) => !prev)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.showMoreText}>
+                      {showAllModules ? 'Show Less' : `Show ${modules.length - 3} More`}
+                    </Text>
+                    <Ionicons
+                      name={showAllModules ? 'chevron-up' : 'chevron-down'}
+                      size={14}
+                      color={colors.accent}
+                    />
+                  </TouchableOpacity>
+                )}
+              </>
+            )
+          )}
+        </View>
+
+        {/* Shared Resources — collapsible, lazy-loaded */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.collapsibleHeader}
+            onPress={() => toggleSection(SECTIONS.RESOURCES)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.collapsibleHeaderLeft}>
+              <Ionicons name="folder-open-outline" size={18} color={colors.info} />
+              <Text style={styles.sectionTitle}>Shared Resources</Text>
+              {loadedSections[SECTIONS.RESOURCES] && sharedMedia.length > 0 && (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{sharedMedia.length}</Text>
+                </View>
+              )}
+            </View>
+            <Ionicons
+              name={expandedSections[SECTIONS.RESOURCES] ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={colors.textTertiary}
+            />
+          </TouchableOpacity>
+
+          {expandedSections[SECTIONS.RESOURCES] && (
+            loadingSections[SECTIONS.RESOURCES] ? (
+              <View style={styles.sectionLoading}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : sharedMedia.length === 0 ? (
+              <View style={styles.emptyMini}>
+                <Text style={styles.emptyMiniText}>No shared resources.</Text>
+              </View>
+            ) : (
+              <>
+                {sharedMedia.slice(0, 2).map((item) => (
+                  <SharedMediaCard
+                    key={item.id}
+                    item={item}
+                    navigation={navigation}
+                    onUnshare={handleUnshare}
+                  />
+                ))}
+                {sharedMedia.length > 2 && (
+                  <TouchableOpacity
+                    style={styles.showMoreButton}
                     onPress={() =>
-                      navigation.navigate(SCREENS.CURRICULUM_EDITOR, {
+                      navigation.navigate(SCREENS.CLIENT_SHARED_MEDIA, {
                         clientId,
                         clientName: fullName,
                       })
                     }
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.moduleName}>{mod.title || mod.name}</Text>
-                    <Text style={styles.moduleProgress}>
-                      {completed} / {lessons.length} lessons
+                    <Text style={styles.showMoreText}>
+                      Show All {sharedMedia.length} Resources
                     </Text>
+                    <Ionicons name="chevron-forward" size={14} color={colors.accent} />
                   </TouchableOpacity>
-                );
-              })}
-              {modules.length > 3 && (
-                <TouchableOpacity
-                  style={styles.showMoreButton}
-                  onPress={() => setShowAllModules((prev) => !prev)}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.showMoreText}>
-                    {showAllModules ? 'Show Less' : `Show ${modules.length - 3} More`}
-                  </Text>
-                  <Ionicons
-                    name={showAllModules ? 'chevron-up' : 'chevron-down'}
-                    size={14}
-                    color={colors.accent}
-                  />
-                </TouchableOpacity>
-              )}
-            </>
+                )}
+              </>
+            )
           )}
         </View>
 
-        {sharedMedia.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Shared Resources</Text>
-            {sharedMedia.slice(0, 2).map((item) => (
-              <SharedMediaCard
-                key={item.id}
-                item={item}
-                navigation={navigation}
-                onUnshare={handleUnshare}
+        {/* Progress Reports — collapsible, lazy-loaded */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.collapsibleHeader}
+            onPress={() => toggleSection(SECTIONS.REPORTS)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.collapsibleHeaderLeft}>
+              <Ionicons name="bar-chart-outline" size={18} color={colors.accent} />
+              <Text style={styles.sectionTitle}>Progress Reports</Text>
+              {loadedSections[SECTIONS.REPORTS] && snapshots.length > 0 && (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{snapshots.length}</Text>
+                </View>
+              )}
+            </View>
+            <View style={styles.collapsibleHeaderRight}>
+              {expandedSections[SECTIONS.REPORTS] && (
+                <TouchableOpacity
+                  style={styles.shareProgressButton}
+                  onPress={handleCreateSnapshot}
+                  disabled={isCreatingSnapshot}
+                  activeOpacity={0.7}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  {isCreatingSnapshot ? (
+                    <ActivityIndicator size="small" color={colors.accent} />
+                  ) : (
+                    <>
+                      <Ionicons name="share-outline" size={14} color={colors.accent} />
+                      <Text style={styles.shareProgressText}>Share</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
+              <Ionicons
+                name={expandedSections[SECTIONS.REPORTS] ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={colors.textTertiary}
               />
-            ))}
-            {sharedMedia.length > 2 && (
-              <TouchableOpacity
-                style={styles.showMoreButton}
-                onPress={() =>
-                  navigation.navigate(SCREENS.CLIENT_SHARED_MEDIA, {
-                    clientId,
-                    clientName: fullName,
-                  })
-                }
-                activeOpacity={0.7}
-              >
-                <Text style={styles.showMoreText}>
-                  Show All {sharedMedia.length} Resources
+            </View>
+          </TouchableOpacity>
+
+          {expandedSections[SECTIONS.REPORTS] && (
+            loadingSections[SECTIONS.REPORTS] ? (
+              <View style={styles.sectionLoading}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : snapshots.length === 0 ? (
+              <View style={styles.emptyMini}>
+                <Text style={styles.emptyMiniText}>
+                  No progress reports yet. Tap "Share" to capture a snapshot.
                 </Text>
-                <Ionicons name="chevron-forward" size={14} color={colors.accent} />
-              </TouchableOpacity>
+              </View>
+            ) : (
+              snapshots.slice(0, 5).map((snap) => (
+                <TouchableOpacity
+                  key={snap.id}
+                  style={styles.snapshotItem}
+                  onPress={() =>
+                    navigation.navigate(SCREENS.PROGRESS_REPORT_DETAIL, {
+                      report: snap,
+                    })
+                  }
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name="document-text-outline" size={18} color={colors.accent} />
+                  <View style={styles.snapshotInfo}>
+                    <Text style={styles.snapshotTitle}>
+                      {snap.title || 'Progress Report'}
+                    </Text>
+                    <Text style={styles.snapshotDate}>
+                      {new Date(snap.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                </TouchableOpacity>
+              ))
+            )
+          )}
+        </View>
+
+        {/* Upcoming Bookings — collapsible, already loaded */}
+        {upcomingBookings.length > 0 && (
+          <View style={styles.section}>
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => toggleSection(SECTIONS.UPCOMING)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.collapsibleHeaderLeft}>
+                <Ionicons name="calendar-outline" size={18} color={colors.success} />
+                <Text style={styles.sectionTitle}>Upcoming Bookings</Text>
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{upcomingBookings.length}</Text>
+                </View>
+              </View>
+              <Ionicons
+                name={expandedSections[SECTIONS.UPCOMING] ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={colors.textTertiary}
+              />
+            </TouchableOpacity>
+            {expandedSections[SECTIONS.UPCOMING] && (
+              upcomingBookings.map((booking) => renderBookingItem(booking))
             )}
           </View>
         )}
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeaderRow}>
-            <Text style={styles.sectionTitle}>Progress Reports</Text>
-            <TouchableOpacity
-              style={styles.shareProgressButton}
-              onPress={handleCreateSnapshot}
-              disabled={isCreatingSnapshot}
-              activeOpacity={0.7}
-            >
-              {isCreatingSnapshot ? (
-                <ActivityIndicator size="small" color={colors.accent} />
-              ) : (
-                <>
-                  <Ionicons name="share-outline" size={14} color={colors.accent} />
-                  <Text style={styles.shareProgressText}>Share Progress</Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
-          {snapshots.length === 0 ? (
-            <View style={styles.emptyMini}>
-              <Text style={styles.emptyMiniText}>
-                No progress reports yet. Tap "Share Progress" to capture a snapshot of curriculum and assessment data to share with the client.
-              </Text>
-            </View>
-          ) : (
-            snapshots.slice(0, 5).map((snap) => (
-              <TouchableOpacity
-                key={snap.id}
-                style={styles.snapshotItem}
-                onPress={() =>
-                  navigation.navigate(SCREENS.PROGRESS_REPORT_DETAIL, {
-                    report: snap,
-                  })
-                }
-                activeOpacity={0.7}
-              >
-                <Ionicons name="document-text-outline" size={18} color={colors.accent} />
-                <View style={styles.snapshotInfo}>
-                  <Text style={styles.snapshotTitle}>
-                    {snap.title || 'Progress Report'}
-                  </Text>
-                  <Text style={styles.snapshotDate}>
-                    {new Date(snap.created_at).toLocaleDateString('en-US', {
-                      month: 'short',
-                      day: 'numeric',
-                      year: 'numeric',
-                    })}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
-
-        {upcomingBookings.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Upcoming Bookings</Text>
-            {upcomingBookings.map((booking) => renderBookingItem(booking))}
-          </View>
-        )}
-
+        {/* Past Bookings — collapsible, already loaded */}
         {pastBookings.length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Recent Bookings</Text>
-            {pastBookings.map((booking) => renderBookingItem(booking))}
+            <TouchableOpacity
+              style={styles.collapsibleHeader}
+              onPress={() => toggleSection(SECTIONS.PAST)}
+              activeOpacity={0.7}
+            >
+              <View style={styles.collapsibleHeaderLeft}>
+                <Ionicons name="time-outline" size={18} color={colors.textTertiary} />
+                <Text style={styles.sectionTitle}>Recent Bookings</Text>
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{pastBookings.length}</Text>
+                </View>
+              </View>
+              <Ionicons
+                name={expandedSections[SECTIONS.PAST] ? 'chevron-up' : 'chevron-down'}
+                size={18}
+                color={colors.textTertiary}
+              />
+            </TouchableOpacity>
+            {expandedSections[SECTIONS.PAST] && (
+              pastBookings.map((booking) => renderBookingItem(booking))
+            )}
           </View>
         )}
       </ScrollView>

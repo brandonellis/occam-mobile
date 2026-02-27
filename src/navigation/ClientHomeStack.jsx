@@ -1,6 +1,7 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SCREENS } from '../constants/navigation.constants';
+import { colors } from '../theme/colors';
 import ClientHomeScreen from '../screens/Client/ClientHomeScreen';
 import LocationSelectionScreen from '../screens/Booking/LocationSelectionScreen';
 import ClientSelectionScreen from '../screens/Booking/ClientSelectionScreen';
@@ -19,7 +20,7 @@ const Stack = createNativeStackNavigator();
 
 const ClientHomeStack = () => {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen
         name={SCREENS.CLIENT_HOME}
         component={ClientHomeScreen}

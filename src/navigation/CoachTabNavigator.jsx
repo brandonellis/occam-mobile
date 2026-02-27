@@ -1,10 +1,9 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { CommonActions } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import CustomTabBar from '../components/CustomTabBar';
 import CoachDashboardScreen from '../screens/Coach/CoachDashboardScreen';
 import CoachScheduleStack from './CoachScheduleStack';
 import CoachClientsScreen from '../screens/Coach/CoachClientsScreen';
@@ -22,32 +21,15 @@ const TAB_ICONS = {
 const CoachTabNavigator = () => {
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textInverseMuted,
-        tabBarLabelStyle: {
-          fontFamily: typography.fontFamily,
-          fontSize: 10,
-          fontWeight: '600',
-          lineHeight: 14,
-          letterSpacing: 0,
-        },
-        tabBarAllowFontScaling: false,
-        tabBarStyle: {
-          backgroundColor: colors.primary,
-          borderTopColor: colors.gray800,
-          borderTopWidth: 1,
-          paddingBottom: 4,
-          paddingTop: 4,
-          height: 56,
-        },
-        tabBarIcon: ({ focused, color, size }) => {
-          const icons = TAB_ICONS[route.name];
-          const iconName = focused ? icons.focused : icons.unfocused;
-          return <Ionicons name={iconName} size={size} color={color} />;
-        },
-      })}
+        freezeOnBlur: true,
+        sceneStyle: { backgroundColor: colors.background },
+        animation: 'shift',
+      }}
+      lazy={false}
+      detachInactiveScreens={false}
+      tabBar={(props) => <CustomTabBar {...props} tabIcons={TAB_ICONS} />}
     >
       <Tab.Screen
         name={SCREENS.COACH_DASHBOARD}
@@ -60,20 +42,17 @@ const CoachTabNavigator = () => {
         options={{ tabBarLabel: 'Schedule' }}
         listeners={({ navigation }) => ({
           tabPress: (e) => {
-            e.preventDefault();
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [
-                  {
-                    name: 'ScheduleTab',
-                    state: {
-                      routes: [{ name: SCREENS.COACH_SCHEDULE }],
-                    },
-                  },
-                ],
-              })
-            );
+            const state = navigation.getState();
+            const scheduleTabRoute = state.routes.find((r) => r.name === 'ScheduleTab');
+            const isOnScheduleTab = state.index === state.routes.indexOf(scheduleTabRoute);
+            const isNested = scheduleTabRoute?.state?.routes?.length > 1;
+
+            if (isOnScheduleTab && isNested) {
+              e.preventDefault();
+              navigation.navigate('ScheduleTab', {
+                screen: SCREENS.COACH_SCHEDULE,
+              });
+            }
           },
         })}
       />
