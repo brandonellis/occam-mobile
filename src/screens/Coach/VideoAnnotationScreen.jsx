@@ -25,6 +25,8 @@ import {
 import { videoAnnotationStyles as styles } from '../../styles/videoAnnotation.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
+import { getToken, getTenantId } from '../../helpers/storage.helper';
+import { resolveMediaUrl } from '../../helpers/media.helper';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const VIDEO_HEIGHT = (SCREEN_WIDTH * 9) / 16;
@@ -46,8 +48,25 @@ const formatTimestamp = (seconds) => {
 
 const VideoAnnotationScreen = ({ route, navigation }) => {
   const { uploadId, videoUrl, videoTitle } = route.params;
+  const [videoSource, setVideoSource] = useState(null);
 
-  const player = useVideoPlayer(videoUrl, (p) => {
+  // Fetch auth credentials and build source with headers
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
+      if (cancelled) return;
+      const resolved = resolveMediaUrl(videoUrl);
+      const headers = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+      if (tenantId) headers['X-Tenant'] = tenantId;
+      setVideoSource(resolved ? { uri: resolved, headers } : null);
+    })();
+    return () => { cancelled = true; };
+  }, [videoUrl]);
+
+  const player = useVideoPlayer(videoSource, (p) => {
+    if (!videoSource) return;
     p.loop = false;
   });
 
@@ -93,10 +112,10 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
   // Track play/pause state
   useEffect(() => {
     if (!player) return;
-    const subscription = player.addListener('playingChange', (event) => {
-      setIsPlaying(event.isPlaying);
+    const sub = player.addListener('playingChange', ({ isPlaying: playing }) => {
+      setIsPlaying(playing);
     });
-    return () => subscription?.remove();
+    return () => sub?.remove();
   }, [player]);
 
   const loadAnnotations = useCallback(async () => {
@@ -213,9 +232,10 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
 
   const handleSeekToAnnotation = useCallback((timestamp) => {
     if (player) {
-      player.currentTime = timestamp;
+      const time = Number(timestamp) || 0;
+      player.currentTime = time;
       player.pause();
-      setCapturedTimestamp(timestamp);
+      setCapturedTimestamp(time);
     }
   }, [player]);
 

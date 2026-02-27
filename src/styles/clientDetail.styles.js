@@ -129,38 +129,62 @@ export const clientDetailStyles = StyleSheet.create({
   },
 
   // Shared resources
-  sharedItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  sharedMediaCard: {
     backgroundColor: colors.surface,
-    borderRadius: borderRadius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
     ...shadows.sm,
   },
-  sharedItemContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: spacing.sm,
+  sharedMediaPreview: {
+    width: '100%',
+    height: 180,
+    backgroundColor: colors.borderLight,
   },
-  sharedItemThumb: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.background,
+  sharedMediaVideoContainer: {
+    width: '100%',
+    height: 180,
+    backgroundColor: colors.borderLight,
   },
-  sharedItemThumbPlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: borderRadius.sm,
-    backgroundColor: colors.background,
+  sharedMediaVideoPlaceholder: {
+    width: '100%',
+    height: 180,
+    backgroundColor: colors.gray800,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  sharedItemInfo: {
+  sharedMediaPlayOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  sharedMediaDocPlaceholder: {
+    width: '100%',
+    height: 100,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  sharedMediaDocType: {
+    ...typography.labelSmall,
+    color: colors.textTertiary,
+    fontSize: 10,
+  },
+  sharedMediaInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+  },
+  sharedMediaInfo: {
     flex: 1,
+    marginRight: spacing.sm,
   },
   sharedItemName: {
     ...typography.label,
@@ -173,19 +197,6 @@ export const clientDetailStyles = StyleSheet.create({
     fontSize: 12,
     marginTop: 1,
   },
-
-  sharedItemPlayOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    borderRadius: borderRadius.sm,
-  },
-
   sharedMediaActions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -264,5 +275,11 @@ export const clientDetailStyles = StyleSheet.create({
     color: colors.textTertiary,
     textAlign: 'center',
     fontSize: 13,
+  },
+  snackbar: {
+    backgroundColor: colors.gray800,
+    marginBottom: spacing.lg,
+    marginHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
   },
 });

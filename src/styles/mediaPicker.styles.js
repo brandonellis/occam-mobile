@@ -36,16 +36,51 @@ export const mediaPickerStyles = StyleSheet.create({
     fontWeight: '600',
   },
 
-  // Search
-  searchBar: {
-    marginHorizontal: spacing.lg,
-    marginVertical: spacing.md,
+  // Search + Upload row
+  searchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+  },
+  searchBarFlex: {
+    flex: 1,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.md,
   },
   searchInput: {
     ...typography.body,
     color: colors.textPrimary,
+  },
+  uploadButton: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  uploadButtonDisabled: {
+    opacity: 0.5,
+  },
+
+  // Upload progress
+  uploadProgressRow: {
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    gap: spacing.xs,
+  },
+  uploadProgressText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    fontSize: 12,
+  },
+  uploadProgressBar: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.borderLight,
   },
 
   // Notes
@@ -149,5 +184,12 @@ export const mediaPickerStyles = StyleSheet.create({
   emptyText: {
     ...typography.body,
     color: colors.textTertiary,
+  },
+
+  // Snackbar
+  snackbar: {
+    marginBottom: spacing.lg,
+    marginHorizontal: spacing.md,
+    borderRadius: borderRadius.md,
   },
 });

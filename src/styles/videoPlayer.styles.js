@@ -42,4 +42,37 @@ export const videoPlayerStyles = StyleSheet.create({
   headerSpacer: {
     width: 24,
   },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
+  errorText: {
+    ...typography.body,
+    color: colors.textInverse,
+    textAlign: 'center',
+    opacity: 0.8,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    marginTop: spacing.sm,
+  },
+  retryText: {
+    ...typography.label,
+    color: colors.textInverse,
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
 });

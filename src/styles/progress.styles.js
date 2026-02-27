@@ -162,10 +162,22 @@ export const progressStyles = StyleSheet.create({
     marginBottom: spacing.md,
     ...shadows.sm,
   },
-  resourceThumbnail: {
+  resourceImage: {
     width: '100%',
-    height: 160,
+    height: 220,
     backgroundColor: colors.borderLight,
+  },
+  resourceVideoContainer: {
+    width: '100%',
+    height: 220,
+    backgroundColor: colors.borderLight,
+  },
+  resourceVideoPlaceholder: {
+    width: '100%',
+    height: 220,
+    backgroundColor: colors.gray800,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   resourcePlayOverlay: {
     position: 'absolute',
@@ -176,6 +188,19 @@ export const progressStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
+  },
+  resourceDocPlaceholder: {
+    width: '100%',
+    height: 120,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+  },
+  resourceDocType: {
+    ...typography.labelSmall,
+    color: colors.textTertiary,
+    fontSize: 10,
   },
   resourceInfo: {
     padding: spacing.md,

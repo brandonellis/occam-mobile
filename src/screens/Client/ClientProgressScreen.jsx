@@ -22,8 +22,103 @@ import { globalStyles } from '../../styles/global.styles';
 import EmptyState from '../../components/EmptyState';
 import { SCREENS } from '../../constants/navigation.constants';
 import { colors } from '../../theme';
+import { resolveMediaUrl } from '../../helpers/media.helper';
+import AuthImage from '../../components/AuthImage';
 
 const TABS = { CURRICULUM: 'curriculum', REPORTS: 'reports', RESOURCES: 'resources' };
+
+const getDocumentIcon = (mime) => {
+  if (mime.startsWith('application/pdf')) return 'document-text';
+  if (mime.includes('spreadsheet') || mime.includes('excel')) return 'grid';
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return 'easel';
+  return 'document';
+};
+
+const ResourceCard = ({ resource, navigation }) => {
+  const mime = resource.mime_type || '';
+  const isVideo = mime.startsWith('video/');
+  const isImage = mime.startsWith('image/');
+  const mediaUrl = resolveMediaUrl(resource.url);
+  const thumbUrl = resolveMediaUrl(resource.thumbnail_url);
+
+  const handleVideoPress = () => {
+    if (mediaUrl) {
+      navigation.navigate('HomeTab', {
+        screen: SCREENS.VIDEO_PLAYER,
+        params: { videoUrl: mediaUrl, videoTitle: resource.filename || 'Video' },
+      });
+    }
+  };
+
+  return (
+    <View style={styles.resourceCard}>
+      {isImage && mediaUrl && (
+        <AuthImage
+          uri={mediaUrl}
+          style={styles.resourceImage}
+          resizeMode="cover"
+        />
+      )}
+
+      {isVideo && mediaUrl && (
+        <TouchableOpacity activeOpacity={0.8} onPress={handleVideoPress}>
+          {thumbUrl ? (
+            <View>
+              <AuthImage
+                uri={thumbUrl}
+                style={styles.resourceVideoContainer}
+                resizeMode="cover"
+              />
+              <View style={styles.resourcePlayOverlay}>
+                <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.9)" />
+              </View>
+            </View>
+          ) : (
+            <View style={styles.resourceVideoPlaceholder}>
+              <Ionicons name="videocam" size={32} color={colors.textTertiary} />
+              <View style={styles.resourcePlayOverlay}>
+                <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.7)" />
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {!isImage && !isVideo && (
+        <View style={styles.resourceDocPlaceholder}>
+          <Ionicons name={getDocumentIcon(mime)} size={36} color={colors.textTertiary} />
+          <Text style={styles.resourceDocType}>
+            {mime.split('/').pop()?.toUpperCase() || 'FILE'}
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.resourceInfo}>
+        <Text style={styles.resourceName}>
+          {resource.filename || 'Resource'}
+        </Text>
+        {resource.notes && (
+          <Text style={styles.resourceNotes} numberOfLines={2}>
+            {resource.notes}
+          </Text>
+        )}
+        <View style={styles.resourceMeta}>
+          {resource.shared_by && (
+            <Text style={styles.resourceCoach}>
+              From {resource.shared_by.first_name}
+            </Text>
+          )}
+          <Text style={styles.resourceDate}>
+            {new Date(resource.created_at).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+};
 
 const ClientProgressScreen = () => {
   const { user } = useAuth();
@@ -238,68 +333,9 @@ const ClientProgressScreen = () => {
       );
     }
 
-    return resources.map((resource) => {
-      const mime = resource.mime_type || '';
-      const isVideo = mime.startsWith('video/');
-      const thumbUri = resource.thumbnail_url;
-      const handlePress = isVideo && resource.url
-        ? () => navigation.navigate('HomeTab', {
-            screen: SCREENS.VIDEO_PLAYER,
-            params: {
-              videoUrl: resource.url,
-              videoTitle: resource.filename || 'Video',
-            },
-          })
-        : undefined;
-
-      return (
-        <TouchableOpacity
-          key={resource.id}
-          style={styles.resourceCard}
-          onPress={handlePress}
-          activeOpacity={handlePress ? 0.7 : 1}
-          disabled={!handlePress}
-        >
-          {(thumbUri || (resource.url && mime.startsWith('image/'))) && (
-            <View>
-              <Image
-                source={{ uri: thumbUri || resource.url }}
-                style={styles.resourceThumbnail}
-                resizeMode="cover"
-              />
-              {isVideo && (
-                <View style={styles.resourcePlayOverlay}>
-                  <Ionicons name="play-circle" size={40} color="rgba(255, 255, 255, 0.9)" />
-                </View>
-              )}
-            </View>
-          )}
-          <View style={styles.resourceInfo}>
-            <Text style={styles.resourceName}>
-              {resource.filename || 'Resource'}
-            </Text>
-            {resource.notes && (
-              <Text style={styles.resourceNotes} numberOfLines={2}>
-                {resource.notes}
-              </Text>
-            )}
-            <View style={styles.resourceMeta}>
-              {resource.shared_by && (
-                <Text style={styles.resourceCoach}>
-                  From {resource.shared_by.first_name}
-                </Text>
-              )}
-              <Text style={styles.resourceDate}>
-                {new Date(resource.created_at).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      );
-    });
+    return resources.map((resource) => (
+      <ResourceCard key={resource.id} resource={resource} navigation={navigation} />
+    ));
   };
 
   return (

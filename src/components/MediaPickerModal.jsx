@@ -4,7 +4,8 @@ import {
   Modal,
   TouchableOpacity,
   FlatList,
-  Image,
+  Alert,
+  Text as RNText,
 } from 'react-native';
 import {
   Text,
@@ -14,10 +15,15 @@ import {
   Badge,
   Button,
   Icon,
+  ProgressBar,
+  Snackbar,
 } from 'react-native-paper';
-import { getUploads } from '../services/uploads.api';
+import { Ionicons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { getUploads, uploadFile } from '../services/uploads.api';
 import { mediaPickerStyles as styles } from '../styles/mediaPicker.styles';
 import { colors } from '../theme';
+import AuthImage from './AuthImage';
 
 const MIME_ICON_MAP = {
   video: 'video',
@@ -43,6 +49,9 @@ const MediaPickerModal = ({
   const [isLoading, setIsLoading] = useState(false);
   const [selectedUpload, setSelectedUpload] = useState(null);
   const [notes, setNotes] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [snackMessage, setSnackMessage] = useState('');
 
   const loadUploads = useCallback(async () => {
     setIsLoading(true);
@@ -70,6 +79,48 @@ const MediaPickerModal = ({
     if (!selectedUpload) return;
     onSelect({ upload_id: selectedUpload.id, notes: notes.trim() || null });
   }, [selectedUpload, notes, onSelect]);
+
+  const handleUploadFromDevice = useCallback(async () => {
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please allow access to your photo library to upload media.');
+        return;
+      }
+
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images', 'videos'],
+        quality: 0.8,
+        videoMaxDuration: 300,
+      });
+
+      if (result.canceled || !result.assets?.length) return;
+
+      const asset = result.assets[0];
+      const fileName = asset.fileName || asset.uri.split('/').pop() || 'upload';
+      const mimeType = asset.mimeType || (asset.type === 'video' ? 'video/mp4' : 'image/jpeg');
+
+      setIsUploading(true);
+      setUploadProgress(0);
+
+      await uploadFile(asset.uri, {
+        uploadableType: 'media_library',
+        isLibrary: true,
+        filename: fileName,
+        mimeType,
+        onProgress: (progress) => setUploadProgress(progress),
+      });
+
+      setSnackMessage('Upload complete');
+      loadUploads();
+    } catch (err) {
+      console.warn('Upload failed:', err.message);
+      Alert.alert('Upload Failed', err.response?.data?.message || err.message || 'Something went wrong.');
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  }, [loadUploads]);
 
   const isAlreadyShared = (uploadId) => alreadySharedIds.includes(uploadId);
 
@@ -100,7 +151,7 @@ const MediaPickerModal = ({
       >
         <View style={styles.mediaThumbnail}>
           {thumb ? (
-            <Image source={{ uri: thumb }} style={styles.mediaThumbnailImage} />
+            <AuthImage uri={thumb} style={styles.mediaThumbnailImage} resizeMode="cover" />
           ) : (
             <Icon
               source={getMimeIcon(item.mime_type)}
@@ -158,15 +209,39 @@ const MediaPickerModal = ({
           )}
         </View>
 
-        {/* Search */}
-        <Searchbar
-          placeholder="Search media..."
-          value={search}
-          onChangeText={setSearch}
-          style={styles.searchBar}
-          inputStyle={styles.searchInput}
-          elevation={0}
-        />
+        {/* Search + Upload row */}
+        <View style={styles.searchRow}>
+          <Searchbar
+            placeholder="Search media..."
+            value={search}
+            onChangeText={setSearch}
+            style={styles.searchBarFlex}
+            inputStyle={styles.searchInput}
+            elevation={0}
+          />
+          <TouchableOpacity
+            style={[styles.uploadButton, (isUploading || isSharing) && styles.uploadButtonDisabled]}
+            onPress={handleUploadFromDevice}
+            disabled={isUploading || isSharing}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="cloud-upload-outline" size={22} color={colors.white} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Upload progress */}
+        {isUploading && (
+          <View style={styles.uploadProgressRow}>
+            <RNText style={styles.uploadProgressText}>
+              Uploading... {Math.round(uploadProgress * 100)}%
+            </RNText>
+            <ProgressBar
+              progress={uploadProgress}
+              color={colors.accent}
+              style={styles.uploadProgressBar}
+            />
+          </View>
+        )}
 
         {/* Notes input (when item selected) */}
         {selectedUpload && (
@@ -209,6 +284,15 @@ const MediaPickerModal = ({
             }
           />
         )}
+
+        <Snackbar
+          visible={!!snackMessage}
+          onDismiss={() => setSnackMessage('')}
+          duration={2500}
+          style={styles.snackbar}
+        >
+          {snackMessage}
+        </Snackbar>
       </View>
     </Modal>
   );

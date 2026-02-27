@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,11 @@ import {
   RefreshControl,
   Alert,
   Image,
+  LayoutAnimation,
+  UIManager,
+  Platform,
 } from 'react-native';
+import { Snackbar } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -30,6 +34,125 @@ import { globalStyles } from '../../styles/global.styles';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
+import { resolveMediaUrl } from '../../helpers/media.helper';
+import AuthImage from '../../components/AuthImage';
+
+const getDocIcon = (mime) => {
+  if (mime.startsWith('application/pdf')) return 'document-text';
+  if (mime.includes('spreadsheet') || mime.includes('excel')) return 'grid';
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return 'easel';
+  return 'document';
+};
+
+const SharedMediaCard = ({ item, navigation, onUnshare }) => {
+  const mime = item.mime_type || '';
+  const isVideo = mime.startsWith('video/');
+  const isImage = mime.startsWith('image/');
+  const mediaUrl = resolveMediaUrl(item.url);
+  const thumbUrl = resolveMediaUrl(item.thumbnail_url);
+
+  const handleVideoPress = () => {
+    if (mediaUrl) {
+      navigation.navigate(SCREENS.VIDEO_PLAYER, {
+        videoUrl: mediaUrl,
+        videoTitle: item.filename || 'Video',
+      });
+    }
+  };
+
+  return (
+    <View style={styles.sharedMediaCard}>
+      {isImage && mediaUrl && (
+        <AuthImage
+          uri={mediaUrl}
+          style={styles.sharedMediaPreview}
+          resizeMode="cover"
+        />
+      )}
+
+      {isVideo && mediaUrl && (
+        <TouchableOpacity activeOpacity={0.8} onPress={handleVideoPress}>
+          {thumbUrl ? (
+            <View>
+              <AuthImage
+                uri={thumbUrl}
+                style={styles.sharedMediaVideoContainer}
+                resizeMode="cover"
+              />
+              <View style={styles.sharedMediaPlayOverlay}>
+                <Ionicons name="play-circle" size={48} color="rgba(255,255,255,0.9)" />
+              </View>
+            </View>
+          ) : (
+            <View style={styles.sharedMediaVideoPlaceholder}>
+              <Ionicons name="videocam" size={28} color={colors.textTertiary} />
+              <View style={styles.sharedMediaPlayOverlay}>
+                <Ionicons name="play-circle" size={48} color="rgba(255,255,255,0.7)" />
+              </View>
+            </View>
+          )}
+        </TouchableOpacity>
+      )}
+
+      {!isImage && !isVideo && (
+        <View style={styles.sharedMediaDocPlaceholder}>
+          <Ionicons name={getDocIcon(mime)} size={28} color={colors.textTertiary} />
+          <Text style={styles.sharedMediaDocType}>
+            {mime.split('/').pop()?.toUpperCase() || 'FILE'}
+          </Text>
+        </View>
+      )}
+
+      <View style={styles.sharedMediaInfoRow}>
+        <View style={styles.sharedMediaInfo}>
+          <Text style={styles.sharedItemName} numberOfLines={1}>
+            {item.filename || 'Resource'}
+          </Text>
+          {item.notes && (
+            <Text style={styles.sharedItemNotes} numberOfLines={1}>
+              {item.notes}
+            </Text>
+          )}
+        </View>
+        <View style={styles.sharedMediaActions}>
+          {isVideo && mediaUrl && (
+            <>
+              <TouchableOpacity
+                onPress={handleVideoPress}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="play-circle-outline" size={20} color={colors.accent} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() =>
+                  navigation.navigate(SCREENS.VIDEO_ANNOTATION, {
+                    uploadId: item.upload_id,
+                    videoUrl: mediaUrl,
+                    videoTitle: item.filename || 'Video',
+                  })
+                }
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+              >
+                <Ionicons name="brush-outline" size={18} color={colors.accent} />
+              </TouchableOpacity>
+            </>
+          )}
+          <TouchableOpacity
+            onPress={() => onUnshare(item.id)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="close-circle-outline" size={20} color={colors.error} />
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
+  );
+};
+
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const ClientDetailScreen = ({ route, navigation }) => {
   const { company } = useAuth();
@@ -46,6 +169,8 @@ const ClientDetailScreen = ({ route, navigation }) => {
   const [isSharing, setIsSharing] = useState(false);
   const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
   const [showAllModules, setShowAllModules] = useState(false);
+  const [snackbar, setSnackbar] = useState({ visible: false, message: '', undoData: null });
+  const undoTimerRef = useRef(null);
 
   const loadData = useCallback(async (showRefresh = false) => {
     try {
@@ -145,24 +270,51 @@ const ClientDetailScreen = ({ route, navigation }) => {
     );
   }, [clientId, loadData]);
 
-  const handleUnshare = useCallback(async (sharedMediaId) => {
-    Alert.alert('Remove Resource', 'Unshare this resource from the client?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            await unshareMediaFromClient(clientId, sharedMediaId);
-            loadData(true);
-          } catch (err) {
-            console.warn('Failed to unshare media:', err.message);
-            Alert.alert('Error', 'Failed to remove shared resource.');
-          }
-        },
-      },
-    ]);
-  }, [clientId, loadData]);
+  const handleUnshare = useCallback((sharedMediaId) => {
+    // Find the item being removed so we can restore on undo
+    const removedItem = sharedMedia.find((m) => m.id === sharedMediaId);
+    if (!removedItem) return;
+
+    // Optimistic removal with smooth animation
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setSharedMedia((prev) => prev.filter((m) => m.id !== sharedMediaId));
+
+    // Clear any pending undo timer from a previous removal
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+
+    // Show undo snackbar
+    setSnackbar({
+      visible: true,
+      message: 'Resource removed',
+      undoData: { sharedMediaId, removedItem },
+    });
+
+    // Fire the API delete after a short delay to allow undo
+    undoTimerRef.current = setTimeout(async () => {
+      try {
+        await unshareMediaFromClient(clientId, sharedMediaId);
+      } catch (err) {
+        console.warn('Failed to unshare media:', err.message);
+        // Restore the item on failure
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setSharedMedia((prev) => [...prev, removedItem].sort((a, b) => b.id - a.id));
+        setSnackbar({ visible: false, message: '', undoData: null });
+        Alert.alert('Error', 'Failed to remove shared resource.');
+      }
+    }, 3500);
+  }, [clientId, sharedMedia]);
+
+  const handleUndoUnshare = useCallback(() => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    const { undoData } = snackbar;
+    if (undoData?.removedItem) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+      setSharedMedia((prev) =>
+        [...prev, undoData.removedItem].sort((a, b) => b.id - a.id)
+      );
+    }
+    setSnackbar({ visible: false, message: '', undoData: null });
+  }, [snackbar]);
 
   const renderBookingItem = (booking) => {
     const serviceName = Array.isArray(booking.services) && booking.services.length > 0
@@ -335,94 +487,31 @@ const ClientDetailScreen = ({ route, navigation }) => {
         {sharedMedia.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Shared Resources</Text>
-            {sharedMedia.map((item) => {
-              const mime = item.mime_type || '';
-              const isVideo = mime.startsWith('video/');
-              const typeLabel = isVideo ? 'Video' : mime.startsWith('image/') ? 'Image' : 'Document';
-              const typeIcon = isVideo ? 'videocam' : mime.startsWith('image/') ? 'image' : 'document';
-              const handleItemPress = isVideo && item.url
-                ? () => navigation.navigate(SCREENS.VIDEO_PLAYER, {
-                    videoUrl: item.url,
-                    videoTitle: item.filename || 'Video',
-                  })
-                : undefined;
-              return (
-              <TouchableOpacity
+            {sharedMedia.slice(0, 2).map((item) => (
+              <SharedMediaCard
                 key={item.id}
-                style={styles.sharedItem}
-                onPress={handleItemPress}
-                activeOpacity={handleItemPress ? 0.7 : 1}
-                disabled={!handleItemPress}
+                item={item}
+                navigation={navigation}
+                onUnshare={handleUnshare}
+              />
+            ))}
+            {sharedMedia.length > 2 && (
+              <TouchableOpacity
+                style={styles.showMoreButton}
+                onPress={() =>
+                  navigation.navigate(SCREENS.CLIENT_SHARED_MEDIA, {
+                    clientId,
+                    clientName: fullName,
+                  })
+                }
+                activeOpacity={0.7}
               >
-                <View style={styles.sharedItemContent}>
-                  {item.thumbnail_url || (item.url && mime.startsWith('image/')) ? (
-                    <View>
-                      <Image
-                        source={{ uri: item.thumbnail_url || item.url }}
-                        style={styles.sharedItemThumb}
-                      />
-                      {isVideo && (
-                        <View style={styles.sharedItemPlayOverlay}>
-                          <Ionicons name="play-circle" size={22} color={colors.white} />
-                        </View>
-                      )}
-                    </View>
-                  ) : (
-                    <View style={styles.sharedItemThumbPlaceholder}>
-                      <Ionicons
-                        name={typeIcon}
-                        size={18}
-                        color={colors.textTertiary}
-                      />
-                    </View>
-                  )}
-                  <View style={styles.sharedItemInfo}>
-                    <Text style={styles.sharedItemName} numberOfLines={1}>
-                      {item.filename || 'Resource'}
-                    </Text>
-                    <Text style={styles.sharedItemNotes} numberOfLines={1}>
-                      {typeLabel}{item.notes ? ` · ${item.notes}` : ''}
-                    </Text>
-                  </View>
-                </View>
-                <View style={styles.sharedMediaActions}>
-                  {isVideo && item.url && (
-                    <>
-                      <TouchableOpacity
-                        onPress={() =>
-                          navigation.navigate(SCREENS.VIDEO_PLAYER, {
-                            videoUrl: item.url,
-                            videoTitle: item.filename || 'Video',
-                          })
-                        }
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons name="play-circle-outline" size={20} color={colors.accent} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() =>
-                          navigation.navigate(SCREENS.VIDEO_ANNOTATION, {
-                            uploadId: item.upload_id,
-                            videoUrl: item.url,
-                            videoTitle: item.filename || 'Video',
-                          })
-                        }
-                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                      >
-                        <Ionicons name="brush-outline" size={18} color={colors.accent} />
-                      </TouchableOpacity>
-                    </>
-                  )}
-                  <TouchableOpacity
-                    onPress={() => handleUnshare(item.id)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                  >
-                    <Ionicons name="close-circle-outline" size={20} color={colors.error} />
-                  </TouchableOpacity>
-                </View>
+                <Text style={styles.showMoreText}>
+                  Show All {sharedMedia.length} Resources
+                </Text>
+                <Ionicons name="chevron-forward" size={14} color={colors.accent} />
               </TouchableOpacity>
-              );
-            })}
+            )}
           </View>
         )}
 
@@ -504,6 +593,16 @@ const ClientDetailScreen = ({ route, navigation }) => {
         alreadySharedIds={sharedMedia.map((m) => m.upload_id)}
         isSharing={isSharing}
       />
+
+      <Snackbar
+        visible={snackbar.visible}
+        onDismiss={() => setSnackbar({ visible: false, message: '', undoData: null })}
+        duration={3000}
+        action={{ label: 'Undo', onPress: handleUndoUnshare }}
+        style={styles.snackbar}
+      >
+        {snackbar.message}
+      </Snackbar>
     </SafeAreaView>
   );
 };

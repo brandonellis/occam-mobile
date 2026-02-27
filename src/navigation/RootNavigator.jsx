@@ -18,6 +18,7 @@ import BookingConfirmationScreen from '../screens/Booking/BookingConfirmationScr
 import MembershipPlansScreen from '../screens/Membership/MembershipPlansScreen';
 import MembershipCheckoutScreen from '../screens/Membership/MembershipCheckoutScreen';
 import ClientDetailScreen from '../screens/Coach/ClientDetailScreen';
+import ClientSharedMediaScreen from '../screens/Coach/ClientSharedMediaScreen';
 import CurriculumEditorScreen from '../screens/Coach/CurriculumEditorScreen';
 import ProgressReportDetailScreen from '../screens/Coach/ProgressReportDetailScreen';
 import VideoRecordingScreen from '../screens/Coach/VideoRecordingScreen';
@@ -123,6 +124,11 @@ const RootNavigator = () => {
           <Stack.Screen
             name={SCREENS.CLIENT_DETAIL}
             component={ClientDetailScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name={SCREENS.CLIENT_SHARED_MEDIA}
+            component={ClientSharedMediaScreen}
             options={{ animation: 'slide_from_right' }}
           />
 

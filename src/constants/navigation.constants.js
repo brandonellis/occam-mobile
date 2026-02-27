@@ -31,6 +31,7 @@ export const SCREENS = {
 
   // Coach detail screens
   CLIENT_DETAIL: 'ClientDetail',
+  CLIENT_SHARED_MEDIA: 'ClientSharedMedia',
 
   // Curriculum
   CURRICULUM_EDITOR: 'CurriculumEditor',
