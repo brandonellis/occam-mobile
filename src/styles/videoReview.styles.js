@@ -45,14 +45,14 @@ export const videoReviewStyles = StyleSheet.create({
   },
   label: {
     ...typography.label,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: colors.textInverseMuted,
     fontSize: 13,
     marginBottom: spacing.xs,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.textInverseDisabled,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.textInverseDisabled,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: 14,
@@ -67,7 +67,7 @@ export const videoReviewStyles = StyleSheet.create({
   },
   progressBarContainer: {
     height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: colors.textInverseDisabled,
     borderRadius: 3,
     overflow: 'hidden',
     marginBottom: spacing.sm,
@@ -79,7 +79,7 @@ export const videoReviewStyles = StyleSheet.create({
   },
   progressText: {
     ...typography.bodySmall,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: colors.textInverseMuted,
     fontSize: 13,
     textAlign: 'center',
   },
@@ -114,14 +114,14 @@ export const videoReviewStyles = StyleSheet.create({
   },
   discardButtonText: {
     ...typography.body,
-    color: 'rgba(255, 255, 255, 0.5)',
+    color: colors.textInverseMuted,
     fontSize: 14,
   },
 
   // Sharing overlay
   sharingOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    backgroundColor: colors.overlay,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.md,

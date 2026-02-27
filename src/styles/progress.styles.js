@@ -187,7 +187,7 @@ export const progressStyles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: colors.overlay,
   },
   resourceDocPlaceholder: {
     width: '100%',
@@ -245,6 +245,12 @@ export const progressStyles = StyleSheet.create({
     borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  resourceSectionIconPersonal: {
+    backgroundColor: colors.accentLight,
+  },
+  resourceSectionIconGroup: {
+    backgroundColor: colors.lavenderMistLight,
   },
   resourceSectionTitle: {
     ...typography.label,

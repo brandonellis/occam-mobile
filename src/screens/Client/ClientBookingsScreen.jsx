@@ -181,17 +181,23 @@ const ClientBookingsScreen = ({ navigation }) => {
           </View>
         </View>
 
-        {isUpcoming && item.status !== 'cancelled' && (
-          <View style={styles.bookingActions}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => handleCancel(item)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {isUpcoming && item.status !== 'cancelled' && (() => {
+          const windowHours = company?.cancellation_window_hours ?? 24;
+          const withinWindow = item.start_time &&
+            new Date(item.start_time).getTime() < Date.now() + windowHours * 3600000;
+          if (withinWindow) return null;
+          return (
+            <View style={styles.bookingActions}>
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => handleCancel(item)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          );
+        })()}
 
         {!isUpcoming && (
           <View style={styles.bookingActions}>

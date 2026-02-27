@@ -374,7 +374,7 @@ const ClientProgressScreen = () => {
               onPress={() => toggleSection('personal')}
               style={[styles.resourceSectionHeader, styles.resourceSectionHeaderFirst]}
             >
-              <View style={[styles.resourceSectionIcon, { backgroundColor: colors.accentLight }]}>
+              <View style={[styles.resourceSectionIcon, styles.resourceSectionIconPersonal]}>
                 <Ionicons name="person-outline" size={14} color={colors.accent} />
               </View>
               <Text style={styles.resourceSectionTitle}>My Resources</Text>
@@ -402,7 +402,7 @@ const ClientProgressScreen = () => {
                 onPress={() => toggleSection(sectionKey)}
                 style={[styles.resourceSectionHeader, !hasPersonal && index === 0 && styles.resourceSectionHeaderFirst]}
               >
-                <View style={[styles.resourceSectionIcon, { backgroundColor: colors.lavenderMistLight }]}>
+                <View style={[styles.resourceSectionIcon, styles.resourceSectionIconGroup]}>
                   <Ionicons name="people-outline" size={14} color={colors.twilightPurple} />
                 </View>
                 <Text style={styles.resourceSectionTitle}>{group.name}</Text>

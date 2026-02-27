@@ -57,9 +57,10 @@ const VideoReviewScreen = ({ route, navigation }) => {
         onProgress: setUploadProgress,
       });
 
-      const resultUploadId = uploadResult?.data?.id || uploadResult?.id || null;
+      const resultUploadId = uploadResult?.id || null;
       setUploadId(resultUploadId);
       setUploadComplete(true);
+      setIsUploading(false);
 
       setTimeout(() => {
         Alert.alert(
@@ -80,18 +81,15 @@ const VideoReviewScreen = ({ route, navigation }) => {
         );
       }, 400);
     } catch (err) {
-      console.warn('Upload failed:', err);
+      console.error('Upload failed:', err);
+      setIsUploading(false);
       Alert.alert(
         'Upload Failed',
         err.response?.data?.message || 'Something went wrong. Please try again.',
         [{ text: 'OK' }]
       );
-    } finally {
-      if (!uploadComplete) {
-        setIsUploading(false);
-      }
     }
-  }, [videoUri, title, isUploading, uploadComplete, navigation]);
+  }, [videoUri, title, isUploading, navigation]);
 
   const handleDiscard = useCallback(() => {
     Alert.alert(
@@ -131,7 +129,7 @@ const VideoReviewScreen = ({ route, navigation }) => {
         [{ text: 'Done', onPress: () => navigation.popToTop() }]
       );
     } catch (err) {
-      console.warn('Share failed:', err);
+      console.error('Share failed:', err);
       Alert.alert(
         'Share Failed',
         err.response?.data?.message || 'Could not share with one or more targets.',

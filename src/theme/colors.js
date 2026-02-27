@@ -6,6 +6,7 @@ export const colors = {
 
   // Secondary / Accent — matches occam-client secondary blue
   accent: '#4CACD5',
+  accentSubtle: 'rgba(76, 172, 213, 0.06)',
   accentLight: 'rgba(76, 172, 213, 0.3)',
   accentDark: '#3A8DB3',
 

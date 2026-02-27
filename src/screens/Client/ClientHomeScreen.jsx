@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,8 +20,8 @@ const ClientHomeScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const todayKey = getTodayKey(company);
-  const futureKey = getFutureDateKey(company, 30);
+  const todayKey = useMemo(() => getTodayKey(company), [company]);
+  const futureKey = useMemo(() => getFutureDateKey(company, 30), [company]);
 
   const loadBookings = useCallback(async (showRefresh = false) => {
     try {

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
+import PropTypes from 'prop-types';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getClients, getClientGroups } from '../services/accounts.api';
@@ -34,7 +35,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
       setClients(clientsRes?.data || clientsRes || []);
       setGroups(groupsRes?.data || groupsRes || []);
     } catch (err) {
-      console.warn('Failed to load share targets:', err?.message);
+      console.warn('Failed to load share targets:', err?.message || err);
     } finally {
       setIsLoading(false);
     }
@@ -253,6 +254,12 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
       </SafeAreaView>
     </Modal>
   );
+};
+
+ShareTargetSheet.propTypes = {
+  visible: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  onSelect: PropTypes.func.isRequired,
 };
 
 export default ShareTargetSheet;

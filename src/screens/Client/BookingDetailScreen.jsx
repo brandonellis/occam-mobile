@@ -107,11 +107,10 @@ const BookingDetailScreen = ({ navigation, route }) => {
   const coach = booking.coaches?.[0];
   const location = booking.location;
   const resources = booking.resources || [];
-  const isPastBooking = booking.start_time && new Date(booking.start_time).getTime() < Date.now();
   const windowHours = company?.cancellation_window_hours ?? 24;
-  const isWithinCancellationWindow = windowHours > 0 && booking.start_time &&
+  const isWithinCancellationWindow = booking.start_time &&
     new Date(booking.start_time).getTime() < Date.now() + windowHours * 3600000;
-  const canCancel = !isPastBooking && !isWithinCancellationWindow &&
+  const canCancel = !isWithinCancellationWindow &&
     (booking.status === 'confirmed' || booking.status === 'pending');
 
   return (

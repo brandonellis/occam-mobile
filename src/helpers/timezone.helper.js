@@ -26,18 +26,19 @@ const getFormatter = (tz, options) => {
  * Get the individual date parts in the target timezone.
  * Returns { year, month, day, hour, minute, second, weekday, dayPeriod }
  */
+const _partsOptions = {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  weekday: 'short',
+  hour12: true,
+};
+
 const getPartsInTz = (date, tz) => {
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    weekday: 'short',
-    hour12: true,
-  });
+  const formatter = getFormatter(tz, _partsOptions);
 
   const parts = {};
   formatter.formatToParts(date).forEach(({ type, value }) => {
@@ -59,7 +60,7 @@ const toDate = (input) => {
   if (input instanceof Date) return input;
   if (typeof input === 'number') return new Date(input);
   if (typeof input === 'string') return new Date(input);
-  return new Date();
+  return new Date(NaN);
 };
 
 // ── Public API ──────────────────────────────────────────────────────────────

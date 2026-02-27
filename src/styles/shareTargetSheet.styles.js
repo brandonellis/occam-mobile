@@ -122,7 +122,7 @@ export const shareTargetSheetStyles = StyleSheet.create({
     marginBottom: 2,
   },
   targetRowSelected: {
-    backgroundColor: 'rgba(76, 172, 213, 0.06)',
+    backgroundColor: colors.accentSubtle,
   },
   avatar: {
     width: 40,
