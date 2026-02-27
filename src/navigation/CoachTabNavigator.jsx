@@ -1,6 +1,5 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { CommonActions } from '@react-navigation/native';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
 import CustomTabBar from '../components/CustomTabBar';

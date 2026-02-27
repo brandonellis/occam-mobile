@@ -1,6 +1,5 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { CommonActions } from '@react-navigation/native';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
 import CustomTabBar from '../components/CustomTabBar';
@@ -35,7 +34,7 @@ const ClientTabNavigator = () => {
         name="HomeTab"
         component={ClientHomeStack}
         options={{ tabBarLabel: 'Home' }}
-        listeners={({ navigation, route }) => ({
+        listeners={({ navigation }) => ({
           tabPress: (e) => {
             const state = navigation.getState();
             const homeTabRoute = state.routes.find((r) => r.name === 'HomeTab');

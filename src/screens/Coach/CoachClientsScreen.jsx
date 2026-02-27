@@ -33,7 +33,8 @@ const CoachClientsScreen = ({ navigation }) => {
       const list = data || [];
       setClients(list);
       setFiltered(list);
-    } catch {
+    } catch (err) {
+      console.warn('Failed to load clients:', err?.message || err);
       setClients([]);
       setFiltered([]);
     } finally {
