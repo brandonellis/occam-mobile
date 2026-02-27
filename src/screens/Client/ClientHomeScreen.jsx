@@ -6,6 +6,7 @@ import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
+import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
 import EmptyState from '../../components/EmptyState';
 import { colors } from '../../theme';
@@ -24,6 +25,7 @@ const ClientHomeScreen = ({ navigation }) => {
     try {
       if (showRefresh) setIsRefreshing(true);
       const { data } = await getBookings({
+        client_id: user?.id,
         start_date: todayKey,
         end_date: futureKey,
       });
@@ -36,7 +38,7 @@ const ClientHomeScreen = ({ navigation }) => {
     } finally {
       setIsRefreshing(false);
     }
-  }, [todayKey, futureKey]);
+  }, [user?.id, todayKey, futureKey]);
 
   // Refetch every time the screen comes into focus (e.g. after booking)
   useEffect(() => {
@@ -46,12 +48,13 @@ const ClientHomeScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, loadBookings]);
 
-  // Filter to only upcoming sessions
-  const now = new Date();
+  // Filter to only upcoming sessions (using company timezone)
+  const tz = getEffectiveTimezone(company);
+  const nowTz = dayjs().tz(tz);
   const upcomingSessions = sessions.filter((s) => {
     if (!s.start_time) return true;
-    const startDate = new Date(s.start_time);
-    return isNaN(startDate.getTime()) || startDate >= now;
+    const startTz = dayjs(s.start_time).tz(tz);
+    return !startTz.isValid() || startTz.isSameOrAfter(nowTz);
   });
 
   return (
@@ -93,11 +96,15 @@ const ClientHomeScreen = ({ navigation }) => {
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={1}>Book Session</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionButton} activeOpacity={0.7}>
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate(SCREENS.CLIENT_PROGRESS, { initialTab: 'resources' })}
+            >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.lavenderMistLight }]}>
                 <Ionicons name="play-circle-outline" size={18} color={colors.twilightPurple} />
               </View>
-              <Text style={styles.quickActionLabel} numberOfLines={1}>My Videos</Text>
+              <Text style={styles.quickActionLabel} numberOfLines={1}>My Resources</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.quickActionButton}
@@ -136,6 +143,7 @@ const ClientHomeScreen = ({ navigation }) => {
                   key={session.id}
                   style={styles.bookingCard}
                   activeOpacity={0.7}
+                  onPress={() => navigation.navigate(SCREENS.CLIENT_BOOKINGS)}
                 >
                   <View style={styles.bookingCardRow}>
                     <View style={styles.bookingTimeBlock}>

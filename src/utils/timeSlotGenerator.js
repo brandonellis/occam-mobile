@@ -160,12 +160,21 @@ export const generateTimeSlots = (
     return [];
   }
 
+  // Deduplicate potential slots by start time (multiple availability windows
+  // can produce the same candidate start, causing duplicate UI entries)
+  const seenStartMs = new Set();
+  const uniquePotentialSlots = potentialSlots.filter((slot) => {
+    if (seenStartMs.has(slot._startMs)) return false;
+    seenStartMs.add(slot._startMs);
+    return true;
+  });
+
   // Prepare resource pool ids for capacity calculations
   const resourcePoolIds = Array.isArray(resourcePool)
     ? resourcePool.map(r => (r.id || r.resource_id)).filter(Boolean).map(id => id.toString())
     : [];
 
-  potentialSlots.forEach((slot) => {
+  uniquePotentialSlots.forEach((slot) => {
     const slotStartMs = slot._startMs;
     const slotEndMs = slot._endMs;
 

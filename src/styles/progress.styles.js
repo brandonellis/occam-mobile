@@ -140,6 +140,11 @@ export const progressStyles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
+  reportSummary: {
+    ...typography.bodySmall,
+    color: colors.accent,
+    marginTop: spacing.xs,
+  },
 
   // Resources
   resourceCard: {
@@ -153,6 +158,16 @@ export const progressStyles = StyleSheet.create({
     width: '100%',
     height: 160,
     backgroundColor: colors.borderLight,
+  },
+  resourcePlayOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   resourceInfo: {
     padding: spacing.md,

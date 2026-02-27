@@ -430,12 +430,12 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
             </Text>
           ) : (
             <View style={styles.timeSlotGrid}>
-              {timeSlots.map((slot, index) => {
+              {timeSlots.map((slot) => {
                 const isSelected =
-                  selectedSlot?.start_time === slot.start_time;
+                  selectedSlot?.id === slot.id;
                 return (
                   <TouchableOpacity
-                    key={`${slot.start_time}-${index}`}
+                    key={slot.id}
                     style={[
                       styles.timeSlot,
                       isSelected && styles.timeSlotSelected,

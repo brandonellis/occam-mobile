@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -13,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
+import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
 import useAuth from '../../hooks/useAuth';
 import { bookingsListStyles as styles } from '../../styles/bookingsList.styles';
 import { globalStyles } from '../../styles/global.styles';
@@ -20,6 +22,20 @@ import EmptyState from '../../components/EmptyState';
 import { colors } from '../../theme';
 
 const TABS = { UPCOMING: 'upcoming', PAST: 'past' };
+
+const UPCOMING_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: '7d', label: 'Next 7 Days' },
+  { key: '30d', label: 'Next 30 Days' },
+  { key: '90d', label: 'Next 3 Months' },
+];
+
+const PAST_FILTERS = [
+  { key: 'all', label: 'All' },
+  { key: '7d', label: 'Last 7 Days' },
+  { key: '30d', label: 'Last 30 Days' },
+  { key: '90d', label: 'Last 3 Months' },
+];
 
 const STATUS_MAP = {
   confirmed: { style: styles.statusConfirmed, textStyle: styles.statusTextConfirmed, label: 'CONFIRMED' },
@@ -29,29 +45,53 @@ const STATUS_MAP = {
 };
 
 const ClientBookingsScreen = ({ navigation }) => {
-  const { company } = useAuth();
+  const { user, company } = useAuth();
   const [activeTab, setActiveTab] = useState(TABS.UPCOMING);
+  const [dateFilter, setDateFilter] = useState('all');
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const dateRange = useMemo(() => {
+    const tz = getEffectiveTimezone(company);
+    const today = dayjs().tz(tz);
+
+    if (dateFilter === 'all') return {};
+
+    const days = dateFilter === '7d' ? 7 : dateFilter === '30d' ? 30 : 90;
+
+    if (activeTab === TABS.UPCOMING) {
+      return {
+        start_date: today.format('YYYY-MM-DD'),
+        end_date: today.add(days, 'day').format('YYYY-MM-DD'),
+      };
+    }
+    return {
+      start_date: today.subtract(days, 'day').format('YYYY-MM-DD'),
+      end_date: today.format('YYYY-MM-DD'),
+    };
+  }, [company, dateFilter, activeTab]);
 
   const loadBookings = useCallback(async (showRefresh = false) => {
     try {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
 
-      const { data } = await getBookings({ per_page: 50 });
+      const tz = getEffectiveTimezone(company);
+      const nowTz = dayjs().tz(tz);
+
+      const params = { client_id: user?.id, per_page: 50, ...dateRange };
+      const { data } = await getBookings(params);
       const all = data || [];
-      const now = new Date();
 
       if (activeTab === TABS.UPCOMING) {
         const upcoming = all
-          .filter((b) => b.start_time && new Date(b.start_time) >= now)
+          .filter((b) => b.start_time && dayjs(b.start_time).tz(tz).isSameOrAfter(nowTz))
           .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
         setBookings(upcoming);
       } else {
         const past = all
-          .filter((b) => !b.start_time || new Date(b.start_time) < now)
+          .filter((b) => !b.start_time || dayjs(b.start_time).tz(tz).isBefore(nowTz))
           .sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
         setBookings(past);
       }
@@ -61,7 +101,7 @@ const ClientBookingsScreen = ({ navigation }) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [activeTab]);
+  }, [user?.id, company, activeTab, dateRange]);
 
   useEffect(() => {
     loadBookings();
@@ -93,42 +133,42 @@ const ClientBookingsScreen = ({ navigation }) => {
   const renderBooking = ({ item }) => {
     const status = STATUS_MAP[item.status] || STATUS_MAP.confirmed;
     const isUpcoming = activeTab === TABS.UPCOMING;
+    const coach = item.coaches?.[0] || null;
 
     return (
       <View style={styles.bookingCard}>
-        <View style={styles.bookingHeader}>
-          <Text style={styles.bookingService}>
-            {item.services?.[0]?.name || 'Session'}
-          </Text>
-          <View style={[styles.statusBadge, status.style]}>
-            <Text style={[styles.statusText, status.textStyle]}>
-              {status.label}
+        <View style={styles.bookingCardRow}>
+          <View style={styles.bookingTimeBlock}>
+            <Text style={styles.bookingTimeValue}>
+              {formatTimeInTz(item.start_time, company)}
             </Text>
-          </View>
-        </View>
-
-        <View style={styles.bookingDetails}>
-          <View style={styles.bookingRow}>
-            <Ionicons name="calendar-outline" size={14} color={colors.textTertiary} />
-            <Text style={styles.bookingDetailText}>
+            <Text style={styles.bookingTimeDate}>
               {formatDateInTz(item.start_time, company)}
             </Text>
           </View>
-          <View style={styles.bookingRow}>
-            <Ionicons name="time-outline" size={14} color={colors.textTertiary} />
-            <Text style={styles.bookingDetailText}>
-              {formatTimeInTz(item.start_time, company)}
-              {item.end_time ? ` — ${formatTimeInTz(item.end_time, company)}` : ''}
+          <View style={styles.bookingCardContent}>
+            <Text style={styles.bookingService}>
+              {item.services?.[0]?.name || 'Session'}
             </Text>
+            {coach && (
+              <Text style={styles.bookingCoach}>
+                {coach.first_name} {coach.last_name}
+              </Text>
+            )}
+            {item.location && (
+              <Text style={styles.bookingLocation}>
+                {item.location.name}
+              </Text>
+            )}
           </View>
-          {item.coaches?.[0] && (
-            <View style={styles.bookingRow}>
-              <Ionicons name="person-outline" size={14} color={colors.textTertiary} />
-              <Text style={styles.bookingDetailText}>
-                {item.coaches[0].first_name} {item.coaches[0].last_name}
+          <View style={styles.bookingEndColumn}>
+            <View style={[styles.statusBadge, status.style]}>
+              <Text style={[styles.statusText, status.textStyle]}>
+                {status.label}
               </Text>
             </View>
-          )}
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+          </View>
         </View>
 
         {isUpcoming && item.status !== 'cancelled' && (
@@ -147,7 +187,7 @@ const ClientBookingsScreen = ({ navigation }) => {
           <View style={styles.bookingActions}>
             <TouchableOpacity
               style={styles.rebookButton}
-              onPress={() => navigation.navigate(SCREENS.LOCATION_SELECTION, { bookingData: {} })}
+              onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.LOCATION_SELECTION, params: { bookingData: {} } })}
               activeOpacity={0.7}
             >
               <Text style={styles.rebookButtonText}>Book Again</Text>
@@ -165,7 +205,7 @@ const ClientBookingsScreen = ({ navigation }) => {
           <TouchableOpacity
             key={tab}
             style={[styles.tab, activeTab === tab && styles.tabActive]}
-            onPress={() => setActiveTab(tab)}
+            onPress={() => { setActiveTab(tab); setDateFilter('all'); }}
             activeOpacity={0.7}
           >
             <Text
@@ -179,6 +219,33 @@ const ClientBookingsScreen = ({ navigation }) => {
           </TouchableOpacity>
         ))}
       </View>
+
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filterBar}
+      >
+        {(activeTab === TABS.UPCOMING ? UPCOMING_FILTERS : PAST_FILTERS).map((f) => (
+          <TouchableOpacity
+            key={f.key}
+            style={[
+              styles.filterChip,
+              dateFilter === f.key && styles.filterChipActive,
+            ]}
+            onPress={() => setDateFilter(f.key)}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.filterChipText,
+                dateFilter === f.key && styles.filterChipTextActive,
+              ]}
+            >
+              {f.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </ScrollView>
 
       {isLoading ? (
         <View style={globalStyles.loadingContainer}>
@@ -212,7 +279,7 @@ const ClientBookingsScreen = ({ navigation }) => {
               actionLabel={activeTab === TABS.UPCOMING ? 'Book a Session' : undefined}
               onAction={
                 activeTab === TABS.UPCOMING
-                  ? () => navigation.navigate(SCREENS.LOCATION_SELECTION, { bookingData: {} })
+                  ? () => navigation.navigate('HomeTab', { screen: SCREENS.LOCATION_SELECTION, params: { bookingData: {} } })
                   : undefined
               }
             />

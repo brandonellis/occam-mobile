@@ -9,6 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
 import {
@@ -19,15 +20,33 @@ import {
 import { progressStyles as styles } from '../../styles/progress.styles';
 import { globalStyles } from '../../styles/global.styles';
 import EmptyState from '../../components/EmptyState';
+import { SCREENS } from '../../constants/navigation.constants';
 import { colors } from '../../theme';
 
 const TABS = { CURRICULUM: 'curriculum', REPORTS: 'reports', RESOURCES: 'resources' };
 
 const ClientProgressScreen = () => {
   const { user } = useAuth();
+  const navigation = useNavigation();
+  const route = useRoute();
   const clientId = user?.id;
 
-  const [activeTab, setActiveTab] = useState(TABS.CURRICULUM);
+  const [activeTab, setActiveTab] = useState(
+    route.params?.initialTab || TABS.CURRICULUM
+  );
+
+  // Switch tab on every focus when initialTab param is provided
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      const tab = route.params?.initialTab;
+      if (tab) {
+        setActiveTab(tab);
+        // Clear the param so returning to this tab later doesn't re-apply it
+        navigation.setParams({ initialTab: undefined });
+      }
+    });
+    return unsubscribe;
+  }, [navigation, route.params?.initialTab]);
   const [curriculum, setCurriculum] = useState({ program: null, modules: [] });
   const [reports, setReports] = useState([]);
   const [resources, setResources] = useState([]);
@@ -156,23 +175,56 @@ const ClientProgressScreen = () => {
       );
     }
 
-    return reports.map((report) => (
-      <View key={report.id} style={styles.reportCard}>
-        <Text style={styles.reportTitle}>{report.title || 'Progress Report'}</Text>
-        <Text style={styles.reportDate}>
-          {new Date(report.created_at).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          })}
-        </Text>
-        {report.coach && (
-          <Text style={styles.reportCoach}>
-            From {report.coach.first_name} {report.coach.last_name}
-          </Text>
-        )}
-      </View>
-    ));
+    return reports.map((report) => {
+      const payload = report?.payload || {};
+      const curriculumSummary = payload?.exact?.curriculum?.summary;
+      const hasAssessment = !!payload?.exact?.assessment;
+      const hasCurriculum = curriculumSummary?.total_lessons > 0;
+
+      return (
+        <TouchableOpacity
+          key={report.id}
+          style={styles.reportCard}
+          activeOpacity={0.7}
+          onPress={() =>
+            navigation.navigate('HomeTab', {
+              screen: SCREENS.PROGRESS_REPORT_DETAIL,
+              params: { report },
+            })
+          }
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.reportTitle}>{report.title || 'Progress Report'}</Text>
+              <Text style={styles.reportDate}>
+                {new Date(report.created_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                  year: 'numeric',
+                })}
+              </Text>
+              {report.coach && (
+                <Text style={styles.reportCoach}>
+                  From {report.coach.first_name} {report.coach.last_name}
+                </Text>
+              )}
+              {(hasCurriculum || hasAssessment) && (
+                <Text style={styles.reportSummary}>
+                  {[
+                    hasCurriculum &&
+                      `${curriculumSummary.completed_lessons}/${curriculumSummary.total_lessons} lessons completed`,
+                    hasAssessment && 'Assessment scores',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </Text>
+              )}
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+          </View>
+        </TouchableOpacity>
+      );
+    });
   };
 
   const renderResources = () => {
@@ -186,40 +238,68 @@ const ClientProgressScreen = () => {
       );
     }
 
-    return resources.map((resource) => (
-      <View key={resource.id} style={styles.resourceCard}>
-        {resource.upload?.thumbnail_url && (
-          <Image
-            source={{ uri: resource.upload.thumbnail_url }}
-            style={styles.resourceThumbnail}
-            resizeMode="cover"
-          />
-        )}
-        <View style={styles.resourceInfo}>
-          <Text style={styles.resourceName}>
-            {resource.upload?.original_name || 'Resource'}
-          </Text>
-          {resource.notes && (
-            <Text style={styles.resourceNotes} numberOfLines={2}>
-              {resource.notes}
-            </Text>
+    return resources.map((resource) => {
+      const mime = resource.mime_type || '';
+      const isVideo = mime.startsWith('video/');
+      const thumbUri = resource.thumbnail_url;
+      const handlePress = isVideo && resource.url
+        ? () => navigation.navigate('HomeTab', {
+            screen: SCREENS.VIDEO_PLAYER,
+            params: {
+              videoUrl: resource.url,
+              videoTitle: resource.filename || 'Video',
+            },
+          })
+        : undefined;
+
+      return (
+        <TouchableOpacity
+          key={resource.id}
+          style={styles.resourceCard}
+          onPress={handlePress}
+          activeOpacity={handlePress ? 0.7 : 1}
+          disabled={!handlePress}
+        >
+          {(thumbUri || (resource.url && mime.startsWith('image/'))) && (
+            <View>
+              <Image
+                source={{ uri: thumbUri || resource.url }}
+                style={styles.resourceThumbnail}
+                resizeMode="cover"
+              />
+              {isVideo && (
+                <View style={styles.resourcePlayOverlay}>
+                  <Ionicons name="play-circle" size={40} color="rgba(255, 255, 255, 0.9)" />
+                </View>
+              )}
+            </View>
           )}
-          <View style={styles.resourceMeta}>
-            {resource.shared_by_user && (
-              <Text style={styles.resourceCoach}>
-                From {resource.shared_by_user.first_name}
+          <View style={styles.resourceInfo}>
+            <Text style={styles.resourceName}>
+              {resource.filename || 'Resource'}
+            </Text>
+            {resource.notes && (
+              <Text style={styles.resourceNotes} numberOfLines={2}>
+                {resource.notes}
               </Text>
             )}
-            <Text style={styles.resourceDate}>
-              {new Date(resource.created_at).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-              })}
-            </Text>
+            <View style={styles.resourceMeta}>
+              {resource.shared_by && (
+                <Text style={styles.resourceCoach}>
+                  From {resource.shared_by.first_name}
+                </Text>
+              )}
+              <Text style={styles.resourceDate}>
+                {new Date(resource.created_at).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </Text>
+            </View>
           </View>
-        </View>
-      </View>
-    ));
+        </TouchableOpacity>
+      );
+    });
   };
 
   return (

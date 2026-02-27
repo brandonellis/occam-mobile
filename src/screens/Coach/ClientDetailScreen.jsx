@@ -117,20 +117,32 @@ const ClientDetailScreen = ({ route, navigation }) => {
     }
   }, [clientId, loadData]);
 
-  const handleCreateSnapshot = useCallback(async () => {
-    setIsCreatingSnapshot(true);
-    try {
-      await createPerformanceSnapshot(clientId);
-      Alert.alert('Success', 'Progress report shared with client.');
-      loadData(true);
-    } catch (err) {
-      Alert.alert(
-        'Error',
-        err.response?.data?.message || 'Failed to create progress report.'
-      );
-    } finally {
-      setIsCreatingSnapshot(false);
-    }
+  const handleCreateSnapshot = useCallback(() => {
+    Alert.alert(
+      'Share Progress Report',
+      'This will capture a snapshot of the client\'s current curriculum progress and assessment scores, then share it with the client.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Share',
+          onPress: async () => {
+            setIsCreatingSnapshot(true);
+            try {
+              await createPerformanceSnapshot(clientId);
+              Alert.alert('Success', 'Progress report shared with client.');
+              loadData(true);
+            } catch (err) {
+              Alert.alert(
+                'Error',
+                err.response?.data?.message || 'Failed to create progress report.'
+              );
+            } finally {
+              setIsCreatingSnapshot(false);
+            }
+          },
+        },
+      ]
+    );
   }, [clientId, loadData]);
 
   const handleUnshare = useCallback(async (sharedMediaId) => {
@@ -324,17 +336,37 @@ const ClientDetailScreen = ({ route, navigation }) => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Shared Resources</Text>
             {sharedMedia.map((item) => {
-              const mime = item.upload?.mime_type || '';
-              const typeLabel = mime.startsWith('video/') ? 'Video' : mime.startsWith('image/') ? 'Image' : 'Document';
-              const typeIcon = mime.startsWith('video/') ? 'videocam' : mime.startsWith('image/') ? 'image' : 'document';
+              const mime = item.mime_type || '';
+              const isVideo = mime.startsWith('video/');
+              const typeLabel = isVideo ? 'Video' : mime.startsWith('image/') ? 'Image' : 'Document';
+              const typeIcon = isVideo ? 'videocam' : mime.startsWith('image/') ? 'image' : 'document';
+              const handleItemPress = isVideo && item.url
+                ? () => navigation.navigate(SCREENS.VIDEO_PLAYER, {
+                    videoUrl: item.url,
+                    videoTitle: item.filename || 'Video',
+                  })
+                : undefined;
               return (
-              <View key={item.id} style={styles.sharedItem}>
+              <TouchableOpacity
+                key={item.id}
+                style={styles.sharedItem}
+                onPress={handleItemPress}
+                activeOpacity={handleItemPress ? 0.7 : 1}
+                disabled={!handleItemPress}
+              >
                 <View style={styles.sharedItemContent}>
-                  {item.upload?.thumb_url || (item.upload?.url && mime.startsWith('image/')) ? (
-                    <Image
-                      source={{ uri: item.upload.thumb_url || item.upload.url }}
-                      style={styles.sharedItemThumb}
-                    />
+                  {item.thumbnail_url || (item.url && mime.startsWith('image/')) ? (
+                    <View>
+                      <Image
+                        source={{ uri: item.thumbnail_url || item.url }}
+                        style={styles.sharedItemThumb}
+                      />
+                      {isVideo && (
+                        <View style={styles.sharedItemPlayOverlay}>
+                          <Ionicons name="play-circle" size={22} color={colors.white} />
+                        </View>
+                      )}
+                    </View>
                   ) : (
                     <View style={styles.sharedItemThumbPlaceholder}>
                       <Ionicons
@@ -346,7 +378,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                   )}
                   <View style={styles.sharedItemInfo}>
                     <Text style={styles.sharedItemName} numberOfLines={1}>
-                      {item.upload?.original_filename || 'Resource'}
+                      {item.filename || 'Resource'}
                     </Text>
                     <Text style={styles.sharedItemNotes} numberOfLines={1}>
                       {typeLabel}{item.notes ? ` · ${item.notes}` : ''}
@@ -354,19 +386,32 @@ const ClientDetailScreen = ({ route, navigation }) => {
                   </View>
                 </View>
                 <View style={styles.sharedMediaActions}>
-                  {item.upload?.mime_type?.startsWith('video/') && (
-                    <TouchableOpacity
-                      onPress={() =>
-                        navigation.navigate(SCREENS.VIDEO_ANNOTATION, {
-                          uploadId: item.upload.id,
-                          videoUrl: item.upload.url,
-                          videoTitle: item.upload.original_filename || 'Video',
-                        })
-                      }
-                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    >
-                      <Ionicons name="brush-outline" size={18} color={colors.accent} />
-                    </TouchableOpacity>
+                  {isVideo && item.url && (
+                    <>
+                      <TouchableOpacity
+                        onPress={() =>
+                          navigation.navigate(SCREENS.VIDEO_PLAYER, {
+                            videoUrl: item.url,
+                            videoTitle: item.filename || 'Video',
+                          })
+                        }
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="play-circle-outline" size={20} color={colors.accent} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() =>
+                          navigation.navigate(SCREENS.VIDEO_ANNOTATION, {
+                            uploadId: item.upload_id,
+                            videoUrl: item.url,
+                            videoTitle: item.filename || 'Video',
+                          })
+                        }
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      >
+                        <Ionicons name="brush-outline" size={18} color={colors.accent} />
+                      </TouchableOpacity>
+                    </>
                   )}
                   <TouchableOpacity
                     onPress={() => handleUnshare(item.id)}
@@ -375,7 +420,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                     <Ionicons name="close-circle-outline" size={20} color={colors.error} />
                   </TouchableOpacity>
                 </View>
-              </View>
+              </TouchableOpacity>
               );
             })}
           </View>
@@ -403,7 +448,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
           {snapshots.length === 0 ? (
             <View style={styles.emptyMini}>
               <Text style={styles.emptyMiniText}>
-                No progress reports yet. Tap "Share Progress" to create one.
+                No progress reports yet. Tap "Share Progress" to capture a snapshot of curriculum and assessment data to share with the client.
               </Text>
             </View>
           ) : (
