@@ -39,4 +39,7 @@ export const videoPlayerStyles = StyleSheet.create({
   controlButton: {
     padding: spacing.sm,
   },
+  headerSpacer: {
+    width: 24,
+  },
 });

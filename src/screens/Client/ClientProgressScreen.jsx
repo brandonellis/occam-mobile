@@ -75,8 +75,8 @@ const ClientProgressScreen = () => {
         const { data } = await getClientSharedMedia(clientId);
         setResources(data || []);
       }
-    } catch {
-      // Silently handle — empty state will show
+    } catch (err) {
+      console.warn('Failed to load progress data:', err?.message || err);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -193,8 +193,8 @@ const ClientProgressScreen = () => {
             })
           }
         >
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <View style={{ flex: 1 }}>
+          <View style={styles.reportCardRow}>
+            <View style={styles.reportCardContent}>
               <Text style={styles.reportTitle}>{report.title || 'Progress Report'}</Text>
               <Text style={styles.reportDate}>
                 {new Date(report.created_at).toLocaleDateString('en-US', {

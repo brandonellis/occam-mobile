@@ -88,7 +88,7 @@ const CoachDashboardScreen = ({ navigation }) => {
           />
         }
       >
-        <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }]}>
+        <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Hello, {firstName}</Text>
             <Text style={styles.subtitle}>Here's your day at a glance</Text>

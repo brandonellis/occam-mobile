@@ -33,8 +33,8 @@ const ClientHomeScreen = ({ navigation }) => {
         (a.start_time || '').localeCompare(b.start_time || '')
       );
       setSessions(sorted);
-    } catch {
-      // Keep existing state on error
+    } catch (err) {
+      console.warn('Failed to load bookings:', err?.message || err);
     } finally {
       setIsRefreshing(false);
     }
@@ -69,7 +69,7 @@ const ClientHomeScreen = ({ navigation }) => {
           />
         }
       >
-        <View style={[styles.header, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }]}>
+        <View style={styles.header}>
           <View>
             <Text style={styles.greeting}>Welcome, {firstName}</Text>
             <Text style={styles.subtitle}>Ready to improve your game?</Text>

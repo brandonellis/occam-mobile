@@ -95,7 +95,8 @@ const ClientBookingsScreen = ({ navigation }) => {
           .sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
         setBookings(past);
       }
-    } catch {
+    } catch (err) {
+      console.warn('Failed to load bookings:', err?.message || err);
       setBookings([]);
     } finally {
       setIsLoading(false);
@@ -120,7 +121,8 @@ const ClientBookingsScreen = ({ navigation }) => {
             try {
               await cancelBooking(booking.id);
               loadBookings();
-            } catch {
+            } catch (err) {
+              console.warn('Failed to cancel booking:', err?.message || err);
               Alert.alert('Error', 'Failed to cancel booking.');
             }
           },

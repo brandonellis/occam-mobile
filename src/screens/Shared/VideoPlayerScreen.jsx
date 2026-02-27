@@ -47,7 +47,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
         <Text style={styles.headerTitle} numberOfLines={1}>
           {videoTitle || 'Video'}
         </Text>
-        <View style={{ width: 24 }} />
+        <View style={styles.headerSpacer} />
       </View>
 
       <View style={styles.videoWrapper}>

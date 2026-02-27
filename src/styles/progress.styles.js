@@ -125,6 +125,14 @@ export const progressStyles = StyleSheet.create({
     marginBottom: spacing.md,
     ...shadows.sm,
   },
+  reportCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  reportCardContent: {
+    flex: 1,
+  },
   reportTitle: {
     ...typography.label,
     color: colors.textPrimary,

@@ -14,6 +14,9 @@ export const dashboardStyles = StyleSheet.create({
     paddingBottom: spacing.xxxl,
   },
   header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: spacing.xl,
   },
   greeting: {
