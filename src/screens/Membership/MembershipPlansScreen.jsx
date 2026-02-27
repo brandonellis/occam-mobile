@@ -39,7 +39,8 @@ const MembershipPlansScreen = ({ navigation }) => {
         if (defaultCycle) defaults[plan.id] = defaultCycle;
       });
       setSelectedCycles(defaults);
-    } catch {
+    } catch (err) {
+      console.warn('Failed to load membership plans:', err?.message || err);
       setError('Failed to load membership plans.');
     } finally {
       setIsLoading(false);

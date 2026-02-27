@@ -62,7 +62,7 @@ const CoachDashboardScreen = ({ navigation }) => {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [todayKey]);
+  }, [todayKey, user?.id]);
 
   // Load on mount + refresh when returning to dashboard
   useEffect(() => {

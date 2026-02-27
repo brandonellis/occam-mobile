@@ -45,7 +45,8 @@ const CoachScheduleScreen = ({ navigation }) => {
         (a.start_time || '').localeCompare(b.start_time || '')
       );
       setSessions(sorted);
-    } catch {
+    } catch (err) {
+      console.warn('Failed to load sessions:', err?.message || err);
       setSessions([]);
     } finally {
       setIsLoading(false);

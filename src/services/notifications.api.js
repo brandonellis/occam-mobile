@@ -33,7 +33,6 @@ export const markAllNotificationsRead = async () => {
 };
 
 export const getUnreadNotificationCount = async () => {
-  const response = await apiClient.get('/notifications', { params: { per_page: 50 } });
-  const notifications = response.data?.data || [];
-  return notifications.filter((n) => !n.read_at).length;
+  const response = await apiClient.get('/notifications', { params: { limit: 1 } });
+  return response.data?.unread_count ?? 0;
 };

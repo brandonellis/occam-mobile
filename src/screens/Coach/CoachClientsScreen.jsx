@@ -29,7 +29,7 @@ const CoachClientsScreen = ({ navigation }) => {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
 
-      const { data } = await getClients();
+      const { data } = await getClients({ per_page: 100 });
       const list = data || [];
       setClients(list);
       setFiltered(list);
