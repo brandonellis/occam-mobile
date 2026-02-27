@@ -193,16 +193,13 @@ export const videoAnnotationStyles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
-  drawingBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
+  drawingPreview: {
     marginTop: 4,
-  },
-  drawingBadgeText: {
-    ...typography.bodySmall,
-    color: colors.accent,
-    fontSize: 11,
+    width: 60,
+    height: 34,
+    borderRadius: 4,
+    backgroundColor: colors.charcoal || '#2A2D34',
+    overflow: 'hidden',
   },
   annotationAuthor: {
     ...typography.bodySmall,

@@ -401,7 +401,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
             <TouchableOpacity
               style={styles.actionButton}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREENS.LOCATION_SELECTION, { bookingData: { client } })}
+              onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.LOCATION_SELECTION, params: { bookingData: { client } } })}
             >
               <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
               <Text style={styles.actionButtonText}>Book Session</Text>

@@ -126,6 +126,7 @@ const MediaPickerModal = ({
 
   const getThumbnail = (upload) => {
     if (upload.thumb_url) return upload.thumb_url;
+    if (upload.thumbnail_url) return upload.thumbnail_url;
     if (upload.url && upload.mime_type?.startsWith('image/')) return upload.url;
     return null;
   };

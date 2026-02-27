@@ -230,12 +230,22 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
     ]);
   }, [uploadId, loadAnnotations]);
 
-  const handleSeekToAnnotation = useCallback((timestamp) => {
+  const handleSeekToAnnotation = useCallback((annotation) => {
     if (player) {
-      const time = Number(timestamp) || 0;
+      const time = Number(annotation.timestamp) || 0;
       player.currentTime = time;
       player.pause();
       setCapturedTimestamp(time);
+      setIsDrawing(false);
+      setCurrentPath('');
+      setComment(annotation.comment || '');
+
+      // Load saved drawing onto the canvas
+      if (annotation.drawing_data?.paths?.length > 0) {
+        setPaths(annotation.drawing_data.paths);
+      } else {
+        setPaths([]);
+      }
     }
   }, [player]);
 
@@ -261,7 +271,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
     return (
       <TouchableOpacity
         style={styles.annotationItem}
-        onPress={() => handleSeekToAnnotation(item.timestamp)}
+        onPress={() => handleSeekToAnnotation(item)}
         activeOpacity={0.7}
       >
         <View style={styles.annotationTimestamp}>
@@ -275,9 +285,24 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
             <Text style={styles.annotationComment}>{item.comment}</Text>
           )}
           {hasDrawing && (
-            <View style={styles.drawingBadge}>
-              <Ionicons name="brush-outline" size={12} color={colors.accent} />
-              <Text style={styles.drawingBadgeText}>Drawing</Text>
+            <View style={styles.drawingPreview}>
+              <Svg
+                width={60}
+                height={34}
+                viewBox={`0 0 ${item.drawing_data.viewWidth || SCREEN_WIDTH} ${item.drawing_data.viewHeight || VIDEO_HEIGHT}`}
+              >
+                {item.drawing_data.paths.map((p, i) => (
+                  <Path
+                    key={i}
+                    d={p.d}
+                    stroke={p.color}
+                    strokeWidth={3}
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                ))}
+              </Svg>
             </View>
           )}
           <Text style={styles.annotationAuthor}>{authorName}</Text>

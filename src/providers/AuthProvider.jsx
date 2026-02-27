@@ -16,6 +16,8 @@ import {
 } from '../helpers/storage.helper';
 import * as authApi from '../services/auth.api';
 import { getCompany } from '../services/bookings.api';
+import { unregisterPushToken } from '../services/notifications.api';
+import * as Notifications from 'expo-notifications';
 
 const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
@@ -165,6 +167,15 @@ const AuthProvider = ({ children }) => {
 
   const logoutUser = useCallback(async () => {
     try {
+      // Unregister push token before logging out
+      try {
+        const tokenData = await Notifications.getExpoPushTokenAsync();
+        if (tokenData?.data) {
+          await unregisterPushToken(tokenData.data);
+        }
+      } catch {
+        // Push token cleanup is best-effort
+      }
       await authApi.logout();
     } catch {
       // Proceed with local logout even if API call fails

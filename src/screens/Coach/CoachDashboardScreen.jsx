@@ -127,7 +127,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={styles.quickActionButton}
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate(SCREENS.CLIENT_SELECTION, { bookingData: {} })}
+                  onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.CLIENT_SELECTION, params: { bookingData: {} } })}
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: colors.accentLight }]}>
                     <Ionicons name="add-circle-outline" size={18} color={colors.accent} />

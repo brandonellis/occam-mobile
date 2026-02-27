@@ -4,6 +4,8 @@ import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { registerPushToken } from '../services/notifications.api';
+import { navigate } from '../helpers/navigation.helper';
+import { SCREENS } from '../constants/navigation.constants';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -76,9 +78,15 @@ const usePushNotifications = () => {
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data;
-        // Handle navigation based on notification data
         if (data?.screen) {
-          // Navigation will be handled by the component consuming this hook
+          const screenMap = {
+            Bookings: SCREENS.CLIENT_BOOKINGS,
+            Schedule: SCREENS.COACH_SCHEDULE,
+          };
+          const targetScreen = screenMap[data.screen];
+          if (targetScreen) {
+            navigate(targetScreen, data.booking_id ? { bookingId: data.booking_id } : undefined);
+          }
         }
       });
 

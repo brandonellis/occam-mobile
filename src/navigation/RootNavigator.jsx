@@ -1,22 +1,14 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import useAuth from '../hooks/useAuth';
+import usePushNotifications from '../hooks/usePushNotifications';
 import { SCREENS } from '../constants/navigation.constants';
 import { COACH_ROLES } from '../constants/auth.constants';
 import { colors } from '../theme/colors';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import CoachTabNavigator from './CoachTabNavigator';
 import ClientTabNavigator from './ClientTabNavigator';
-import LocationSelectionScreen from '../screens/Booking/LocationSelectionScreen';
-import ClientSelectionScreen from '../screens/Booking/ClientSelectionScreen';
-import ServiceSelectionScreen from '../screens/Booking/ServiceSelectionScreen';
-import DurationSelectionScreen from '../screens/Booking/DurationSelectionScreen';
-import CoachSelectionScreen from '../screens/Booking/CoachSelectionScreen';
-import TimeSlotSelectionScreen from '../screens/Booking/TimeSlotSelectionScreen';
-import BookingConfirmationScreen from '../screens/Booking/BookingConfirmationScreen';
-import MembershipPlansScreen from '../screens/Membership/MembershipPlansScreen';
-import MembershipCheckoutScreen from '../screens/Membership/MembershipCheckoutScreen';
 import ClientDetailScreen from '../screens/Coach/ClientDetailScreen';
 import ClientSharedMediaScreen from '../screens/Coach/ClientSharedMediaScreen';
 import CurriculumEditorScreen from '../screens/Coach/CurriculumEditorScreen';
@@ -26,11 +18,19 @@ import VideoReviewScreen from '../screens/Coach/VideoReviewScreen';
 import VideoAnnotationScreen from '../screens/Coach/VideoAnnotationScreen';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 import VideoPlayerScreen from '../screens/Shared/VideoPlayerScreen';
+import BookingDetailScreen from '../screens/Client/BookingDetailScreen';
 
 const Stack = createNativeStackNavigator();
 
 const RootNavigator = () => {
   const { isLoading, isAuthenticated, activeRole } = useAuth();
+  const { registerToken } = usePushNotifications();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      registerToken();
+    }
+  }, [isAuthenticated, registerToken]);
 
   if (isLoading) {
     return (
@@ -70,55 +70,6 @@ const RootNavigator = () => {
               component={ClientTabNavigator}
             />
           )}
-
-          {/* Booking flow — shared by both Coach and Client */}
-          <Stack.Screen
-            name={SCREENS.LOCATION_SELECTION}
-            component={LocationSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.CLIENT_SELECTION}
-            component={ClientSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.SERVICE_SELECTION}
-            component={ServiceSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.DURATION_SELECTION}
-            component={DurationSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.COACH_SELECTION}
-            component={CoachSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.TIME_SLOT_SELECTION}
-            component={TimeSlotSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.BOOKING_CONFIRMATION}
-            component={BookingConfirmationScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-
-          {/* Membership flow */}
-          <Stack.Screen
-            name={SCREENS.MEMBERSHIP_PLANS}
-            component={MembershipPlansScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.MEMBERSHIP_CHECKOUT}
-            component={MembershipCheckoutScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
 
           {/* Coach detail screens */}
           <Stack.Screen
@@ -162,6 +113,13 @@ const RootNavigator = () => {
           <Stack.Screen
             name={SCREENS.VIDEO_ANNOTATION}
             component={VideoAnnotationScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+
+          {/* Booking detail */}
+          <Stack.Screen
+            name={SCREENS.BOOKING_DETAIL}
+            component={BookingDetailScreen}
             options={{ animation: 'slide_from_right' }}
           />
 

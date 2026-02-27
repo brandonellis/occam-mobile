@@ -1,9 +1,9 @@
 import apiClient from './apiClient';
 
-export const registerPushToken = async (token, platform) => {
+export const registerPushToken = async (token, deviceType) => {
   const response = await apiClient.post('/push-tokens', {
     token,
-    platform,
+    device_type: deviceType,
   });
   return response.data;
 };
@@ -21,13 +21,13 @@ export const getNotifications = async (params = {}) => {
 };
 
 export const markNotificationRead = async (notificationId) => {
-  const response = await apiClient.put(
+  const response = await apiClient.post(
     `/notifications/${notificationId}/read`
   );
   return response.data;
 };
 
 export const markAllNotificationsRead = async () => {
-  const response = await apiClient.put('/notifications/read-all');
+  const response = await apiClient.post('/notifications/read-all');
   return response.data;
 };

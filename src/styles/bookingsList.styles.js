@@ -16,7 +16,7 @@ export const bookingsListStyles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
@@ -27,22 +27,26 @@ export const bookingsListStyles = StyleSheet.create({
   tabText: {
     ...typography.label,
     color: colors.textTertiary,
+    lineHeight: 16,
+    fontSize: 13,
   },
   tabTextActive: {
     color: colors.accent,
   },
   filterBar: {
     flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6,
     gap: spacing.sm,
     backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
   },
   filterChip: {
+    height: 28,
+    justifyContent: 'center',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
     borderRadius: borderRadius.full,
     backgroundColor: colors.background,
     borderWidth: 1,
@@ -56,6 +60,7 @@ export const bookingsListStyles = StyleSheet.create({
     ...typography.labelSmall,
     color: colors.textSecondary,
     fontSize: 12,
+    lineHeight: 14,
   },
   filterChipTextActive: {
     color: colors.textInverse,

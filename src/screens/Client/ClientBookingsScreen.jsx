@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
-  ScrollView,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -27,14 +26,12 @@ const UPCOMING_FILTERS = [
   { key: 'all', label: 'All' },
   { key: '7d', label: 'Next 7 Days' },
   { key: '30d', label: 'Next 30 Days' },
-  { key: '90d', label: 'Next 3 Months' },
 ];
 
 const PAST_FILTERS = [
   { key: 'all', label: 'All' },
   { key: '7d', label: 'Last 7 Days' },
   { key: '30d', label: 'Last 30 Days' },
-  { key: '90d', label: 'Last 3 Months' },
 ];
 
 const STATUS_MAP = {
@@ -138,7 +135,11 @@ const ClientBookingsScreen = ({ navigation }) => {
     const coach = item.coaches?.[0] || null;
 
     return (
-      <View style={styles.bookingCard}>
+      <TouchableOpacity
+        style={styles.bookingCard}
+        onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { booking: item })}
+        activeOpacity={0.7}
+      >
         <View style={styles.bookingCardRow}>
           <View style={styles.bookingTimeBlock}>
             <Text style={styles.bookingTimeValue}>
@@ -196,7 +197,7 @@ const ClientBookingsScreen = ({ navigation }) => {
             </TouchableOpacity>
           </View>
         )}
-      </View>
+      </TouchableOpacity>
     );
   };
 
@@ -222,11 +223,7 @@ const ClientBookingsScreen = ({ navigation }) => {
         ))}
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.filterBar}
-      >
+      <View style={styles.filterBar}>
         {(activeTab === TABS.UPCOMING ? UPCOMING_FILTERS : PAST_FILTERS).map((f) => (
           <TouchableOpacity
             key={f.key}
@@ -247,7 +244,7 @@ const ClientBookingsScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
         ))}
-      </ScrollView>
+      </View>
 
       {isLoading ? (
         <View style={globalStyles.loadingContainer}>

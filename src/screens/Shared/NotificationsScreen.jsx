@@ -11,11 +11,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
 import EmptyState from '../../components/EmptyState';
+import { SCREENS } from '../../constants/navigation.constants';
 import {
   getNotifications,
   markNotificationRead,
   markAllNotificationsRead,
 } from '../../services/notifications.api';
+import { getTimeAgo } from '../../helpers/date.helper';
 import { notificationsStyles as styles } from '../../styles/notifications.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
@@ -33,6 +35,7 @@ const NotificationsScreen = ({ navigation }) => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
 
   const loadNotifications = useCallback(async (showRefresh = false) => {
     try {
@@ -41,8 +44,10 @@ const NotificationsScreen = ({ navigation }) => {
 
       const { data } = await getNotifications();
       setNotifications(data || []);
-    } catch {
+      setError(null);
+    } catch (err) {
       setNotifications([]);
+      setError('Unable to load notifications. Pull down to retry.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -54,18 +59,25 @@ const NotificationsScreen = ({ navigation }) => {
   }, [loadNotifications]);
 
   const handleMarkRead = useCallback(async (notification) => {
-    if (notification.read_at) return;
-    try {
-      await markNotificationRead(notification.id);
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n
-        )
-      );
-    } catch (err) {
-      console.warn('Failed to mark notification as read:', err.message);
+    if (!notification.read_at) {
+      try {
+        await markNotificationRead(notification.id);
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n
+          )
+        );
+      } catch (err) {
+        console.warn('Failed to mark notification as read:', err.message);
+      }
     }
-  }, []);
+
+    // Navigate based on notification data
+    const data = notification.data;
+    if (data?.booking_id) {
+      navigation.navigate(SCREENS.BOOKING_DETAIL, { bookingId: data.booking_id });
+    }
+  }, [navigation]);
 
   const handleMarkAllRead = useCallback(async () => {
     try {
@@ -77,21 +89,6 @@ const NotificationsScreen = ({ navigation }) => {
       console.warn('Failed to mark all notifications as read:', err.message);
     }
   }, []);
-
-  const getTimeAgo = (dateStr) => {
-    if (!dateStr) return '';
-    const now = new Date();
-    const date = new Date(dateStr);
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    const diffDays = Math.floor(diffHours / 24);
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
 
   const hasUnread = notifications.some((n) => !n.read_at);
 
@@ -166,11 +163,19 @@ const NotificationsScreen = ({ navigation }) => {
             />
           }
           ListEmptyComponent={
-            <EmptyState
-              icon="notifications-off-outline"
-              title="No Notifications"
-              message="You're all caught up."
-            />
+            error ? (
+              <EmptyState
+                icon="alert-circle-outline"
+                title="Something Went Wrong"
+                message={error}
+              />
+            ) : (
+              <EmptyState
+                icon="notifications-off-outline"
+                title="No Notifications"
+                message="You're all caught up."
+              />
+            )
           }
         />
       )}

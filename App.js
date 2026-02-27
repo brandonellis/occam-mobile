@@ -6,6 +6,7 @@ import { PaperProvider } from 'react-native-paper';
 import AuthProvider from './src/providers/AuthProvider';
 import StripeConnectProvider from './src/providers/StripeConnectProvider';
 import RootNavigator from './src/navigation/RootNavigator';
+import { navigationRef } from './src/helpers/navigation.helper';
 import ErrorBoundary from './src/components/ErrorBoundary';
 import { initGlobalErrorHandler } from './src/services/errorReporting.service';
 import { paperTheme } from './src/theme';
@@ -19,7 +20,7 @@ export default function App() {
         <ErrorBoundary>
           <AuthProvider>
             <StripeConnectProvider>
-              <NavigationContainer>
+              <NavigationContainer ref={navigationRef}>
                 <StatusBar style="dark" />
                 <RootNavigator />
               </NavigationContainer>

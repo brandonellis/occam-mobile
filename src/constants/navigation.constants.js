@@ -46,6 +46,9 @@ export const SCREENS = {
   // Video annotation
   VIDEO_ANNOTATION: 'VideoAnnotation',
 
+  // Booking detail
+  BOOKING_DETAIL: 'BookingDetail',
+
   // Shared stacks
   VIDEO_PLAYER: 'VideoPlayer',
   NOTIFICATIONS: 'Notifications',

@@ -59,17 +59,6 @@
       ],
       "expo-secure-store",
       [
-        "expo-camera",
-        {
-          "cameraPermission": "Occam Golf needs camera access to record coaching videos.",
-          "microphonePermission": "Occam Golf needs microphone access to record audio with coaching videos.",
-          "recordAudioAndroid": {
-            "audioEncoder": "aac",
-            "outputFormat": "mpeg4"
-          }
-        }
-      ],
-      [
         "expo-media-library",
         {
           "photosPermission": "Occam Golf needs photo library access to save and upload media.",

@@ -51,7 +51,7 @@ const ClientTabNavigator = () => {
       <Tab.Screen
         name="HomeTab"
         component={ClientHomeStack}
-        options={{ tabBarLabel: 'Home' }}
+        options={{ tabBarLabel: 'Home', unmountOnBlur: true }}
       />
       <Tab.Screen
         name={SCREENS.CLIENT_BOOKINGS}
