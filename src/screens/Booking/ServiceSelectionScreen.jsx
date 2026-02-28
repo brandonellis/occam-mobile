@@ -94,7 +94,13 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
       const updatedData = { ...bookingData, service, location: null };
 
       // Resolve location from service's attached locations
-      const effectiveLocations = getServiceLocations(service, locationsRef.current);
+      const serviceLocations = getServiceLocations(service, locationsRef.current);
+
+      // If user is a coach, intersect with the coach's own locations
+      const coachLocationIds = isCoach ? (user?.location_ids || []) : [];
+      const effectiveLocations = coachLocationIds.length > 0
+        ? serviceLocations.filter((loc) => coachLocationIds.includes(loc.id))
+        : serviceLocations;
 
       if (effectiveLocations.length === 1) {
         // Single location — auto-set and proceed

@@ -24,11 +24,31 @@ const CoachSelectionScreen = ({ route, navigation }) => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
       const { data } = await getCoaches();
-      // Filter to active coaches that offer this service (if service has coach_ids)
       let coachList = data || [];
+
+      // Filter to coaches that offer this service (if service has coach_ids)
       if (service?.coach_ids?.length) {
         coachList = coachList.filter((c) => service.coach_ids.includes(c.id));
       }
+
+      // Filter coaches by location availability
+      const location = bookingData.location;
+      const serviceLocationIds = service?.location_ids || [];
+
+      if (location?.id) {
+        // Specific location selected — only show coaches at that location
+        coachList = coachList.filter((c) => {
+          const coachLocIds = c.location_ids || [];
+          return coachLocIds.length === 0 || coachLocIds.includes(location.id);
+        });
+      } else if (serviceLocationIds.length > 0) {
+        // No location yet — show coaches at any of the service's locations
+        coachList = coachList.filter((c) => {
+          const coachLocIds = c.location_ids || [];
+          return coachLocIds.length === 0 || coachLocIds.some((id) => serviceLocationIds.includes(id));
+        });
+      }
+
       setState({ coaches: coachList, isLoading: false, error: null });
     } catch (err) {
       console.warn('Failed to load coaches:', err.message);
@@ -38,7 +58,7 @@ const CoachSelectionScreen = ({ route, navigation }) => {
         error: 'Failed to load coaches.',
       }));
     }
-  }, [service?.coach_ids]);
+  }, [service?.coach_ids, service?.location_ids, bookingData.location]);
 
   useEffect(() => {
     loadCoaches();
