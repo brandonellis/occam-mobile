@@ -208,7 +208,7 @@ const ClientBookingsScreen = ({ navigation }) => {
           <View style={styles.bookingActions}>
             <TouchableOpacity
               style={styles.rebookButton}
-              onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.LOCATION_SELECTION, params: { bookingData: {} } })}
+              onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: {} } })}
               activeOpacity={0.7}
             >
               <Text style={styles.rebookButtonText}>Book Again</Text>
@@ -294,7 +294,7 @@ const ClientBookingsScreen = ({ navigation }) => {
               actionLabel={activeTab === TABS.UPCOMING ? 'Book a Session' : undefined}
               onAction={
                 activeTab === TABS.UPCOMING
-                  ? () => navigation.navigate('HomeTab', { screen: SCREENS.LOCATION_SELECTION, params: { bookingData: {} } })
+                  ? () => navigation.navigate('HomeTab', { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: {} } })
                   : undefined
               }
             />

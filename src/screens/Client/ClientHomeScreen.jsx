@@ -143,7 +143,7 @@ const ClientHomeScreen = ({ navigation }) => {
             <TouchableOpacity
               style={styles.quickActionButton}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREENS.LOCATION_SELECTION, { bookingData: {} })}
+              onPress={() => navigation.navigate(SCREENS.SERVICE_SELECTION, { bookingData: {} })}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.accentLight }]}>
                 <Ionicons name="calendar-outline" size={18} color={colors.accent} />

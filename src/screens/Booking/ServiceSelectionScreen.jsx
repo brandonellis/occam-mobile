@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,9 +7,9 @@ import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { formatDuration } from '../../constants/booking.constants';
 import { formatCurrency } from '../../helpers/pricing.helper';
-import { getServices } from '../../services/bookings.api';
+import { getServices, getLocations } from '../../services/bookings.api';
 import { getCurrentClientMembership } from '../../services/accounts.api';
-import { isClassLike } from '../../helpers/normalizers.helper';
+import { getNextBookingScreen, getServiceLocations } from '../../helpers/booking.helper';
 import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
@@ -27,26 +27,23 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
 
   const clientId = bookingData.client?.id;
   const clientHasMembership = !!bookingData.client?.membership?.is_active;
+  const locationsRef = useRef([]);
 
   const loadServices = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
-      const [servicesRes, membershipRes] = await Promise.allSettled([
+      const [servicesRes, locationsRes, membershipRes] = await Promise.allSettled([
         getServices(),
+        getLocations(),
         clientId && clientHasMembership
           ? getCurrentClientMembership(clientId)
           : Promise.resolve(null),
       ]);
 
       let serviceList = servicesRes.status === 'fulfilled' ? (servicesRes.value.data || []) : [];
-
-      // Filter by location if selected
-      if (bookingData.location?.id) {
-        serviceList = serviceList.filter(
-          (s) => !s.location_id || s.location_id === bookingData.location.id
-        );
-      }
+      const locationList = locationsRes.status === 'fulfilled' ? (locationsRes.value.data || []) : [];
+      locationsRef.current = locationList;
 
       // Filter by membership services if client has an active membership
       let membershipFiltered = false;
@@ -83,7 +80,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
         error: 'Failed to load services. Please try again.',
       }));
     }
-  }, [bookingData.location?.id, clientId, clientHasMembership]);
+  }, [clientId, clientHasMembership]);
 
   useEffect(() => {
     loadServices();
@@ -94,38 +91,26 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
 
   const handleSelectService = useCallback(
     (service) => {
-      const updatedData = { ...bookingData, service };
+      const updatedData = { ...bookingData, service, location: null };
 
-      // Variable-duration services go to duration selection first
-      if (service.is_variable_duration && service.allowed_durations?.length > 0) {
-        navigation.navigate(SCREENS.DURATION_SELECTION, {
+      // Resolve location from service's attached locations
+      const effectiveLocations = getServiceLocations(service, locationsRef.current);
+
+      if (effectiveLocations.length === 1) {
+        // Single location — auto-set and proceed
+        updatedData.location = effectiveLocations[0];
+        const { screen, params } = getNextBookingScreen(updatedData, isCoach, user);
+        navigation.navigate(screen, params);
+      } else if (effectiveLocations.length > 1) {
+        // Multiple locations — show location picker
+        navigation.navigate(SCREENS.LOCATION_SELECTION, {
           bookingData: updatedData,
+          serviceLocations: effectiveLocations,
         });
-        return;
-      }
-
-      // Class/group services skip coach selection — sessions already have coaches assigned
-      if (isClassLike(service)) {
-        navigation.navigate(SCREENS.TIME_SLOT_SELECTION, {
-          bookingData: { ...updatedData, coach: null },
-        });
-        return;
-      }
-
-      if (service.requires_coach) {
-        if (isCoach) {
-          navigation.navigate(SCREENS.TIME_SLOT_SELECTION, {
-            bookingData: { ...updatedData, coach: user },
-          });
-        } else {
-          navigation.navigate(SCREENS.COACH_SELECTION, {
-            bookingData: updatedData,
-          });
-        }
       } else {
-        navigation.navigate(SCREENS.TIME_SLOT_SELECTION, {
-          bookingData: { ...updatedData, coach: null },
-        });
+        // No locations (shouldn't happen) — proceed anyway
+        const { screen, params } = getNextBookingScreen(updatedData, isCoach, user);
+        navigation.navigate(screen, params);
       }
     },
     [navigation, bookingData, isCoach, user]

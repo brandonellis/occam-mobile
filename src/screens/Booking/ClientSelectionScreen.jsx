@@ -48,7 +48,7 @@ const ClientSelectionScreen = ({ route, navigation }) => {
 
   const handleSelectClient = useCallback(
     (client) => {
-      navigation.navigate(SCREENS.LOCATION_SELECTION, {
+      navigation.navigate(SCREENS.SERVICE_SELECTION, {
         bookingData: { ...bookingData, client },
       });
     },
