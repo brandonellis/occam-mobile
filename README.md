@@ -95,4 +95,8 @@ Per the mobile architecture rules, styles are kept in `src/styles/` as separate 
 - [x] **Phase 1**: Auth, booking flow, membership purchase, push notifications
 - [x] **Phase 2**: Video recording/upload, shared resources, progress reports
 - [x] **Phase 3**: Client management, curriculum tools, schedule management
-- [ ] **Phase 4**: Video annotation, offline support, CoPilot AI, analytics
+- [x] **Phase 4**: Video annotation, offline support, CoPilot AI, analytics
+
+## License
+
+This project is licensed under the MIT License.
