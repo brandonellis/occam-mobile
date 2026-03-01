@@ -82,11 +82,12 @@ const usePushNotifications = () => {
           const screenMap = {
             Bookings: SCREENS.CLIENT_BOOKINGS,
             Schedule: SCREENS.COACH_SCHEDULE,
+            Resources: SCREENS.CLIENT_PROGRESS,
+            Notifications: SCREENS.NOTIFICATIONS,
           };
-          const targetScreen = screenMap[data.screen];
-          if (targetScreen) {
-            navigate(targetScreen, data.booking_id ? { bookingId: data.booking_id } : undefined);
-          }
+          const targetScreen = screenMap[data.screen] || SCREENS.NOTIFICATIONS;
+          const params = data.booking_id ? { bookingId: data.booking_id } : undefined;
+          navigate(targetScreen, params);
         }
       });
 

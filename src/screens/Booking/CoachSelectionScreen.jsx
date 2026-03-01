@@ -26,8 +26,8 @@ const CoachSelectionScreen = ({ route, navigation }) => {
       const { data } = await getCoaches();
       let coachList = data || [];
 
-      // Filter to coaches that offer this service (if service has coach_ids)
-      if (service?.coach_ids?.length) {
+      // Filter to coaches that offer this service (if restrict_coaches is enabled)
+      if (service?.restrict_coaches && service?.coach_ids?.length) {
         coachList = coachList.filter((c) => service.coach_ids.includes(c.id));
       }
 
