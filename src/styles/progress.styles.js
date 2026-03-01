@@ -148,6 +148,17 @@ export const progressStyles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
+  reportProgramBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.xs,
+  },
+  reportProgramText: {
+    ...typography.bodySmall,
+    color: colors.accent,
+    fontSize: 12,
+  },
   reportSummary: {
     ...typography.bodySmall,
     color: colors.accent,

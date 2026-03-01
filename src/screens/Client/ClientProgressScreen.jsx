@@ -292,6 +292,7 @@ const ClientProgressScreen = () => {
       const curriculumSummary = payload?.exact?.curriculum?.summary;
       const hasAssessment = !!payload?.exact?.assessment;
       const hasCurriculum = curriculumSummary?.total_lessons > 0;
+      const programName = payload?.program?.name || null;
 
       return (
         <TouchableOpacity
@@ -316,6 +317,12 @@ const ClientProgressScreen = () => {
                 <Text style={styles.reportCoach}>
                   From {report.coach.first_name} {report.coach.last_name}
                 </Text>
+              )}
+              {programName && (
+                <View style={styles.reportProgramBadge}>
+                  <Ionicons name="flag-outline" size={12} color={colors.accent} />
+                  <Text style={styles.reportProgramText}>{programName}</Text>
+                </View>
               )}
               {(hasCurriculum || hasAssessment) && (
                 <Text style={styles.reportSummary}>
