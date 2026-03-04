@@ -12,7 +12,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
-import dayjs from '../../utils/dayjs';
 import useAuth from '../../hooks/useAuth';
 import { bookingsListStyles as styles } from '../../styles/bookingsList.styles';
 import { ListSkeleton } from '../../components/SkeletonLoader';
@@ -75,7 +74,7 @@ const ClientBookingsScreen = ({ navigation }) => {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
 
-      const nowUtc = dayjs.utc();
+      const nowMs = Date.now();
 
       const params = { client_id: user?.id, per_page: 50, ...dateRange };
       const { data } = await getBookings(params);
@@ -83,12 +82,22 @@ const ClientBookingsScreen = ({ navigation }) => {
 
       if (activeTab === TABS.UPCOMING) {
         const upcoming = all
-          .filter((b) => b.start_time && dayjs.utc(b.start_time).isSameOrAfter(nowUtc))
+          .filter((b) => {
+            if (!b.start_time) return false;
+            // Use end_time if available so in-progress bookings stay in upcoming
+            // until they finish; fall back to start_time
+            const cutoff = b.end_time || b.start_time;
+            return new Date(cutoff).getTime() >= nowMs;
+          })
           .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
         setBookings(upcoming);
       } else {
         const past = all
-          .filter((b) => !b.start_time || dayjs.utc(b.start_time).isBefore(nowUtc))
+          .filter((b) => {
+            if (!b.start_time) return true;
+            const cutoff = b.end_time || b.start_time;
+            return new Date(cutoff).getTime() < nowMs;
+          })
           .sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
         setBookings(past);
       }
