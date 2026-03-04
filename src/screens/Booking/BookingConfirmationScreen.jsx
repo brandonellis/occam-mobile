@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { View, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
-import { Text, ProgressBar } from 'react-native-paper';
+import { Text, ProgressBar, Icon } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CardField, useConfirmPayment, StripeProvider } from '@stripe/stripe-react-native';
 import config from '../../config';
@@ -8,13 +8,10 @@ import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { formatDuration } from '../../constants/booking.constants';
-import { createBooking, cancelBooking } from '../../services/bookings.api';
-import { createServicePayment, handlePaymentSuccess } from '../../services/billing.api';
+import { createBooking, cancelBooking, getBooking } from '../../services/bookings.api';
+import { createServicePayment, handlePaymentSuccess, getClientPaymentMethods } from '../../services/billing.api';
 import { getCurrentClientMembership } from '../../services/accounts.api';
-import {
-  buildPaymentSummary,
-  formatCurrency,
-} from '../../helpers/pricing.helper';
+import { buildPaymentSummary } from '../../helpers/pricing.helper';
 import { extractErrorMessage } from '../../helpers/error.helper';
 import useAuth from '../../hooks/useAuth';
 import useEcommerceConfig from '../../hooks/useEcommerceConfig';
@@ -39,6 +36,37 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   // Stripe card state
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState(null);
+
+  // Saved payment methods state (Gap 4)
+  const [savedMethods, setSavedMethods] = useState([]);
+  const [savedMethodsLoading, setSavedMethodsLoading] = useState(false);
+  const [selectedSavedMethodId, setSelectedSavedMethodId] = useState(null);
+  const [paymentMode, setPaymentMode] = useState('card'); // 'card' | 'saved'
+
+  // Success screen state (Gap 5)
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdBookingData, setCreatedBookingData] = useState(null);
+
+  // Success screen entrance animation
+  const successScale = useRef(new Animated.Value(0)).current;
+  const successOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!showSuccess) return;
+    Animated.parallel([
+      Animated.spring(successScale, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successOpacity, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [showSuccess, successScale, successOpacity]);
 
   // Skeleton pulse animation for card loading state
   const skeletonAnim = useRef(new Animated.Value(0.3)).current;
@@ -125,6 +153,32 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const isMembershipBooking =
     membershipStatus?.hasActiveMembership && membershipStatus?.hasUsage;
 
+  // Fetch saved payment methods for authenticated clients (Gap 4)
+  useEffect(() => {
+    if (isCoach || !clientId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        setSavedMethodsLoading(true);
+        const resp = await getClientPaymentMethods(clientId);
+        const methods = resp?.payment_methods || resp?.data || [];
+        if (!cancelled) {
+          const list = Array.isArray(methods) ? methods : [];
+          setSavedMethods(list);
+          if (list.length > 0) {
+            setPaymentMode('saved');
+            setSelectedSavedMethodId(list[0]?.id || null);
+          }
+        }
+      } catch (_) {
+        if (!cancelled) setSavedMethods([]);
+      } finally {
+        if (!cancelled) setSavedMethodsLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [clientId, isCoach]);
+
   // Per-service toggle: service does not require upfront payment
   const isPaymentNotRequired = service?.payment_required === false;
 
@@ -200,18 +254,17 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       setIsSubmitting(true);
       setLoadingMessage('Creating booking...');
       const payload = buildBookingPayload('confirmed');
-      await createBooking(payload);
-
-      Alert.alert('Booking Confirmed', 'Your session has been booked using your membership.', [
-        { text: 'OK', onPress: () => navigation.popToTop() },
-      ]);
+      const result = await createBooking(payload);
+      const booking = result?.data || result;
+      setCreatedBookingData(booking);
+      setShowSuccess(true);
     } catch (error) {
       Alert.alert('Booking Failed', extractErrorMessage(error));
     } finally {
       setIsSubmitting(false);
       setLoadingMessage('');
     }
-  }, [buildBookingPayload, navigation]);
+  }, [buildBookingPayload]);
 
   // Handle one-off payment booking (Stripe card)
   const handlePaymentConfirm = useCallback(async () => {
@@ -267,11 +320,17 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       await handlePaymentSuccess(paymentIntent.id);
 
       // Payment succeeded — clear the pendingBookingId so catch block won't cancel it
+      const confirmedBookingId = pendingBookingId;
       pendingBookingId = null;
 
-      Alert.alert('Payment Successful', 'Your booking has been confirmed and payment processed.', [
-        { text: 'OK', onPress: () => navigation.popToTop() },
-      ]);
+      // Fetch full booking for success screen
+      try {
+        const full = await getBooking(confirmedBookingId);
+        setCreatedBookingData(full?.data || full);
+      } catch (_) {
+        setCreatedBookingData(bookingResponse?.data || bookingResponse);
+      }
+      setShowSuccess(true);
     } catch (error) {
       // Clean up the pending booking so the time slot isn't blocked
       if (pendingBookingId) {
@@ -288,7 +347,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     }
   }, [
     cardComplete, buildBookingPayload, clientId, service,
-    client, user, isCoach, confirmPayment, navigation,
+    client, user, isCoach, confirmPayment,
   ]);
 
   // Handle non-payment booking (staff/coach flow when Stripe not enabled)
@@ -297,18 +356,86 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       setIsSubmitting(true);
       setLoadingMessage('Creating booking...');
       const payload = buildBookingPayload('confirmed');
-      await createBooking(payload);
-
-      Alert.alert('Booking Confirmed', 'Your session has been booked.', [
-        { text: 'OK', onPress: () => navigation.popToTop() },
-      ]);
+      const result = await createBooking(payload);
+      const booking = result?.data || result;
+      setCreatedBookingData(booking);
+      setShowSuccess(true);
     } catch (error) {
       Alert.alert('Booking Failed', extractErrorMessage(error));
     } finally {
       setIsSubmitting(false);
       setLoadingMessage('');
     }
-  }, [buildBookingPayload, navigation]);
+  }, [buildBookingPayload]);
+
+  // Handle saved card payment (Gap 4)
+  const handleSavedCardPayment = useCallback(async () => {
+    if (!selectedSavedMethodId) {
+      Alert.alert('Card Required', 'Please select a saved card to proceed.');
+      return;
+    }
+
+    let pendingBookingId = null;
+
+    try {
+      setIsSubmitting(true);
+
+      // PHASE 1: Create pending booking
+      setLoadingMessage('Creating booking...');
+      const payload = buildBookingPayload('pending');
+      const bookingResponse = await createBooking(payload);
+      pendingBookingId = bookingResponse?.data?.id || bookingResponse?.id;
+
+      // PHASE 2: Create payment intent with saved card
+      setLoadingMessage('Processing payment...');
+      const piResponse = await createServicePayment({
+        client_id: clientId,
+        service_id: service?.id,
+        booking_id: pendingBookingId,
+        use_saved_payment_method: true,
+        payment_method_id: selectedSavedMethodId,
+      });
+
+      if (!piResponse?.success || !piResponse?.payment_intent_id) {
+        throw new Error(piResponse?.error || piResponse?.message || 'Failed to create payment.');
+      }
+
+      // SCA fallback: if requires_action, confirm on-device
+      if (piResponse.status === 'requires_action' && piResponse.client_secret) {
+        setLoadingMessage('Confirming payment...');
+        const { error: confirmError } = await confirmPayment(piResponse.client_secret, {
+          paymentMethodType: 'Card',
+        });
+        if (confirmError) throw new Error(confirmError.message || 'Payment confirmation failed.');
+        await handlePaymentSuccess(piResponse.payment_intent_id);
+      } else if (piResponse.status === 'succeeded') {
+        await handlePaymentSuccess(piResponse.payment_intent_id);
+      }
+
+      pendingBookingId = null;
+
+      // Fetch full booking for success screen
+      try {
+        const full = await getBooking(bookingResponse?.data?.id || bookingResponse?.id);
+        setCreatedBookingData(full?.data || full);
+      } catch (_) {
+        setCreatedBookingData(bookingResponse?.data || bookingResponse);
+      }
+      setShowSuccess(true);
+    } catch (error) {
+      if (pendingBookingId) {
+        try {
+          await cancelBooking(pendingBookingId);
+        } catch (cancelErr) {
+          console.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
+        }
+      }
+      Alert.alert('Payment Failed', extractErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+      setLoadingMessage('');
+    }
+  }, [selectedSavedMethodId, buildBookingPayload, clientId, service, confirmPayment]);
 
   // Main confirm handler — routes to membership, payment, or no-payment flow
   const handleConfirm = useCallback(() => {
@@ -321,24 +448,21 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       Alert.alert('Error', 'This service requires a resource to be selected. Please go back and select a different time slot.');
       return;
     }
-    // Coach flow: membership-only — block if client has no membership coverage
-    if (isCoach && !isMembershipBooking) {
-      Alert.alert(
-        'Membership Required',
-        'This client does not have an active membership with available usage for this service. Bookings through the coach app require a membership.',
-      );
-      return;
-    }
     if (isMembershipBooking) {
       handleMembershipConfirm();
+    } else if (isCoach) {
+      // Coach flow: create confirmed booking directly (payment settled separately via web dashboard)
+      handleNoPaymentConfirm();
     } else if (isPaymentNotRequired) {
       handleNoPaymentConfirm();
+    } else if (paymentsEnabled && paymentMode === 'saved' && selectedSavedMethodId) {
+      handleSavedCardPayment();
     } else if (paymentsEnabled) {
       handlePaymentConfirm();
     } else {
       handleNoPaymentConfirm();
     }
-  }, [clientId, service, selectedResource, isCoach, isMembershipBooking, isPaymentNotRequired, paymentsEnabled, handleMembershipConfirm, handlePaymentConfirm, handleNoPaymentConfirm]);
+  }, [clientId, service, selectedResource, isCoach, isMembershipBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, handleMembershipConfirm, handlePaymentConfirm, handleNoPaymentConfirm, handleSavedCardPayment]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
@@ -346,13 +470,15 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     if (isMembershipBooking) return true;
     // Service doesn't require payment — allow booking without card
     if (isPaymentNotRequired) return true;
-    // Coach flow: membership-only — disable button when no membership coverage
-    if (isCoach) return false;
+    // Coach flow: always allow (booking created as confirmed, payment settled separately)
+    if (isCoach) return true;
+    // Client flow: saved card selected — allow if a method is chosen
+    if (paymentsEnabled && paymentMode === 'saved') return !!selectedSavedMethodId;
     // Client flow: one-off payment — require card if payments are enabled
     if (paymentsEnabled) return cardComplete;
-    // Payments not enabled — allow booking without payment (staff flow)
+    // Payments not enabled — allow booking without payment
     return true;
-  }, [isSubmitting, membershipLoading, ecommerceLoading, isMembershipBooking, isPaymentNotRequired, isCoach, paymentsEnabled, cardComplete]);
+  }, [isSubmitting, membershipLoading, ecommerceLoading, isMembershipBooking, isPaymentNotRequired, isCoach, paymentsEnabled, paymentMode, selectedSavedMethodId, cardComplete]);
 
   // Allotment progress bars for membership
   const renderAllotmentSection = () => {
@@ -367,6 +493,23 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
     // No membership at all
     if (!membershipStatus?.hasActiveMembership && membershipStatus !== null) {
+      // Coach sees a calm informational banner — not a warning
+      if (isCoach) {
+        return (
+          <View style={styles.allotmentSection}>
+            <Text style={styles.allotmentTitle}>Payment</Text>
+            <View style={styles.coachInfoBanner}>
+              <Text style={styles.coachInfoBannerText}>
+                {membershipStatus.isPaused
+                  ? `${client?.first_name || 'This client'}'s membership is currently paused.`
+                  : `${client?.first_name || 'This client'} doesn't have an active membership.`}
+                {' '}This booking will be created as confirmed.
+              </Text>
+            </View>
+          </View>
+        );
+      }
+      // Client sees the standard membership status with payment info
       return (
         <View style={styles.allotmentSection}>
           <Text style={styles.allotmentTitle}>
@@ -375,17 +518,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           <View style={styles.allotmentNoMembership}>
             <Text style={styles.allotmentNoMembershipText}>
               {membershipStatus.isPaused
-                ? isCoach
-                  ? 'This client\'s membership is paused. Benefits are temporarily unavailable.'
-                  : 'Your membership is paused. Benefits are temporarily unavailable.'
-                : isCoach
-                  ? 'This client does not have an active membership.'
-                  : "You don't currently have an active membership."}
+                ? 'Your membership is paused. Benefits are temporarily unavailable.'
+                : "You don't currently have an active membership."}
             </Text>
             <Text style={[styles.allotmentNoMembershipText, { marginTop: 4, fontSize: 12 }]}>
-              {isCoach
-                ? 'A membership with available usage is required to book through the app.'
-                : 'Payment will be processed as a one-time booking.'}
+              Payment will be processed as a one-time booking.
             </Text>
           </View>
         </View>
@@ -450,14 +587,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
           {/* Warning if current service has no remaining usage */}
           {!membershipStatus.hasUsage && (
-            <View style={styles.allotmentWarningBanner}>
-              <Text style={styles.allotmentNoMembershipText}>
-                This service isn't covered or {isCoach ? 'the client has' : 'you\'ve'} reached the limit.
-              </Text>
-              <Text style={[styles.allotmentNoMembershipText, { marginTop: 4, fontSize: 12 }]}>
+            <View style={isCoach ? styles.coachInfoBanner : styles.allotmentWarningBanner}>
+              <Text style={isCoach ? styles.coachInfoBannerText : styles.allotmentNoMembershipText}>
                 {isCoach
-                  ? 'A membership with available usage for this service is required.'
-                  : 'Payment will be processed as a one-time booking.'}
+                  ? `This service isn't covered by ${client?.first_name || 'the client'}'s plan, or the allotment has been used. The booking will be created as confirmed.`
+                  : "This service isn't covered by your plan, or you've reached the allotment limit. Payment will be processed as a one-time booking."}
               </Text>
             </View>
           )}
@@ -500,28 +634,215 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     return (
       <View style={styles.cardSection}>
         <Text style={styles.cardSectionTitle}>Payment Method</Text>
-        <CardField
-          postalCodeEnabled={false}
-          placeholders={{ number: '4242 4242 4242 4242' }}
-          cardStyle={{
-            backgroundColor: colors.background,
-            textColor: colors.textPrimary,
-            borderWidth: 1,
-            borderColor: colors.border,
-            borderRadius: 8,
-            fontSize: 16,
-            placeholderColor: colors.textTertiary,
-          }}
-          style={styles.cardField}
-          onCardChange={(details) => {
-            setCardComplete(details.complete);
-            setCardError(details.validationError?.message || null);
-          }}
-        />
-        {cardError && <Text style={styles.cardError}>{cardError}</Text>}
+
+        {/* Saved card / New card toggle (Gap 4) */}
+        {savedMethods.length > 0 && (
+          <View style={styles.paymentModeToggle}>
+            <TouchableOpacity
+              style={[styles.paymentModeOption, paymentMode === 'saved' && styles.paymentModeOptionActive]}
+              onPress={() => setPaymentMode('saved')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentModeText, paymentMode === 'saved' && styles.paymentModeTextActive]}>
+                Saved Card
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.paymentModeOption, paymentMode === 'card' && styles.paymentModeOptionActive]}
+              onPress={() => setPaymentMode('card')}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.paymentModeText, paymentMode === 'card' && styles.paymentModeTextActive]}>
+                New Card
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {paymentMode === 'saved' && savedMethods.length > 0 ? (
+          <View>
+            {savedMethods.map((method) => {
+              const card = method.card || {};
+              const isSelected = selectedSavedMethodId === method.id;
+              return (
+                <TouchableOpacity
+                  key={method.id}
+                  style={[styles.savedCardItem, isSelected && styles.savedCardItemSelected]}
+                  onPress={() => setSelectedSavedMethodId(method.id)}
+                  activeOpacity={0.7}
+                >
+                  <View style={styles.savedCardInfo}>
+                    <Icon
+                      source="credit-card-outline"
+                      size={22}
+                      color={isSelected ? colors.accent : colors.textTertiary}
+                    />
+                    <View>
+                      <Text style={[styles.savedCardBrand, isSelected && styles.savedCardTextSelected]}>
+                        {(card.brand || 'Card').toUpperCase()}
+                      </Text>
+                      <Text style={[styles.savedCardLast4, isSelected && styles.savedCardTextSelected]}>
+                        •••• {card.last4 || '????'}
+                        {card.exp_month && card.exp_year && (
+                          <Text style={styles.savedCardExpiry}>
+                            {'  '}{String(card.exp_month).padStart(2, '0')}/{String(card.exp_year).slice(-2)}
+                          </Text>
+                        )}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={[styles.savedCardRadio, isSelected && styles.savedCardRadioSelected]}>
+                    {isSelected && <View style={styles.savedCardRadioDot} />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : (
+          <>
+            <CardField
+              postalCodeEnabled={false}
+              placeholders={{ number: '4242 4242 4242 4242' }}
+              cardStyle={{
+                backgroundColor: colors.background,
+                textColor: colors.textPrimary,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                fontSize: 16,
+                placeholderColor: colors.textTertiary,
+              }}
+              style={styles.cardField}
+              onCardChange={(details) => {
+                setCardComplete(details.complete);
+                setCardError(details.validationError?.message || null);
+              }}
+            />
+            {cardError && <Text style={styles.cardError}>{cardError}</Text>}
+          </>
+        )}
       </View>
     );
   };
+
+  // Success confirmation screen
+  if (showSuccess) {
+    const successService = createdBookingData?.services?.[0] || service;
+    const successCoach = createdBookingData?.coaches?.[0] || coach;
+    const successLocation = createdBookingData?.location || location;
+    const bookingCode = createdBookingData?.booking_code;
+    const clientName = client ? `${client.first_name}` : null;
+
+    const getSuccessSubtitle = () => {
+      if (isMembershipBooking && isCoach && clientName) {
+        return `${clientName}'s membership session is all set.`;
+      }
+      if (isMembershipBooking) {
+        return 'Your membership session is all set.';
+      }
+      if (isCoach && clientName) {
+        return `${clientName}'s session has been booked.`;
+      }
+      if (isCoach) {
+        return 'The session has been booked for your client.';
+      }
+      return 'Your session is all set. See you there!';
+    };
+
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, styles.successContainer]}>
+          {/* Animated checkmark icon */}
+          <Animated.View style={[
+            styles.successIconCircle,
+            { transform: [{ scale: successScale }], opacity: successOpacity },
+          ]}>
+            <Icon source="check-bold" size={40} color={colors.white} />
+          </Animated.View>
+
+          <Animated.View style={{ opacity: successOpacity, alignItems: 'center' }}>
+            <Text style={styles.successTitle}>Booking Confirmed</Text>
+            <Text style={styles.successSubtitle}>{getSuccessSubtitle()}</Text>
+          </Animated.View>
+
+          {/* Booking code — only show real codes, not raw numeric IDs */}
+          {bookingCode && typeof bookingCode === 'string' && bookingCode.length > 3 && (
+            <Animated.View style={[styles.successCodeContainer, { opacity: successOpacity }]}>
+              <Text style={styles.successCodeLabel}>BOOKING REFERENCE</Text>
+              <Text style={styles.successCodeValue}>{bookingCode}</Text>
+            </Animated.View>
+          )}
+
+          <Animated.View style={[styles.successDetailsCard, { opacity: successOpacity }]}>
+            {successService && (
+              <>
+                <Text style={styles.successDetailLabel}>SERVICE</Text>
+                <Text style={styles.successDetailValue}>{successService.name}</Text>
+              </>
+            )}
+            {successCoach && (
+              <>
+                <View style={styles.successDetailDivider} />
+                <Text style={styles.successDetailLabel}>COACH</Text>
+                <View style={styles.successDetailRow}>
+                  <Avatar
+                    uri={successCoach.avatar_url}
+                    name={`${successCoach.first_name} ${successCoach.last_name}`}
+                    size={28}
+                  />
+                  <Text style={[styles.successDetailValue, { marginLeft: 8 }]}>
+                    {successCoach.first_name} {successCoach.last_name}
+                  </Text>
+                </View>
+              </>
+            )}
+            {successLocation && (
+              <>
+                <View style={styles.successDetailDivider} />
+                <Text style={styles.successDetailLabel}>LOCATION</Text>
+                <Text style={styles.successDetailValue}>{successLocation.name}</Text>
+              </>
+            )}
+            <View style={styles.successDetailDivider} />
+            <Text style={styles.successDetailLabel}>DATE & TIME</Text>
+            <Text style={styles.successDetailValue}>{formattedDate}</Text>
+            <Text style={styles.successDetailTime}>
+              {formatTimeInTz(timeSlot?.start_time, company)}
+              {timeSlot?.end_time ? ` – ${formatTimeInTz(timeSlot.end_time, company)}` : ''}
+            </Text>
+          </Animated.View>
+        </ScrollView>
+
+        <View style={styles.successBottomBar}>
+          {isCoach && (
+            <TouchableOpacity
+              style={styles.successSecondaryButton}
+              onPress={() => navigation.popToTop()}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.successSecondaryButtonText}>Back to Schedule</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity
+            style={[styles.continueButton, !isCoach && { flex: 1 }]}
+            onPress={() => {
+              if (isCoach) {
+                // Navigate back to client selection for another booking
+                navigation.popToTop();
+              } else {
+                navigation.popToTop();
+              }
+            }}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.continueButtonText}>
+              {isCoach ? 'Book Another Session' : 'Done'}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -607,14 +928,16 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         {/* Membership Allotment */}
         {renderAllotmentSection()}
 
-        {/* Membership Booking Success Banner */}
+        {/* Membership Booking Banner */}
         {isMembershipBooking && (
           <View style={[styles.confirmSection, { backgroundColor: colors.successLight }]}>
             <Text style={[styles.confirmLabel, { color: colors.success }]}>
-              NO PAYMENT REQUIRED
+              INCLUDED WITH MEMBERSHIP
             </Text>
             <Text style={[styles.confirmSubtext, { color: colors.textSecondary, marginTop: 2 }]}>
-              This booking will be processed using your membership allotment.
+              {isCoach
+                ? `This session will use ${client?.first_name || 'the client'}'s membership allotment.`
+                : 'This session will use your membership allotment. No payment needed.'}
             </Text>
           </View>
         )}
@@ -623,15 +946,17 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         {!isMembershipBooking && isPaymentNotRequired && (
           <View style={[styles.confirmSection, { backgroundColor: colors.successLight }]}>
             <Text style={[styles.confirmLabel, { color: colors.success }]}>
-              NO UPFRONT PAYMENT NEEDED
+              NO UPFRONT PAYMENT
             </Text>
             <Text style={[styles.confirmSubtext, { color: colors.textSecondary, marginTop: 2 }]}>
-              This service does not require payment at the time of booking. Payment may be collected at your appointment.
+              {isCoach
+                ? 'This service does not require payment at booking. Payment can be collected separately.'
+                : 'No payment is needed right now. Payment may be collected at your appointment.'}
             </Text>
           </View>
         )}
 
-        {/* Stripe Card Input (client one-off only — coaches use membership) */}
+        {/* Stripe Card Input (client one-off only — coaches create confirmed bookings directly) */}
         {renderCardSection()}
 
         {/* Payment Summary */}
@@ -702,14 +1027,12 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             ) : (
               <Text style={styles.continueButtonText}>
                 {isMembershipBooking
-                  ? 'Confirm (Membership)'
-                  : isPaymentNotRequired
-                    ? 'Confirm Booking'
-                    : isCoach
-                      ? 'Membership Required'
-                      : paymentsEnabled
-                        ? `Pay ${summary.totalFormatted}`
-                        : 'Confirm Booking'}
+                  ? 'Confirm Session'
+                  : isCoach
+                    ? 'Book Session'
+                    : isPaymentNotRequired || !paymentsEnabled
+                      ? 'Confirm Booking'
+                      : `Pay ${summary.totalFormatted}`}
               </Text>
             )}
           </TouchableOpacity>

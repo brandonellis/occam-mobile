@@ -44,3 +44,14 @@ export const createMembershipSubscription = async (data) => {
   const response = await apiClient.post('/billing/membership-subscription', data);
   return response.data;
 };
+
+/**
+ * Fetch saved payment methods for a client.
+ *
+ * @param {number} clientId
+ * @returns {Promise<Object>} { payment_methods, default_payment_method }
+ */
+export const getClientPaymentMethods = async (clientId) => {
+  const response = await apiClient.get(`/clients/${clientId}/payment-methods`);
+  return response.data;
+};
