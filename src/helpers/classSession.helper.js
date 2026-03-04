@@ -1,4 +1,4 @@
-import dayjs from '../utils/dayjs';
+import { formatTimeInTz, getTodayKey } from './timezone.helper';
 
 /**
  * Build grouped-by-coach structure and a flattened slot list
@@ -7,12 +7,15 @@ import dayjs from '../utils/dayjs';
  * Exact port of occam-client/src/utils/classSessionHelpers.js.
  *
  * @param {object} result - API response; supports shapes: { data: {coachId: {coach, sessions[]}} } or { groups: ... } or raw object
- * @param {dayjs.Dayjs|string|Date} selectedDate - the currently selected date (used to compute is_past)
+ * @param {string} selectedDateKey - YYYY-MM-DD date key for the selected date
+ * @param {Object|null} company - Company object with timezone property (for Hermes-safe formatting)
  * @returns {{ groups: Array<{coach: object|null, slots: Array<object>}>, flat: Array<object> }}
  */
-export function buildClassSessionGroups(result, selectedDate) {
+export function buildClassSessionGroups(result, selectedDateKey, company) {
   const groupsObj = result?.data || result?.groups || result || {};
-  const isSameDayAsToday = dayjs(selectedDate).isSame(dayjs(), 'day');
+  const todayKey = getTodayKey(company);
+  const isSameDayAsToday = String(selectedDateKey) === todayKey;
+  const nowMs = Date.now();
 
   const groups = [];
   const flat = [];
@@ -38,11 +41,11 @@ export function buildClassSessionGroups(result, selectedDate) {
       already_attending: !!s.already_attending,
       on_waitlist: !!s.on_waitlist,
       waitlist_count: typeof s.waitlist_count === 'number' ? s.waitlist_count : 0,
-      is_past: isSameDayAsToday && dayjs(s.start_at).isBefore(dayjs()),
+      is_past: isSameDayAsToday && new Date(s.start_at).getTime() < nowMs,
       coach: group.coach || s.coach || null,
       location: s.location || null,
-      // Display time for slot rendering
-      display_time: dayjs(s.start_at).format('h:mm A'),
+      // Display time for slot rendering (Hermes-safe via Intl.DateTimeFormat)
+      display_time: formatTimeInTz(s.start_at, company),
     }));
 
     slots.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));

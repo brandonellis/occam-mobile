@@ -36,7 +36,7 @@ import { colors } from '../../theme';
 
 // ── Main Screen ──────────────────────────────────────────
 const ClientActivityFeedScreen = () => {
-  const { user } = useAuth();
+  const { user, company } = useAuth();
   const [state, dispatch] = useReducer(feedReducer, feedInitialState);
   const [selectedItem, setSelectedItem] = useState(null);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -185,7 +185,7 @@ const ClientActivityFeedScreen = () => {
         </View>
       );
     }
-    return <ActivityCard item={row.data} onPress={handleCardPress} />;
+    return <ActivityCard item={row.data} onPress={handleCardPress} company={company} />;
   }, [handleCardPress]);
 
   const keyExtractor = useCallback((row) => row.key, []);

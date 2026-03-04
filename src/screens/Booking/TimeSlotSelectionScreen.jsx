@@ -196,7 +196,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         client_id: bookingData?.client?.id || user?.id || undefined,
       };
       const result = await getAvailableClassSessionsByCoach(params);
-      const { groups, flat } = buildClassSessionGroups(result, selectedDayjs);
+      const { groups, flat } = buildClassSessionGroups(result, dateItem.key, company);
       setClassGroups(groups);
       setClassSlots(flat);
     } catch (err) {

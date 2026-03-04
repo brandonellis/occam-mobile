@@ -6,7 +6,6 @@ import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
-import dayjs from '../../utils/dayjs';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
 import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
@@ -57,12 +56,12 @@ const ClientHomeScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, loadBookings]);
 
-  // Filter to only upcoming sessions (compare in UTC for reliability)
-  const nowUtc = dayjs.utc();
+  // Filter to only upcoming sessions using native Date (Hermes-safe)
+  const nowMs = Date.now();
   const upcomingSessions = sessions.filter((s) => {
     if (!s.start_time) return true;
-    const startUtc = dayjs.utc(s.start_time);
-    return !startUtc.isValid() || startUtc.isSameOrAfter(nowUtc);
+    const cutoff = s.end_time || s.start_time;
+    return new Date(cutoff).getTime() >= nowMs;
   });
 
   if (isLoading) {

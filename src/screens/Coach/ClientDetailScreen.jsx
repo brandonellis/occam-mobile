@@ -518,6 +518,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                   <ActivityCard
                     key={item.id}
                     item={item}
+                    company={company}
                     onPress={(pressed) => setSelectedActivity(pressed)}
                   />
                 ))}

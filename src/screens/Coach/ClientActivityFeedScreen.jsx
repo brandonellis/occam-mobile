@@ -30,10 +30,12 @@ import {
   getDateBoundsFromPreset,
 } from '../../helpers/activity.helper';
 import { feedReducer, feedInitialState, FEED_ACTIONS } from '../../reducers/activityFeed.reducer';
+import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
 
 const ClientActivityFeedScreen = ({ route, navigation }) => {
   const { clientId, clientName } = route.params;
+  const { company } = useAuth();
   const [state, dispatch] = useReducer(feedReducer, feedInitialState);
   const [selectedItem, setSelectedItem] = useState(null);
   const [detailVisible, setDetailVisible] = useState(false);
@@ -171,7 +173,7 @@ const ClientActivityFeedScreen = ({ route, navigation }) => {
         </View>
       );
     }
-    return <ActivityCard item={row.data} onPress={handleCardPress} />;
+    return <ActivityCard item={row.data} onPress={handleCardPress} company={company} />;
   }, [handleCardPress]);
 
   const keyExtractor = useCallback((row) => row.key, []);

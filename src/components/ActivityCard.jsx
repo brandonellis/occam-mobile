@@ -3,21 +3,10 @@ import { View, Text, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { activityFeedStyles as styles } from '../styles/activityFeed.styles';
 import { ACTIVITY_TYPE_CONFIG } from '../constants/activity.constants';
+import { formatDateTimeInTz } from '../helpers/timezone.helper';
 import AuthenticatedImage from './AuthenticatedImage';
 import AuthenticatedVideo from './AuthenticatedVideo';
 import { colors } from '../theme';
-
-const formatTime = (dateStr) => {
-  if (!dateStr) return '';
-  const date = new Date(dateStr);
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const hours = date.getHours();
-  const mins = date.getMinutes();
-  const ampm = hours >= 12 ? 'PM' : 'AM';
-  const h = hours % 12 || 12;
-  const m = mins < 10 ? `0${mins}` : mins;
-  return `${days[date.getDay()]} ${h}:${m} ${ampm}`;
-};
 
 const getCoachName = (item) => {
   const coach = item?.coach || item?.coaches?.[0] || item?.shared_by;
@@ -59,7 +48,7 @@ const isVideoResource = (item) => {
   return mime.startsWith('video/');
 };
 
-const ActivityCard = ({ item, onPress }) => {
+const ActivityCard = ({ item, onPress, company }) => {
   const typeConfig = ACTIVITY_TYPE_CONFIG[item?.type];
   const accentColor = typeConfig?.color || colors.accent;
   const coachName = useMemo(() => getCoachName(item), [item]);
@@ -94,7 +83,7 @@ const ActivityCard = ({ item, onPress }) => {
               </Text>
               {item?.start_time && (
                 <Text style={styles.cardMeta}>
-                  {formatTime(item.start_time)}
+                  {formatDateTimeInTz(item.start_time, company)}
                   {item?.status ? ` · ${item.status}` : ''}
                 </Text>
               )}
@@ -191,7 +180,7 @@ const ActivityCard = ({ item, onPress }) => {
           ) : null}
           <View style={styles.footerSpacer} />
           {item?.created_at ? (
-            <Text style={styles.footerTime}>{formatTime(item.created_at)}</Text>
+            <Text style={styles.footerTime}>{formatDateTimeInTz(item.created_at, company)}</Text>
           ) : null}
         </View>
       </View>
