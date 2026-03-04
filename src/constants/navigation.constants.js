@@ -13,6 +13,7 @@ export const SCREENS = {
   CLIENT_TABS: 'ClientTabs',
   CLIENT_HOME: 'ClientHome',
   CLIENT_BOOKINGS: 'ClientBookings',
+  CLIENT_ACTIVITY: 'ClientActivity',
   CLIENT_PROGRESS: 'ClientProgress',
   CLIENT_PROFILE: 'ClientProfile',
 
@@ -32,6 +33,7 @@ export const SCREENS = {
   // Coach detail screens
   CLIENT_DETAIL: 'ClientDetail',
   CLIENT_SHARED_MEDIA: 'ClientSharedMedia',
+  CLIENT_ACTIVITY_FEED: 'ClientActivityFeed',
 
   // Curriculum
   CURRICULUM_EDITOR: 'CurriculumEditor',

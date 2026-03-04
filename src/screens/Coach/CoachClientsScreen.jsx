@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   TextInput,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,58 +18,113 @@ import { colors } from '../../theme';
 import { coachClientsStyles as styles } from '../../styles/coachClients.styles';
 import { ListSkeleton } from '../../components/SkeletonLoader';
 
+const PER_PAGE = 50;
+const SEARCH_DEBOUNCE_MS = 350;
+
 const CoachClientsScreen = ({ navigation }) => {
   const [clients, setClients] = useState([]);
-  const [filtered, setFiltered] = useState([]);
   const [search, setSearch] = useState('');
+  const [totalCount, setTotalCount] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const debounceRef = useRef(null);
+  const activeSearchRef = useRef('');
 
-  const loadClients = useCallback(async (showRefresh = false) => {
+  const fetchClients = useCallback(async ({ page = 1, searchTerm = '', append = false, refresh = false }) => {
     try {
-      if (showRefresh) setIsRefreshing(true);
+      if (refresh) setIsRefreshing(true);
+      else if (append) setIsLoadingMore(true);
+      else if (searchTerm) setIsSearching(true);
       else setIsLoading(true);
 
-      const { data } = await getClients({ per_page: 100 });
-      const list = data || [];
-      setClients(list);
-      setFiltered(list);
+      const params = { per_page: PER_PAGE, page };
+      if (searchTerm) params.search = searchTerm;
+
+      const res = await getClients(params);
+      const list = res?.data || [];
+      const meta = res?.meta || {};
+
+      if (append) {
+        setClients((prev) => {
+          const ids = new Set(prev.map((c) => c.id));
+          const unique = list.filter((c) => !ids.has(c.id));
+          return [...prev, ...unique];
+        });
+      } else {
+        setClients(list);
+      }
+
+      setTotalCount(meta.total ?? list.length);
+      setCurrentPage(meta.current_page ?? page);
+      setLastPage(meta.last_page ?? page);
     } catch (err) {
       console.warn('Failed to load clients:', err?.message || err);
-      setClients([]);
-      setFiltered([]);
+      if (!append) {
+        setClients([]);
+        setTotalCount(0);
+      }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+      setIsLoadingMore(false);
+      setIsSearching(false);
     }
   }, []);
 
-  // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
+  // Defer initial fetch to focus
   const hasLoaded = useRef(false);
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
-      loadClients(hasLoaded.current);
+      activeSearchRef.current = '';
+      fetchClients({ page: 1, searchTerm: '', refresh: hasLoaded.current });
       hasLoaded.current = true;
     });
     return unsubscribe;
-  }, [navigation, loadClients]);
+  }, [navigation, fetchClients]);
 
+  // Clean up debounce timer on unmount
   useEffect(() => {
-    if (!search.trim()) {
-      setFiltered(clients);
-      return;
-    }
-    const q = search.toLowerCase();
-    setFiltered(
-      clients.filter((c) => {
-        const name = `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase();
-        const email = (c.email || '').toLowerCase();
-        return name.includes(q) || email.includes(q);
-      })
-    );
-  }, [search, clients]);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
-  const renderClient = ({ item }) => {
+  // Debounced server-side search
+  const handleSearchChange = useCallback((text) => {
+    setSearch(text);
+
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      const term = text.trim();
+      activeSearchRef.current = term;
+      setIsSearching(true);
+      fetchClients({ page: 1, searchTerm: term });
+    }, SEARCH_DEBOUNCE_MS);
+  }, [fetchClients]);
+
+  const handleClearSearch = useCallback(() => {
+    setSearch('');
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    activeSearchRef.current = '';
+    setIsSearching(true);
+    fetchClients({ page: 1, searchTerm: '' });
+  }, [fetchClients]);
+
+  const handleRefresh = useCallback(() => {
+    fetchClients({ page: 1, searchTerm: activeSearchRef.current, refresh: true });
+  }, [fetchClients]);
+
+  const handleLoadMore = useCallback(() => {
+    if (isLoadingMore || currentPage >= lastPage) return;
+    fetchClients({ page: currentPage + 1, searchTerm: activeSearchRef.current, append: true });
+  }, [isLoadingMore, currentPage, lastPage, fetchClients]);
+
+  const renderClient = useCallback(({ item }) => {
     const fullName = `${item.first_name || ''} ${item.last_name || ''}`.trim();
     return (
       <TouchableOpacity
@@ -90,14 +146,25 @@ const CoachClientsScreen = ({ navigation }) => {
         <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
       </TouchableOpacity>
     );
-  };
+  }, [navigation]);
+
+  const ListFooter = useCallback(() => {
+    if (isLoadingMore) {
+      return (
+        <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+          <ActivityIndicator size="small" color={colors.accent} />
+        </View>
+      );
+    }
+    return null;
+  }, [isLoadingMore]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Clients</Text>
         <Text style={styles.headerCount}>
-          {clients.length} total
+          {totalCount} total
         </Text>
       </View>
 
@@ -108,34 +175,39 @@ const CoachClientsScreen = ({ navigation }) => {
           placeholder="Search clients..."
           placeholderTextColor={colors.textTertiary}
           value={search}
-          onChangeText={setSearch}
+          onChangeText={handleSearchChange}
           autoCorrect={false}
         />
-        {search.length > 0 && (
-          <TouchableOpacity onPress={() => setSearch('')}>
+        {isSearching ? (
+          <ActivityIndicator size="small" color={colors.accent} />
+        ) : search.length > 0 ? (
+          <TouchableOpacity onPress={handleClearSearch}>
             <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
 
       {isLoading ? (
         <ListSkeleton count={6} />
       ) : (
         <FlatList
-          data={filtered}
+          data={clients}
           renderItem={renderClient}
           keyExtractor={(item) => String(item.id)}
           contentContainerStyle={[
             styles.listContent,
-            filtered.length === 0 && { flex: 1 },
+            clients.length === 0 && { flex: 1 },
           ]}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadClients(true)}
+              onRefresh={handleRefresh}
               tintColor={colors.primary}
             />
           }
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={ListFooter}
           ListEmptyComponent={
             <EmptyState
               icon="people-outline"

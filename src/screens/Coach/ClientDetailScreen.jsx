@@ -17,6 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
 import MediaPickerModal from '../../components/MediaPickerModal';
+import ActivityCard from '../../components/ActivityCard';
+import ActivityDetailSheet from '../../components/ActivityDetailSheet';
 import { SCREENS } from '../../constants/navigation.constants';
 import {
   getClient,
@@ -28,6 +30,7 @@ import {
   createPerformanceSnapshot,
 } from '../../services/accounts.api';
 import { getBookings } from '../../services/bookings.api';
+import { getClientActivities } from '../../services/activity.api';
 import { clientDetailStyles as styles } from '../../styles/clientDetail.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
@@ -154,6 +157,7 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 }
 
 const SECTIONS = {
+  ACTIVITY: 'activity',
   CURRICULUM: 'curriculum',
   RESOURCES: 'resources',
   REPORTS: 'reports',
@@ -176,6 +180,9 @@ const ClientDetailScreen = ({ route, navigation }) => {
   const [isSharing, setIsSharing] = useState(false);
   const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
   const [showAllModules, setShowAllModules] = useState(false);
+  const [activities, setActivities] = useState([]);
+  const [activitiesTotal, setActivitiesTotal] = useState(0);
+  const [selectedActivity, setSelectedActivity] = useState(null);
   const [snackbar, setSnackbar] = useState({ visible: false, message: '', undoData: null });
   const undoTimerRef = useRef(null);
 
@@ -222,7 +229,13 @@ const ClientDetailScreen = ({ route, navigation }) => {
   const loadSectionData = useCallback(async (section) => {
     setLoadingSections((prev) => ({ ...prev, [section]: true }));
     try {
-      if (section === SECTIONS.CURRICULUM) {
+      if (section === SECTIONS.ACTIVITY) {
+        const res = await getClientActivities(clientId, { per_page: 10 });
+        const items = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
+        const total = res?.meta?.total ?? items.length;
+        setActivities(items);
+        setActivitiesTotal(total);
+      } else if (section === SECTIONS.CURRICULUM) {
         const res = await getClientPerformanceCurriculum(clientId);
         const data = res.data;
         setModules(data?.modules || data || []);
@@ -449,16 +462,14 @@ const ClientDetailScreen = ({ route, navigation }) => {
         </View>
 
         <View style={styles.actionRow}>
-          {!!client?.membership?.is_active && (
-            <TouchableOpacity
-              style={styles.actionButton}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREENS.COACH_TABS, { screen: 'ScheduleTab', params: { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: { client } } } })}
-            >
-              <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
-              <Text style={styles.actionButtonText}>Book Session</Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={styles.actionButton}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate(SCREENS.COACH_TABS, { screen: 'ScheduleTab', params: { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: { client } } } })}
+          >
+            <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
+            <Text style={styles.actionButtonText}>Book Session</Text>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             activeOpacity={0.7}
@@ -467,6 +478,69 @@ const ClientDetailScreen = ({ route, navigation }) => {
             <Ionicons name="share-outline" size={18} color={colors.info} />
             <Text style={styles.actionButtonText}>Share Resource</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* Activity Feed — collapsible, lazy-loaded */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.collapsibleHeader}
+            onPress={() => toggleSection(SECTIONS.ACTIVITY)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.collapsibleHeaderLeft}>
+              <Ionicons name="newspaper-outline" size={18} color={colors.accent} />
+              <Text style={styles.sectionTitle}>Activity Feed</Text>
+              {loadedSections[SECTIONS.ACTIVITY] && activitiesTotal > 0 && (
+                <View style={styles.countBadge}>
+                  <Text style={styles.countBadgeText}>{activitiesTotal}</Text>
+                </View>
+              )}
+            </View>
+            <Ionicons
+              name={expandedSections[SECTIONS.ACTIVITY] ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={colors.textTertiary}
+            />
+          </TouchableOpacity>
+
+          {expandedSections[SECTIONS.ACTIVITY] && (
+            loadingSections[SECTIONS.ACTIVITY] ? (
+              <View style={styles.sectionLoading}>
+                <ActivityIndicator size="small" color={colors.accent} />
+              </View>
+            ) : activities.length === 0 ? (
+              <View style={styles.emptyMini}>
+                <Text style={styles.emptyMiniText}>No activity yet.</Text>
+              </View>
+            ) : (
+              <>
+                {activities.slice(0, 3).map((item) => (
+                  <ActivityCard
+                    key={item.id}
+                    item={item}
+                    onPress={(pressed) => setSelectedActivity(pressed)}
+                  />
+                ))}
+                {activitiesTotal > 3 && (
+                  <TouchableOpacity
+                    style={styles.showMoreButton}
+                    onPress={() =>
+                      navigation.navigate(SCREENS.CLIENT_ACTIVITY_FEED, {
+                        clientId,
+                        clientName: fullName,
+                      })
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.showMoreText}>
+                      View All Activity ({activitiesTotal})
+                    </Text>
+                    <Ionicons name="chevron-forward" size={14} color={colors.accent} />
+                  </TouchableOpacity>
+                )}
+              </>
+            )
+          )}
         </View>
 
         {/* Curriculum — collapsible, lazy-loaded */}
@@ -777,6 +851,12 @@ const ClientDetailScreen = ({ route, navigation }) => {
         onSelect={handleShareMedia}
         alreadySharedIds={sharedMedia.map((m) => m.upload_id)}
         isSharing={isSharing}
+      />
+
+      <ActivityDetailSheet
+        item={selectedActivity}
+        visible={!!selectedActivity}
+        onClose={() => setSelectedActivity(null)}
       />
 
       <Snackbar

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -15,20 +15,23 @@ import { shareTargetSheetStyles as styles } from '../styles/shareTargetSheet.sty
 import { colors } from '../theme';
 
 const TABS = { CLIENTS: 'clients', GROUPS: 'groups' };
+const SEARCH_DEBOUNCE_MS = 300;
 
 const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
   const [activeTab, setActiveTab] = useState(TABS.CLIENTS);
   const [clients, setClients] = useState([]);
   const [groups, setGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [search, setSearch] = useState('');
   const [selectedTargets, setSelectedTargets] = useState([]);
+  const searchTimerRef = useRef(null);
 
-  const loadData = useCallback(async () => {
+  const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     try {
       const [clientsRes, groupsRes] = await Promise.all([
-        getClients(),
+        getClients({ per_page: 100 }),
         getClientGroups(),
       ]);
       setClients(clientsRes?.data || clientsRes || []);
@@ -40,14 +43,56 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
     }
   }, []);
 
+  // Server-side client search with debounce
+  const searchClients = useCallback(async (query) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      // Reset to initial full list
+      setIsSearching(true);
+      try {
+        const res = await getClients({ per_page: 100 });
+        setClients(res?.data || res || []);
+      } catch (err) {
+        console.warn('Failed to reload clients:', err?.message || err);
+      } finally {
+        setIsSearching(false);
+      }
+      return;
+    }
+    setIsSearching(true);
+    try {
+      const res = await getClients({ search: trimmed, per_page: 50 });
+      setClients(res?.data || res || []);
+    } catch (err) {
+      console.warn('Failed to search clients:', err?.message || err);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  // Debounce search input
+  useEffect(() => {
+    if (!visible) return;
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      searchClients(search);
+    }, SEARCH_DEBOUNCE_MS);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [search, visible, searchClients]);
+
   useEffect(() => {
     if (visible) {
-      loadData();
+      loadInitialData();
       setSelectedTargets([]);
       setSearch('');
       setActiveTab(TABS.CLIENTS);
     }
-  }, [visible, loadData]);
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [visible, loadInitialData]);
 
   const toggleTarget = useCallback((target) => {
     setSelectedTargets((prev) => {
@@ -72,14 +117,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
 
   const needle = search.toLowerCase().trim();
 
-  const filteredClients = needle
-    ? clients.filter((c) => {
-        const name = `${c.first_name || ''} ${c.last_name || ''}`.toLowerCase();
-        const email = (c.email || '').toLowerCase();
-        return name.includes(needle) || email.includes(needle);
-      })
-    : clients;
-
+  // Groups are filtered client-side (typically few)
   const filteredGroups = needle
     ? groups.filter((g) => (g.name || '').toLowerCase().includes(needle))
     : groups;
@@ -149,7 +187,8 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
     );
   };
 
-  const data = activeTab === TABS.CLIENTS ? filteredClients : filteredGroups;
+  // Clients come from server-side search; groups are filtered client-side
+  const data = activeTab === TABS.CLIENTS ? clients : filteredGroups;
   const renderItem = activeTab === TABS.CLIENTS ? renderClientItem : renderGroupItem;
   const emptyLabel = activeTab === TABS.CLIENTS
     ? (needle ? 'No matching clients' : 'No clients found')
@@ -189,7 +228,10 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
             onChangeText={setSearch}
             autoCorrect={false}
           />
-          {search.length > 0 && (
+          {isSearching && (
+            <ActivityIndicator size="small" color={colors.accent} />
+          )}
+          {!isSearching && search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
               <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
             </TouchableOpacity>
@@ -245,7 +287,9 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>{emptyLabel}</Text>
+                <Text style={styles.emptyText}>
+                  {isSearching ? 'Searching...' : emptyLabel}
+                </Text>
               </View>
             }
           />

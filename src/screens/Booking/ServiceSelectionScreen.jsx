@@ -10,6 +10,7 @@ import { formatCurrency } from '../../helpers/pricing.helper';
 import { getServices, getLocations } from '../../services/bookings.api';
 import { getCurrentClientMembership } from '../../services/accounts.api';
 import { getNextBookingScreen, getServiceLocations } from '../../helpers/booking.helper';
+import { isClassLike } from '../../helpers/normalizers.helper';
 import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
@@ -79,6 +80,10 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
 
       // Hide services with online booking disabled (staff can still book internally)
       serviceList = serviceList.filter((s) => s.online_booking_enabled !== false);
+
+      // Filter to only bookable services (must require coach, resource, or be class-like)
+      // Matches web's ServiceSelection.jsx — services without any of these produce zero time slots
+      serviceList = serviceList.filter((s) => !!(s?.requires_coach || s?.requires_resource || isClassLike(s)));
 
       setState({
         services: serviceList,

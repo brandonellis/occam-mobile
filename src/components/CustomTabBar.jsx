@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
@@ -7,7 +7,7 @@ import { typography } from '../theme/typography';
 
 const INDICATOR_WIDTH_RATIO = 0.5;
 
-const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
+const CustomTabBar = ({ state, descriptors, navigation, tabIcons, badges = {} }) => {
   const insets = useSafeAreaInsets();
   const contentPaddingTop = insets.bottom > 0 ? 8 : 0;
   const tabCount = state.routes.length;
@@ -61,6 +61,7 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
           const isFocused = state.index === index;
           const icons = tabIcons[route.name];
           const iconName = isFocused ? icons?.focused : icons?.unfocused;
+          const badgeCount = badges[route.name] || 0;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -91,12 +92,21 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
               activeOpacity={0.7}
               style={styles.tabItem}
             >
-              <Ionicons
-                name={iconName}
-                size={24}
-                color={isFocused ? colors.accent : colors.textInverseMuted}
-                style={styles.icon}
-              />
+              <View style={styles.iconWrapper}>
+                <Ionicons
+                  name={iconName}
+                  size={24}
+                  color={isFocused ? colors.accent : colors.textInverseMuted}
+                  style={styles.icon}
+                />
+                {badgeCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText} numberOfLines={1}>
+                      {badgeCount > 99 ? '99+' : badgeCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
               <Animated.Text
                 style={[
                   styles.label,
@@ -137,8 +147,33 @@ const styles = StyleSheet.create({
     paddingTop: 6,
     paddingBottom: 6,
   },
+  iconWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   icon: {
     marginBottom: 2,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -10,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.error,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 3,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  badgeText: {
+    color: colors.textInverse,
+    fontSize: 9,
+    fontWeight: '700',
+    lineHeight: 12,
   },
   label: {
     fontFamily: typography.fontFamily,

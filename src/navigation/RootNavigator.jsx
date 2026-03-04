@@ -11,6 +11,7 @@ import CoachTabNavigator from './CoachTabNavigator';
 import ClientTabNavigator from './ClientTabNavigator';
 import ClientDetailScreen from '../screens/Coach/ClientDetailScreen';
 import ClientSharedMediaScreen from '../screens/Coach/ClientSharedMediaScreen';
+import ClientActivityFeedScreen from '../screens/Coach/ClientActivityFeedScreen';
 import CurriculumEditorScreen from '../screens/Coach/CurriculumEditorScreen';
 import ProgressReportDetailScreen from '../screens/Coach/ProgressReportDetailScreen';
 import VideoRecordingScreen from '../screens/Coach/VideoRecordingScreen';
@@ -48,9 +49,10 @@ const RootNavigator = () => {
   }
 
   const isCoachOrAdmin = COACH_ROLES.includes(activeRole);
+  const navigatorKey = isAuthenticated ? `app-${activeRole}` : 'auth';
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+    <Stack.Navigator key={navigatorKey} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       {!isAuthenticated ? (
         <Stack.Screen
           name={SCREENS.LOGIN}
@@ -80,6 +82,11 @@ const RootNavigator = () => {
           <Stack.Screen
             name={SCREENS.CLIENT_SHARED_MEDIA}
             component={ClientSharedMediaScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name={SCREENS.CLIENT_ACTIVITY_FEED}
+            component={ClientActivityFeedScreen}
             options={{ animation: 'slide_from_right' }}
           />
 

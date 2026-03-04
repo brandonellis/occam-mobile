@@ -80,7 +80,7 @@ const AuthProvider = ({ children }) => {
         dispatch({ type: AUTH_ACTIONS.SET_COMPANY, payload: cachedCompany });
       }
 
-      const { data: freshUser } = await authApi.getUser();
+      const freshUser = await authApi.getUser();
       const role = resolveRole(freshUser);
       await setUserData(freshUser);
       dispatch({
@@ -108,12 +108,15 @@ const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
 
     try {
-      const { data } = await authApi.login(email, password, tenantId);
-      const { token, user } = data;
-      const role = resolveRole(user);
+      const loginResponse = await authApi.login(email, password, tenantId);
+      const token = loginResponse.access_token;
 
       await setToken(token);
       await setTenantId(tenantId);
+
+      const user = await authApi.getUser();
+      const role = resolveRole(user);
+
       await setUserData(user);
 
       dispatch({

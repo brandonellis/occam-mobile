@@ -1,7 +1,7 @@
 import apiClient, { centralClient } from './apiClient';
 
 export const login = async (email, password, tenantId) => {
-  const response = await apiClient.post('/login', {
+  const response = await apiClient.post('/auth/login', {
     email,
     password,
     tenant_id: tenantId,
@@ -10,17 +10,17 @@ export const login = async (email, password, tenantId) => {
 };
 
 export const logout = async () => {
-  const response = await apiClient.post('/logout');
+  const response = await apiClient.post('/auth/logout');
   return response.data;
 };
 
 export const getUser = async () => {
-  const response = await apiClient.get('/user');
+  const response = await apiClient.get('/auth/user-profile');
   return response.data;
 };
 
 export const forgotPassword = async (email) => {
-  const response = await apiClient.post('/forgot-password', { email });
+  const response = await apiClient.post('/auth/forgot-password', { email });
   return response.data;
 };
 
