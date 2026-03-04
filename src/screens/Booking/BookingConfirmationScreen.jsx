@@ -37,13 +37,13 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState(null);
 
-  // Saved payment methods state (Gap 4)
+  // Saved payment methods state
   const [savedMethods, setSavedMethods] = useState([]);
   const [savedMethodsLoading, setSavedMethodsLoading] = useState(false);
   const [selectedSavedMethodId, setSelectedSavedMethodId] = useState(null);
   const [paymentMode, setPaymentMode] = useState('card'); // 'card' | 'saved'
 
-  // Success screen state (Gap 5)
+  // Success screen state
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdBookingData, setCreatedBookingData] = useState(null);
 
@@ -170,7 +170,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             setSelectedSavedMethodId(list[0]?.id || null);
           }
         }
-      } catch (_) {
+      } catch (err) {
+        console.warn('Failed to fetch saved payment methods:', err.message);
         if (!cancelled) setSavedMethods([]);
       } finally {
         if (!cancelled) setSavedMethodsLoading(false);
@@ -181,9 +182,6 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Per-service toggle: service does not require upfront payment
   const isPaymentNotRequired = service?.payment_required === false;
-
-  // Determine if one-off payment is required
-  const requiresPayment = !isMembershipBooking && !isPaymentNotRequired && !membershipLoading && membershipStatus !== null;
 
   // Build payment summary (matches web's usePaymentSummary)
   const summary = buildPaymentSummary({
@@ -248,8 +246,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     return payload;
   }, [clientId, isMembershipBooking, location, service, coach, timeSlot, bookingData, membershipStatus]);
 
-  // Handle membership booking (no payment needed)
-  const handleMembershipConfirm = useCallback(async () => {
+  // Handle direct booking (membership or no-payment — no Stripe involved)
+  const handleDirectConfirm = useCallback(async () => {
     try {
       setIsSubmitting(true);
       setLoadingMessage('Creating booking...');
@@ -327,7 +325,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       try {
         const full = await getBooking(confirmedBookingId);
         setCreatedBookingData(full?.data || full);
-      } catch (_) {
+      } catch (fetchErr) {
+        console.warn('Failed to fetch booking details for success screen:', fetchErr.message);
         setCreatedBookingData(bookingResponse?.data || bookingResponse);
       }
       setShowSuccess(true);
@@ -350,25 +349,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     client, user, isCoach, confirmPayment,
   ]);
 
-  // Handle non-payment booking (staff/coach flow when Stripe not enabled)
-  const handleNoPaymentConfirm = useCallback(async () => {
-    try {
-      setIsSubmitting(true);
-      setLoadingMessage('Creating booking...');
-      const payload = buildBookingPayload('confirmed');
-      const result = await createBooking(payload);
-      const booking = result?.data || result;
-      setCreatedBookingData(booking);
-      setShowSuccess(true);
-    } catch (error) {
-      Alert.alert('Booking Failed', extractErrorMessage(error));
-    } finally {
-      setIsSubmitting(false);
-      setLoadingMessage('');
-    }
-  }, [buildBookingPayload]);
-
-  // Handle saved card payment (Gap 4)
+  // Handle saved card payment
   const handleSavedCardPayment = useCallback(async () => {
     if (!selectedSavedMethodId) {
       Alert.alert('Card Required', 'Please select a saved card to proceed.');
@@ -418,7 +399,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       try {
         const full = await getBooking(bookingResponse?.data?.id || bookingResponse?.id);
         setCreatedBookingData(full?.data || full);
-      } catch (_) {
+      } catch (fetchErr) {
+        console.warn('Failed to fetch booking details for success screen:', fetchErr.message);
         setCreatedBookingData(bookingResponse?.data || bookingResponse);
       }
       setShowSuccess(true);
@@ -449,20 +431,20 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       return;
     }
     if (isMembershipBooking) {
-      handleMembershipConfirm();
+      handleDirectConfirm();
     } else if (isCoach) {
       // Coach flow: create confirmed booking directly (payment settled separately via web dashboard)
-      handleNoPaymentConfirm();
+      handleDirectConfirm();
     } else if (isPaymentNotRequired) {
-      handleNoPaymentConfirm();
+      handleDirectConfirm();
     } else if (paymentsEnabled && paymentMode === 'saved' && selectedSavedMethodId) {
       handleSavedCardPayment();
     } else if (paymentsEnabled) {
       handlePaymentConfirm();
     } else {
-      handleNoPaymentConfirm();
+      handleDirectConfirm();
     }
-  }, [clientId, service, selectedResource, isCoach, isMembershipBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, handleMembershipConfirm, handlePaymentConfirm, handleNoPaymentConfirm, handleSavedCardPayment]);
+  }, [clientId, service, selectedResource, isCoach, isMembershipBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, handleDirectConfirm, handlePaymentConfirm, handleSavedCardPayment]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
@@ -521,7 +503,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
                 ? 'Your membership is paused. Benefits are temporarily unavailable.'
                 : "You don't currently have an active membership."}
             </Text>
-            <Text style={[styles.allotmentNoMembershipText, { marginTop: 4, fontSize: 12 }]}>
+            <Text style={[styles.allotmentNoMembershipText, styles.allotmentSubtext]}>
               Payment will be processed as a one-time booking.
             </Text>
           </View>
@@ -635,7 +617,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       <View style={styles.cardSection}>
         <Text style={styles.cardSectionTitle}>Payment Method</Text>
 
-        {/* Saved card / New card toggle (Gap 4) */}
+        {/* Saved card / New card toggle */}
         {savedMethods.length > 0 && (
           <View style={styles.paymentModeToggle}>
             <TouchableOpacity
@@ -766,7 +748,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </Animated.View>
 
           {/* Booking code — only show real codes, not raw numeric IDs */}
-          {bookingCode && typeof bookingCode === 'string' && bookingCode.length > 3 && (
+          {bookingCode && typeof bookingCode === 'string' && !/^\d+$/.test(bookingCode) && (
             <Animated.View style={[styles.successCodeContainer, { opacity: successOpacity }]}>
               <Text style={styles.successCodeLabel}>BOOKING REFERENCE</Text>
               <Text style={styles.successCodeValue}>{bookingCode}</Text>
@@ -790,7 +772,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
                     name={`${successCoach.first_name} ${successCoach.last_name}`}
                     size={28}
                   />
-                  <Text style={[styles.successDetailValue, { marginLeft: 8 }]}>
+                  <Text style={[styles.successDetailValue, styles.successDetailValueWithMargin]}>
                     {successCoach.first_name} {successCoach.last_name}
                   </Text>
                 </View>
@@ -824,15 +806,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={[styles.continueButton, !isCoach && { flex: 1 }]}
-            onPress={() => {
-              if (isCoach) {
-                // Navigate back to client selection for another booking
-                navigation.popToTop();
-              } else {
-                navigation.popToTop();
-              }
-            }}
+            style={[styles.continueButton, !isCoach && styles.successPrimaryFull]}
+            onPress={() => navigation.popToTop()}
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>

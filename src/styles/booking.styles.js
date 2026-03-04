@@ -766,6 +766,18 @@ export const bookingStyles = StyleSheet.create({
     ...typography.button,
     color: colors.textPrimary,
   },
+  successPrimaryFull: {
+    flex: 1,
+  },
+  successDetailValueWithMargin: {
+    marginLeft: spacing.sm,
+  },
+
+  // Allotment sub-text (smaller secondary line)
+  allotmentSubtext: {
+    marginTop: 4,
+    fontSize: 12,
+  },
 
   // Coach info banner (non-membership booking)
   coachInfoBanner: {
