@@ -140,6 +140,13 @@ export const getCurrentClientMembership = async (clientId) => {
   return response.data;
 };
 
+export const getAllowedCoachesForService = async (clientId, serviceId) => {
+  const response = await apiClient.get(
+    `/clients/${clientId}/coach-assignments/allowed/${serviceId}`
+  );
+  return response.data?.data || response.data;
+};
+
 export const getClientGroups = async () => {
   const response = await apiClient.get('/client-groups');
   return response.data;

@@ -45,11 +45,18 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
       const locationList = locationsRes.status === 'fulfilled' ? (locationsRes.value.data || []) : [];
       locationsRef.current = locationList;
 
-      // Filter by membership services if client has an active membership
+      // Feature 2: Filter services by booking_visibility
+      // Determine if client has any active membership for visibility filtering
+      let hasActiveMembership = false;
       let membershipFiltered = false;
       let membershipPlanName = null;
       if (membershipRes.status === 'fulfilled' && membershipRes.value?.data) {
         const membership = membershipRes.value.data;
+        const stripeStatus = (membership.stripe_status || '').toLowerCase();
+        const endDate = membership.end_date || membership.ends_at || null;
+        const notEnded = !endDate || new Date(endDate) >= new Date();
+        hasActiveMembership = (stripeStatus === 'active' || ((stripeStatus === 'canceled' || stripeStatus === 'cancelled') && notEnded)) && !membership.is_paused;
+
         const planServices = membership.membership_plan?.plan_services || [];
 
         // Get service IDs that have remaining uses
@@ -64,6 +71,14 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
           membershipPlanName = membership.membership_plan?.name || 'Membership';
         }
       }
+
+      // Hide members_only services for non-member clients
+      if (!hasActiveMembership) {
+        serviceList = serviceList.filter((s) => s.booking_visibility !== 'members_only');
+      }
+
+      // Hide services with online booking disabled (staff can still book internally)
+      serviceList = serviceList.filter((s) => s.online_booking_enabled !== false);
 
       setState({
         services: serviceList,

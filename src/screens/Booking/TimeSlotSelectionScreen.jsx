@@ -13,7 +13,7 @@ import { buildClassSessionGroups } from '../../helpers/classSession.helper';
 import { colors, spacing } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
-import { generateDateRangeInTz } from '../../helpers/timezone.helper';
+import { generateDateRangeInTz, getFutureDateKey } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 
 
@@ -75,7 +75,14 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
 
   // Build date range in company timezone (rebuilds when company loads)
   const companyTz = useMemo(() => getEffectiveTimezone(company), [company]);
-  const dates = useMemo(() => generateDateRangeInTz(company), [company]);
+  const allDates = useMemo(() => generateDateRangeInTz(company), [company]);
+
+  // Filter dates by advance booking limit (if service has one)
+  const dates = useMemo(() => {
+    if (!service?.advance_booking_limit_days) return allDates;
+    const maxKey = getFutureDateKey(company, service.advance_booking_limit_days);
+    return allDates.filter((d) => d.key <= maxKey);
+  }, [allDates, service?.advance_booking_limit_days, company]);
 
   // Select first date on mount (company is already available from auth context)
   useEffect(() => {

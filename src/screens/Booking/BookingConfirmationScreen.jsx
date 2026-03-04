@@ -125,8 +125,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const isMembershipBooking =
     membershipStatus?.hasActiveMembership && membershipStatus?.hasUsage;
 
+  // Per-service toggle: service does not require upfront payment
+  const isPaymentNotRequired = service?.payment_required === false;
+
   // Determine if one-off payment is required
-  const requiresPayment = !isMembershipBooking && !membershipLoading && membershipStatus !== null;
+  const requiresPayment = !isMembershipBooking && !isPaymentNotRequired && !membershipLoading && membershipStatus !== null;
 
   // Build payment summary (matches web's usePaymentSummary)
   const summary = buildPaymentSummary({
@@ -328,24 +331,28 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     }
     if (isMembershipBooking) {
       handleMembershipConfirm();
+    } else if (isPaymentNotRequired) {
+      handleNoPaymentConfirm();
     } else if (paymentsEnabled) {
       handlePaymentConfirm();
     } else {
       handleNoPaymentConfirm();
     }
-  }, [clientId, service, selectedResource, isCoach, isMembershipBooking, paymentsEnabled, handleMembershipConfirm, handlePaymentConfirm, handleNoPaymentConfirm]);
+  }, [clientId, service, selectedResource, isCoach, isMembershipBooking, isPaymentNotRequired, paymentsEnabled, handleMembershipConfirm, handlePaymentConfirm, handleNoPaymentConfirm]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
     if (isSubmitting || membershipLoading || ecommerceLoading) return false;
     if (isMembershipBooking) return true;
+    // Service doesn't require payment — allow booking without card
+    if (isPaymentNotRequired) return true;
     // Coach flow: membership-only — disable button when no membership coverage
     if (isCoach) return false;
     // Client flow: one-off payment — require card if payments are enabled
     if (paymentsEnabled) return cardComplete;
     // Payments not enabled — allow booking without payment (staff flow)
     return true;
-  }, [isSubmitting, membershipLoading, ecommerceLoading, isMembershipBooking, isCoach, paymentsEnabled, cardComplete]);
+  }, [isSubmitting, membershipLoading, ecommerceLoading, isMembershipBooking, isPaymentNotRequired, isCoach, paymentsEnabled, cardComplete]);
 
   // Allotment progress bars for membership
   const renderAllotmentSection = () => {
@@ -463,7 +470,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Stripe card input for one-off bookings (client flow only)
   const renderCardSection = () => {
-    if (isCoach || isMembershipBooking || membershipLoading) return null;
+    if (isCoach || isMembershipBooking || isPaymentNotRequired || membershipLoading) return null;
 
     // Show skeleton while ecommerce config is loading
     if (ecommerceLoading) {
@@ -612,6 +619,18 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
+        {/* No-payment service banner (payment_required === false) */}
+        {!isMembershipBooking && isPaymentNotRequired && (
+          <View style={[styles.confirmSection, { backgroundColor: colors.successLight }]}>
+            <Text style={[styles.confirmLabel, { color: colors.success }]}>
+              NO UPFRONT PAYMENT NEEDED
+            </Text>
+            <Text style={[styles.confirmSubtext, { color: colors.textSecondary, marginTop: 2 }]}>
+              This service does not require payment at the time of booking. Payment may be collected at your appointment.
+            </Text>
+          </View>
+        )}
+
         {/* Stripe Card Input (client one-off only — coaches use membership) */}
         {renderCardSection()}
 
@@ -684,11 +703,13 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
               <Text style={styles.continueButtonText}>
                 {isMembershipBooking
                   ? 'Confirm (Membership)'
-                  : isCoach
-                    ? 'Membership Required'
-                    : paymentsEnabled
-                      ? `Pay ${summary.totalFormatted}`
-                      : 'Confirm Booking'}
+                  : isPaymentNotRequired
+                    ? 'Confirm Booking'
+                    : isCoach
+                      ? 'Membership Required'
+                      : paymentsEnabled
+                        ? `Pay ${summary.totalFormatted}`
+                        : 'Confirm Booking'}
               </Text>
             )}
           </TouchableOpacity>

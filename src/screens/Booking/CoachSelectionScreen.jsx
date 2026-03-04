@@ -7,6 +7,7 @@ import Avatar from '../../components/Avatar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { getCoaches } from '../../services/bookings.api';
+import { getAllowedCoachesForService } from '../../services/accounts.api';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 
@@ -47,6 +48,20 @@ const CoachSelectionScreen = ({ route, navigation }) => {
           const coachLocIds = c.location_ids || [];
           return coachLocIds.length === 0 || coachLocIds.some((id) => serviceLocationIds.includes(id));
         });
+      }
+
+      // Feature 1: Filter coaches by client-coach assignment
+      const clientId = bookingData.client?.id;
+      if (clientId && service?.id) {
+        try {
+          const assignmentRes = await getAllowedCoachesForService(clientId, service.id);
+          const allowedIds = assignmentRes?.allowed_coach_ids || [];
+          if (allowedIds.length > 0) {
+            coachList = coachList.filter((c) => allowedIds.includes(c.id));
+          }
+        } catch (assignErr) {
+          console.warn('Failed to fetch coach assignments, showing all coaches:', assignErr.message);
+        }
       }
 
       setState({ coaches: coachList, isLoading: false, error: null });
