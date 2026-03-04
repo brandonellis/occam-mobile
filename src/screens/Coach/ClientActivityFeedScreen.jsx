@@ -174,7 +174,7 @@ const ClientActivityFeedScreen = ({ route, navigation }) => {
       );
     }
     return <ActivityCard item={row.data} onPress={handleCardPress} company={company} />;
-  }, [handleCardPress]);
+  }, [handleCardPress, company]);
 
   const keyExtractor = useCallback((row) => row.key, []);
 

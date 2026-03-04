@@ -150,7 +150,7 @@ const ClientBookingsScreen = ({ navigation }) => {
   }, [loadBookings]);
 
 
-  const renderBooking = ({ item }) => {
+  const renderBooking = useCallback(({ item }) => {
     const status = STATUS_MAP[item.status] || STATUS_MAP.confirmed;
     const isUpcoming = activeTab === TABS.UPCOMING;
     const coach = item.coaches?.[0] || null;
@@ -226,7 +226,9 @@ const ClientBookingsScreen = ({ navigation }) => {
         )}
       </TouchableOpacity>
     );
-  };
+  }, [activeTab, company, handleCancel, navigation]);
+
+  const keyExtractor = useCallback((item) => String(item.id), []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -279,7 +281,7 @@ const ClientBookingsScreen = ({ navigation }) => {
         <FlatList
           data={bookings}
           renderItem={renderBooking}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={keyExtractor}
           contentContainerStyle={[
             styles.listContent,
             bookings.length === 0 && { flex: 1 },
@@ -291,6 +293,10 @@ const ClientBookingsScreen = ({ navigation }) => {
               tintColor={colors.primary}
             />
           }
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          windowSize={5}
+          removeClippedSubviews
           ListEmptyComponent={
             <EmptyState
               icon={activeTab === TABS.UPCOMING ? 'calendar-outline' : 'time-outline'}

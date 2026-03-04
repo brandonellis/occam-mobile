@@ -1,18 +1,18 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Video, ResizeMode } from 'expo-av';
+import { useVideoPlayer, VideoView } from 'expo-video';
+import { useEvent } from 'expo';
 import { Ionicons } from '@expo/vector-icons';
 import { getToken, getTenantId } from '../helpers/storage.helper';
 import { colors } from '../theme';
 
 /**
  * Video player component that passes Authorization and X-Tenant headers.
+ * Uses expo-video (SDK 54+) with useVideoPlayer hook + VideoView.
  * Shows a play button overlay; taps to play/pause.
  */
 const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
-  const videoRef = useRef(null);
   const [headers, setHeaders] = useState(null);
-  const [status, setStatus] = useState({});
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -31,18 +31,35 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
     return () => { mounted = false; };
   }, [uri]);
 
-  const handlePlayPause = useCallback(async () => {
-    if (!videoRef.current) return;
+  // Build video source with auth headers
+  const videoSource = useMemo(() => {
+    if (!uri || !headers) return null;
+    return { uri, headers };
+  }, [uri, headers]);
+
+  const player = useVideoPlayer(videoSource, (p) => {
+    p.loop = false;
+  });
+
+  const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
+  const { status } = useEvent(player, 'statusChange', { status: player.status });
+
+  // Track error status
+  useEffect(() => {
+    if (status === 'error') setFailed(true);
+  }, [status]);
+
+  const handlePlayPause = useCallback(() => {
     try {
-      if (status.isPlaying) {
-        await videoRef.current.pauseAsync();
+      if (isPlaying) {
+        player.pause();
       } else {
-        await videoRef.current.playAsync();
+        player.play();
       }
     } catch {
-      // Video may be in an invalid state — ignore
+      // Player may be in an invalid state — ignore
     }
-  }, [status.isPlaying]);
+  }, [isPlaying, player]);
 
   if (failed || !uri) {
     return (
@@ -60,25 +77,16 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
     );
   }
 
-  const hasStarted = status.positionMillis > 0 || status.isPlaying;
-  const isBuffering = status.isBuffering && !status.isPlaying;
-  const showPlayOverlay = !hasStarted && !isBuffering;
+  const isLoading = status === 'loading';
+  const showPlayOverlay = !isPlaying && !isLoading;
 
   return (
     <View style={[style, { borderRadius, overflow: 'hidden' }]}>
-      <Video
-        ref={videoRef}
-        source={{ uri, headers }}
-        posterSource={posterUri ? { uri: posterUri, headers } : undefined}
-        usePoster={!!posterUri}
-        posterStyle={{ resizeMode: 'cover', width: '100%', height: '100%' }}
+      <VideoView
+        player={player}
         style={{ width: '100%', height: '100%' }}
-        resizeMode={ResizeMode.COVER}
-        shouldPlay={false}
-        isLooping={false}
-        useNativeControls
-        onPlaybackStatusUpdate={setStatus}
-        onError={() => setFailed(true)}
+        contentFit="cover"
+        nativeControls
       />
       {showPlayOverlay ? (
         <TouchableOpacity
@@ -105,7 +113,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
           </View>
         </TouchableOpacity>
       ) : null}
-      {isBuffering ? (
+      {isLoading ? (
         <View style={{ ...absoluteFill, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <ActivityIndicator size="large" color={colors.white} />
         </View>
