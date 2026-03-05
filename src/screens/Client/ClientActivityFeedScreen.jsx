@@ -10,7 +10,7 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
 import { getClientActivities, getActivityTags } from '../../services/activity.api';
 import ActivityCard from '../../components/ActivityCard';
@@ -202,7 +202,7 @@ const ClientActivityFeedScreen = () => {
       return (
         <View style={styles.loadMoreContainer}>
           <TouchableOpacity style={styles.loadMoreButton} onPress={handleLoadMore} activeOpacity={0.7}>
-            <Ionicons name="chevron-down" size={16} color={colors.accent} />
+            <MaterialCommunityIcons name="chevron-down" size={16} color={colors.accent} />
             <Text style={styles.loadMoreText}>Load more</Text>
           </TouchableOpacity>
         </View>
@@ -224,7 +224,7 @@ const ClientActivityFeedScreen = () => {
       {/* ── Unified filter toolbar ── */}
       <View style={styles.filterToolbar}>
         <FilterPill
-          icon="layers-outline"
+          icon="view-grid-outline"
           label={state.activeFilter === ACTIVITY_TYPES.ALL ? 'Type' : TYPE_FILTER_OPTIONS.find((o) => o.value === state.activeFilter)?.label || 'Type'}
           isActive={state.activeFilter !== ACTIVITY_TYPES.ALL}
           onPress={() => setTypeSheetVisible(true)}
@@ -237,7 +237,7 @@ const ClientActivityFeedScreen = () => {
         />
         {allTags.length > 0 ? (
           <FilterPill
-            icon="pricetag-outline"
+            icon="tag-outline"
             label="Tags"
             isActive={state.selectedTagIds.length > 0}
             count={state.selectedTagIds.length}
@@ -246,7 +246,7 @@ const ClientActivityFeedScreen = () => {
         ) : null}
         {hasActiveFilters ? (
           <TouchableOpacity style={styles.clearAllButton} onPress={handleClearFilters} activeOpacity={0.7}>
-            <Ionicons name="close-circle" size={16} color={colors.error} />
+            <MaterialCommunityIcons name="close-circle" size={16} color={colors.error} />
           </TouchableOpacity>
         ) : null}
       </View>
@@ -297,12 +297,12 @@ const ClientActivityFeedScreen = () => {
                     activeOpacity={0.7}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Ionicons name={option.icon} size={18} color={isActive ? colors.accent : colors.textSecondary} style={{ marginRight: 12 }} />
+                      <MaterialCommunityIcons name={option.icon} size={18} color={isActive ? colors.accent : colors.textSecondary} style={{ marginRight: 12 }} />
                       <Text style={[styles.dropdownOptionText, isActive && styles.dropdownOptionTextActive]}>
                         {option.label}
                       </Text>
                     </View>
-                    {isActive ? <Ionicons name="checkmark-circle" size={20} color={colors.accent} /> : null}
+                    {isActive ? <MaterialCommunityIcons name="check-circle" size={20} color={colors.accent} /> : null}
                   </TouchableOpacity>
                 );
               })}
@@ -330,7 +330,7 @@ const ClientActivityFeedScreen = () => {
                     <Text style={[styles.dropdownOptionText, isActive && styles.dropdownOptionTextActive]}>
                       {option.label}
                     </Text>
-                    {isActive ? <Ionicons name="checkmark-circle" size={20} color={colors.accent} /> : null}
+                    {isActive ? <MaterialCommunityIcons name="check-circle" size={20} color={colors.accent} /> : null}
                   </TouchableOpacity>
                 );
               })}
@@ -358,8 +358,8 @@ const ClientActivityFeedScreen = () => {
                     <Text style={[styles.dropdownOptionText, isActive && styles.dropdownOptionTextActive]}>
                       {tag.name}
                     </Text>
-                    <Ionicons
-                      name={isActive ? 'checkmark-circle' : 'ellipse-outline'}
+                    <MaterialCommunityIcons
+                      name={isActive ? 'check-circle' : 'circle-outline'}
                       size={20}
                       color={isActive ? colors.accent : colors.gray300}
                     />
@@ -390,7 +390,7 @@ const ClientActivityFeedScreen = () => {
       ) : state.error && state.activities.length === 0 ? (
         <View style={styles.emptyContainer}>
           <View style={styles.emptyIconContainer}>
-            <Ionicons name="alert-circle-outline" size={36} color={colors.error} />
+            <MaterialCommunityIcons name="alert-circle-outline" size={36} color={colors.error} />
           </View>
           <Text style={styles.emptyTitle}>Something went wrong</Text>
           <Text style={styles.emptySubtitle}>{state.error}</Text>
@@ -399,7 +399,7 @@ const ClientActivityFeedScreen = () => {
             onPress={handleRefresh}
             activeOpacity={0.7}
           >
-            <Ionicons name="refresh" size={16} color={colors.accent} />
+            <MaterialCommunityIcons name="refresh" size={16} color={colors.accent} />
             <Text style={styles.loadMoreText}>Try again</Text>
           </TouchableOpacity>
         </View>

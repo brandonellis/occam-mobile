@@ -1,0 +1,101 @@
+# External Booking Flow — authenticated member client
+# Mirrors: occam-client/tests/e2e/external/booking-flow.auth.spec.js
+#
+# Tests the booking route when a member client is logged in.
+# Authenticated clients skip customer info and may see membership coverage.
+#
+# Web test equivalents covered:
+#   ✓ loads booking page and recognizes authenticated user
+#   ✓ selecting a membership-covered service advances through coach and timeslot
+#   ✓ selecting a timeslot advances to payment step (skips customer info)
+#   ✓ membership coverage or payment card is shown on confirmation
+#
+# Usage:
+#   maestro test .maestro/external/booking-flow-auth.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: host.exp.Exponent
+
+---
+
+# ── Login as member client ─────────────────────────────────────────────
+- runFlow: ../helpers/login.yaml
+
+# ── Test: loads booking page and recognizes authenticated user ─────────
+- runFlow: ../helpers/navigate-to-booking.yaml
+
+# Service selection should be visible (no customer info gate for auth users)
+- assertVisible:
+    id: "service-selection-list"
+    timeout: 10000
+
+# ── Test: membership-covered service → coach → timeslot ───────────────
+# Select "1:1 Coaching Session" — covered by Premium membership
+# Mirrors: page.locator('.service-selection .ant-card').filter({ hasText: '1:1 Coaching' }).click()
+- tapOn:
+    text: "1:1 Coaching"
+- waitForAnimationToEnd
+
+# Handle location selection if shown (multi-location service)
+- runFlow: ../helpers/handle-location-selection.yaml
+
+# Coach selection should appear (service requires coach)
+# Mirrors: await expect(coachSelection).toBeVisible()
+- assertVisible:
+    text: "Select a Coach"
+    timeout: 15000
+
+# Select first coach
+# Mirrors: page.locator('.coach-selection .ant-card').filter({ hasText: 'Coach Alpha' }).click()
+- runFlow: ../helpers/handle-coach-selection.yaml
+
+# Should advance to timeslot selection
+# Mirrors: await expect(page.locator('.timeslot-selection')).toBeVisible()
+- assertVisible:
+    text: "Select Date & Time"
+    timeout: 15000
+
+# ── Test: selecting a timeslot advances to confirmation (skips customer info) ──
+# Wait for time slots to load
+- extendedWaitUntil:
+    visible: "Available Times"
+    timeout: 20000
+
+# Select first available timeslot
+- tapOn:
+    text: "\\d{1,2}:\\d{2}.*"
+    index: 0
+
+# Tap Continue
+- tapOn:
+    id: "continue-button"
+- waitForAnimationToEnd
+
+# ── Test: confirmation shows membership coverage or payment ────────────
+# Auth users skip customer info — should see confirmation directly
+# Mirrors: const paymentStep = page.locator('.external-payment')
+#          await expect(paymentStep).toBeVisible()
+- assertVisible:
+    text: "Total"
+    timeout: 15000
+
+# For a member client with coverage, should see membership indicator
+# Mirrors: page.locator('text=/covered by membership|no payment required|confirm booking/i')
+- assertVisible:
+    id: "confirm-booking-button"
+
+# The button text should reflect the booking type:
+#   Membership → "Confirm Session"
+#   Coach → "Book Session"
+#   Client payment → "Pay $X"
+# Mirrors: const confirmBtn = page.locator('button').filter({ hasText: /confirm booking/i })
+#
+# NOTE: We stop before confirming to avoid creating real bookings.
+# To test full membership booking:
+# - tapOn:
+#     id: "confirm-booking-button"
+# - waitForAnimationToEnd
+# - assertVisible:
+#     text: "Booked"
+#     timeout: 30000

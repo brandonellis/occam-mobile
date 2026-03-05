@@ -4,6 +4,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { SCREENS } from '../../constants/navigation.constants';
 import { videoRecordingStyles as styles } from '../../styles/videoRecording.styles';
 import { colors } from '../../theme';
+import logger from '../../helpers/logger.helper';
 
 const VideoRecordingScreen = ({ navigation }) => {
   const launchCamera = useCallback(async () => {
@@ -23,7 +24,7 @@ const VideoRecordingScreen = ({ navigation }) => {
         navigation.goBack();
       }
     } catch (err) {
-      console.warn('Camera launch failed:', err);
+      logger.warn('Camera launch failed:', err);
       navigation.goBack();
     }
   }, [navigation]);

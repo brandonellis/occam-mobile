@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { CardField, useStripe } from '@stripe/stripe-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
 import { membershipStyles as styles } from '../../styles/membership.styles';
@@ -130,7 +130,7 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
               <View style={styles.checkoutIncludesList}>
                 {planServices.map((ps, i) => (
                   <View key={ps.id || i} style={styles.checkoutIncludesRow}>
-                    <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                    <MaterialCommunityIcons name="check-circle" size={16} color={colors.success} />
                     <Text style={styles.checkoutIncludesText}>
                       {ps.service?.name || `Service ${ps.service_id}`}
                     </Text>
@@ -151,7 +151,7 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
               <View style={styles.checkoutIncludesList}>
                 {plan.benefits.map((benefit, i) => (
                   <View key={i} style={styles.checkoutIncludesRow}>
-                    <Ionicons name="checkmark-circle" size={16} color={colors.success} />
+                    <MaterialCommunityIcons name="check-circle" size={16} color={colors.success} />
                     <Text style={styles.checkoutIncludesText}>
                       {typeof benefit === 'string' ? benefit : benefit.description || benefit.name}
                     </Text>

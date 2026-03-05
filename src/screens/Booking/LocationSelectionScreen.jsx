@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react';
-import { ScrollView, TouchableOpacity } from 'react-native';
-import { Text } from 'react-native-paper';
+import { View, ScrollView } from 'react-native';
+import { Text, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import EmptyState from '../../components/EmptyState';
@@ -30,7 +30,7 @@ const LocationSelectionScreen = ({ route, navigation }) => {
         onBack={() => navigation.goBack()}
       />
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} testID="location-selection-list">
         {bookingData.service && (
           <Text style={styles.sectionHeader}>
             Where would you like your {bookingData.service.name}?
@@ -38,25 +38,28 @@ const LocationSelectionScreen = ({ route, navigation }) => {
         )}
         {serviceLocations.length === 0 && (
           <EmptyState
-            icon="location-outline"
+            icon="map-marker-outline"
             title="No Locations Available"
             message="This service doesn't have any assigned locations. Please go back and try another service."
           />
         )}
         {serviceLocations.map((location) => (
-          <TouchableOpacity
+          <TouchableRipple
             key={location.id}
             style={styles.serviceCard}
             onPress={() => handleSelectLocation(location)}
-            activeOpacity={0.7}
+            borderless
+            testID={`location-card-${location.id}`}
           >
-            <Text style={styles.serviceName}>{location.name}</Text>
-            {location.address && (
-              <Text style={styles.serviceDescription} numberOfLines={2}>
-                {location.address}
-              </Text>
-            )}
-          </TouchableOpacity>
+            <View>
+              <Text style={styles.serviceName}>{location.name}</Text>
+              {location.address && (
+                <Text style={styles.serviceDescription} numberOfLines={2}>
+                  {location.address}
+                </Text>
+              )}
+            </View>
+          </TouchableRipple>
         ))}
       </ScrollView>
     </SafeAreaView>

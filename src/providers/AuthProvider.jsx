@@ -18,6 +18,7 @@ import * as authApi from '../services/auth.api';
 import { getCompany } from '../services/bookings.api';
 import { unregisterPushToken } from '../services/notifications.api';
 import * as Notifications from 'expo-notifications';
+import logger from '../helpers/logger.helper';
 
 const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
@@ -46,7 +47,7 @@ const AuthProvider = ({ children }) => {
       await setCompanyData(companyData);
       dispatch({ type: AUTH_ACTIONS.SET_COMPANY, payload: companyData });
     } catch (err) {
-      console.warn('Failed to fetch company:', err.message);
+      logger.warn('Failed to fetch company:', err.message);
     }
   }, []);
 

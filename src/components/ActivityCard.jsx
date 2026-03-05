@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { activityFeedStyles as styles } from '../styles/activityFeed.styles';
 import { ACTIVITY_TYPE_CONFIG } from '../constants/activity.constants';
 import { formatDateTimeInTz } from '../helpers/timezone.helper';
@@ -71,8 +71,8 @@ const ActivityCard = ({ item, onPress, company }) => {
         <View style={styles.cardHeader}>
           <View style={styles.cardHeaderLeft}>
             <View style={[styles.cardIconContainer, { backgroundColor: `${accentColor}15` }]}>
-              <Ionicons
-                name={typeConfig?.icon || 'ellipse-outline'}
+              <MaterialCommunityIcons
+                name={typeConfig?.icon || 'circle-outline'}
                 size={18}
                 color={accentColor}
               />
@@ -108,7 +108,7 @@ const ActivityCard = ({ item, onPress, company }) => {
         {/* Service badge */}
         {serviceName ? (
           <View style={styles.cardServiceBadge}>
-            <Ionicons name="pricetag-outline" size={12} color={colors.accent} />
+            <MaterialCommunityIcons name="tag-outline" size={12} color={colors.accent} />
             <Text style={styles.cardServiceText}>{serviceName}</Text>
           </View>
         ) : null}
@@ -166,7 +166,7 @@ const ActivityCard = ({ item, onPress, company }) => {
         <View style={styles.cardFooter}>
           {notesCount > 0 ? (
             <View style={styles.footerItem}>
-              <Ionicons name="chatbubble-outline" size={14} color={colors.textTertiary} />
+              <MaterialCommunityIcons name="chat-outline" size={14} color={colors.textTertiary} />
               <Text style={styles.footerText}>
                 {notesCount} {notesCount === 1 ? 'note' : 'notes'}
               </Text>
@@ -174,7 +174,7 @@ const ActivityCard = ({ item, onPress, company }) => {
           ) : null}
           {(videoUrl || thumbnailUrl) ? (
             <View style={styles.footerItem}>
-              <Ionicons name={isVideo ? 'videocam-outline' : 'image-outline'} size={14} color={colors.textTertiary} />
+              <MaterialCommunityIcons name={isVideo ? 'video-outline' : 'image-outline'} size={14} color={colors.textTertiary} />
               <Text style={styles.footerText}>{isVideo ? 'Video' : 'Media'}</Text>
             </View>
           ) : null}

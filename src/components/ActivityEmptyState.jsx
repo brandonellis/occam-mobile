@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { activityFeedStyles as styles } from '../styles/activityFeed.styles';
 import { colors } from '../theme';
 
 const ActivityEmptyState = ({ filterActive, message }) => (
   <View style={styles.emptyContainer}>
     <View style={styles.emptyIconContainer}>
-      <Ionicons
+      <MaterialCommunityIcons
         name={filterActive ? 'filter-outline' : 'pulse-outline'}
         size={36}
         color={colors.accent}

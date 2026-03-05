@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Svg, { Path } from 'react-native-svg';
 import ScreenHeader from '../../components/ScreenHeader';
 import {
@@ -275,7 +275,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
         activeOpacity={0.7}
       >
         <View style={styles.annotationTimestamp}>
-          <Ionicons name="time-outline" size={14} color={colors.accent} />
+          <MaterialCommunityIcons name="clock-outline" size={14} color={colors.accent} />
           <Text style={styles.annotationTimeText}>
             {formatTimestamp(item.timestamp)}
           </Text>
@@ -311,7 +311,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
           onPress={() => handleDeleteAnnotation(item.id)}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-          <Ionicons name="trash-outline" size={16} color={colors.error} />
+          <MaterialCommunityIcons name="trash-can-outline" size={16} color={colors.error} />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -373,7 +373,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
         {/* Video controls */}
         <View style={styles.controlsRow}>
           <TouchableOpacity onPress={handlePlayPause} style={styles.controlButton}>
-            <Ionicons
+            <MaterialCommunityIcons
               name={isPlaying ? 'pause' : 'play'}
               size={22}
               color={colors.textPrimary}
@@ -389,7 +389,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
                 onPress={handleCaptureFrame}
                 activeOpacity={0.7}
               >
-                <Ionicons name="pin-outline" size={16} color={colors.accent} />
+                <MaterialCommunityIcons name="pin-outline" size={16} color={colors.accent} />
                 <Text style={styles.captureButtonText}>Mark</Text>
               </TouchableOpacity>
             )}
@@ -399,7 +399,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
                 onPress={handleStartDrawing}
                 activeOpacity={0.7}
               >
-                <Ionicons name="brush-outline" size={16} color={colors.accent} />
+                <MaterialCommunityIcons name="brush" size={16} color={colors.accent} />
                 <Text style={styles.captureButtonText}>Draw</Text>
               </TouchableOpacity>
             )}
@@ -410,7 +410,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
                   onPress={handleClearDrawing}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="refresh-outline" size={16} color={colors.textSecondary} />
+                  <MaterialCommunityIcons name="refresh" size={16} color={colors.textSecondary} />
                   <Text style={[styles.captureButtonText, { color: colors.textSecondary }]}>Clear</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -418,7 +418,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
                   onPress={() => setIsDrawing(false)}
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="checkmark" size={16} color={colors.success} />
+                  <MaterialCommunityIcons name="check" size={16} color={colors.success} />
                   <Text style={[styles.captureButtonText, { color: colors.success }]}>Done</Text>
                 </TouchableOpacity>
               </>
@@ -494,7 +494,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
             ]}
             ListEmptyComponent={
               <View style={styles.emptyState}>
-                <Ionicons name="chatbubble-outline" size={32} color={colors.textTertiary} />
+                <MaterialCommunityIcons name="chat-outline" size={32} color={colors.textTertiary} />
                 <Text style={styles.emptyText}>No annotations yet</Text>
                 <Text style={styles.emptyHint}>
                   Pause the video and tap "Mark" to add your first annotation.

@@ -1,35 +1,51 @@
 import React from 'react';
-import { StyleSheet } from 'react-native';
-import { Appbar, Text } from 'react-native-paper';
+import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 
 const ScreenHeader = ({ title, subtitle, onBack, rightAction }) => {
   return (
-    <Appbar.Header style={styles.header} statusBarHeight={0}>
+    <View style={styles.header}>
       {onBack ? (
-        <Appbar.BackAction onPress={onBack} iconColor={colors.textPrimary} />
+        <TouchableOpacity
+          onPress={onBack}
+          style={styles.backButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          activeOpacity={0.6}
+        >
+          <MaterialCommunityIcons name="chevron-left" size={28} color={colors.textPrimary} />
+        </TouchableOpacity>
       ) : (
-        <Appbar.Action icon={() => null} disabled style={styles.placeholder} />
+        <View style={styles.placeholder} />
       )}
-      <Appbar.Content
-        title={title}
-        titleStyle={styles.title}
-        subtitle={subtitle}
-        subtitleStyle={styles.subtitle}
-      />
-      {rightAction || (
-        <Appbar.Action icon={() => null} disabled style={styles.placeholder} />
-      )}
-    </Appbar.Header>
+      <View style={styles.titleContainer}>
+        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        {subtitle ? <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
+      </View>
+      {rightAction || <View style={styles.placeholder} />}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
-    elevation: 0,
+    paddingHorizontal: 4,
+    minHeight: 48,
+  },
+  backButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleContainer: {
+    flex: 1,
+    alignItems: 'center',
   },
   title: {
     fontSize: 18,
@@ -43,7 +59,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   placeholder: {
-    opacity: 0,
+    width: 44,
   },
 });
 

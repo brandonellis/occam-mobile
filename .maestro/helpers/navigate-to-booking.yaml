@@ -1,0 +1,16 @@
+# Shared helper: navigate to the booking service selection screen.
+# Mirrors the navigateToServiceSelection() helper in the web Playwright tests.
+# Assumes user is already logged in.
+appId: host.exp.Exponent
+
+---
+
+# Tap the "Book" tab on the bottom navigation
+- tapOn:
+    text: "Book"
+- waitForAnimationToEnd
+
+# Wait for the service selection screen to load
+- assertVisible:
+    text: "Select a Service"
+    timeout: 15000

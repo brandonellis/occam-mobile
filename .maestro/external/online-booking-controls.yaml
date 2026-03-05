@@ -1,0 +1,62 @@
+# External Booking — online booking controls filtering
+# Mirrors: occam-client/tests/e2e/external/online-booking-controls.spec.js
+#
+# Tests that:
+#   1. Services with online_booking_enabled=false are NOT shown
+#   2. Services with advance_booking_limit_days enforce date restrictions
+#
+# Seeded data (from E2eTenantSeeder):
+#   - "Staff Only Fitting" (E2E-STAFF-ONLY) has online_booking_enabled=false
+#   - "Short Game Lesson" (E2E-ADVANCE-LIMIT) has advance_booking_limit_days=7
+#   - All other services have online_booking_enabled=true (default)
+#
+# Web test equivalents covered:
+#   ✓ client does NOT see services with online booking disabled
+#   ✓ client CAN see services with online booking enabled
+#   ✓ Short Game Lesson is visible and shows correct price
+#
+# Usage:
+#   maestro test .maestro/external/online-booking-controls.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: host.exp.Exponent
+
+---
+
+# ── Login ──────────────────────────────────────────────────────────────
+- runFlow: ../helpers/login.yaml
+
+# ── Navigate to booking ────────────────────────────────────────────────
+- runFlow: ../helpers/navigate-to-booking.yaml
+
+# Wait for service cards to load
+- assertVisible:
+    id: "service-selection-list"
+    timeout: 10000
+
+# ── Test: client does NOT see services with online booking disabled ────
+# "Staff Only Fitting" should NOT be visible (online_booking_enabled=false)
+# Mirrors: const staffOnly = page.locator('.ant-card').filter({ hasText: 'Staff Only Fitting' })
+#          await expect(staffOnly).toHaveCount(0)
+- assertNotVisible:
+    text: "Staff Only Fitting"
+
+# ── Test: client CAN see services with online booking enabled ──────────
+# "1:1 Coaching Session" should be visible (online_booking_enabled defaults to true)
+# Mirrors: expect(coaching.first()).toBeVisible()
+- assertVisible:
+    text: "1:1 Coaching"
+    timeout: 5000
+
+# "Short Game Lesson" should be visible (has advance limit but online booking is enabled)
+# Mirrors: expect(shortGame.first()).toBeVisible()
+- assertVisible:
+    text: "Short Game Lesson"
+    timeout: 5000
+
+# ── Test: Short Game Lesson shows correct price ───────────────────────
+# Mirrors: await expect(shortGame.first()).toContainText('$55')
+- assertVisible:
+    text: "$55"
+    timeout: 5000

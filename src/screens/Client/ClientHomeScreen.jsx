@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { IconButton, TouchableRipple } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings } from '../../services/bookings.api';
@@ -11,6 +12,7 @@ import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import useUnreadNotifications from '../../hooks/useUnreadNotifications';
 import { colors } from '../../theme';
+import logger from '../../helpers/logger.helper';
 
 const ClientHomeScreen = ({ navigation }) => {
   const { user, company } = useAuth();
@@ -40,7 +42,7 @@ const ClientHomeScreen = ({ navigation }) => {
       setSessions(sorted);
       setError(null);
     } catch (err) {
-      console.warn('Failed to load bookings:', err?.message || err);
+      logger.warn('Failed to load bookings:', err?.message || err);
       setError('Unable to load your sessions. Pull down to retry.');
     } finally {
       setIsLoading(false);
@@ -120,12 +122,14 @@ const ClientHomeScreen = ({ navigation }) => {
             <Text style={styles.greeting}>Welcome, {firstName}</Text>
             <Text style={styles.subtitle}>Ready to improve your game?</Text>
           </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate(SCREENS.NOTIFICATIONS)}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+          <View>
+            <IconButton
+              icon="bell-outline"
+              size={24}
+              iconColor={colors.primary}
+              onPress={() => navigation.navigate(SCREENS.NOTIFICATIONS)}
+              style={{ margin: 0 }}
+            />
             {unreadCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationBadgeText}>
@@ -133,7 +137,7 @@ const ClientHomeScreen = ({ navigation }) => {
                 </Text>
               </View>
             )}
-          </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.section}>
@@ -145,7 +149,7 @@ const ClientHomeScreen = ({ navigation }) => {
               onPress={() => navigation.navigate(SCREENS.SERVICE_SELECTION, { bookingData: {} })}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.accentLight }]}>
-                <Ionicons name="calendar-outline" size={18} color={colors.accent} />
+                <MaterialCommunityIcons name="calendar-outline" size={18} color={colors.accent} />
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={1}>Book Session</Text>
             </TouchableOpacity>
@@ -155,7 +159,7 @@ const ClientHomeScreen = ({ navigation }) => {
               onPress={() => navigation.navigate('ProgressTab', { screen: SCREENS.CLIENT_PROGRESS, params: { initialTab: 'resources' } })}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.lavenderMistLight }]}>
-                <Ionicons name="play-circle-outline" size={18} color={colors.twilightPurple} />
+                <MaterialCommunityIcons name="play-circle-outline" size={18} color={colors.twilightPurple} />
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={1}>My Resources</Text>
             </TouchableOpacity>
@@ -165,7 +169,7 @@ const ClientHomeScreen = ({ navigation }) => {
               onPress={() => navigation.navigate(SCREENS.MEMBERSHIP_PLANS)}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.successLight }]}>
-                <Ionicons name="card-outline" size={18} color={colors.success} />
+                <MaterialCommunityIcons name="credit-card-outline" size={18} color={colors.success} />
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={1}>Membership</Text>
             </TouchableOpacity>
@@ -175,12 +179,12 @@ const ClientHomeScreen = ({ navigation }) => {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
-            <TouchableOpacity
+            <TouchableRipple
               onPress={() => navigation.navigate(SCREENS.CLIENT_BOOKINGS)}
-              activeOpacity={0.7}
+              borderless
             >
               <Text style={styles.seeAllLink}>See All</Text>
-            </TouchableOpacity>
+            </TouchableRipple>
           </View>
           {upcomingSessions.length === 0 ? (
             <EmptyState
@@ -192,11 +196,11 @@ const ClientHomeScreen = ({ navigation }) => {
             upcomingSessions.slice(0, 5).map((session) => {
               const coach = session.coaches?.[0] || null;
               return (
-                <TouchableOpacity
+                <TouchableRipple
                   key={session.id}
                   style={styles.bookingCard}
-                  activeOpacity={0.7}
                   onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { booking: session })}
+                  borderless
                 >
                   <View style={styles.bookingCardRow}>
                     <View style={styles.bookingTimeBlock}>
@@ -222,13 +226,13 @@ const ClientHomeScreen = ({ navigation }) => {
                         </Text>
                       )}
                     </View>
-                    <Ionicons
-                      name="chevron-forward"
+                    <MaterialCommunityIcons
+                      name="chevron-right"
                       size={18}
                       color={colors.textTertiary}
                     />
                   </View>
-                </TouchableOpacity>
+                </TouchableRipple>
               );
             })
           )}

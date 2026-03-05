@@ -18,6 +18,7 @@ import useEcommerceConfig from '../../hooks/useEcommerceConfig';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import { colors } from '../../theme';
 import { COACH_ROLES } from '../../constants/auth.constants';
+import logger from '../../helpers/logger.helper';
 
 const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const { bookingData = {} } = route.params || {};
@@ -141,7 +142,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           setMembershipStatus({ hasActiveMembership: false, hasUsage: false });
         }
       } catch (err) {
-        console.warn('Failed to fetch membership status:', err.message);
+        logger.warn('Failed to fetch membership status:', err.message);
         if (!cancelled) setMembershipStatus({ hasActiveMembership: false, hasUsage: false });
       } finally {
         if (!cancelled) setMembershipLoading(false);
@@ -171,7 +172,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           }
         }
       } catch (err) {
-        console.warn('Failed to fetch saved payment methods:', err.message);
+        logger.warn('Failed to fetch saved payment methods:', err.message);
         if (!cancelled) setSavedMethods([]);
       } finally {
         if (!cancelled) setSavedMethodsLoading(false);
@@ -326,7 +327,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         const full = await getBooking(confirmedBookingId);
         setCreatedBookingData(full?.data || full);
       } catch (fetchErr) {
-        console.warn('Failed to fetch booking details for success screen:', fetchErr.message);
+        logger.warn('Failed to fetch booking details for success screen:', fetchErr.message);
         setCreatedBookingData(bookingResponse?.data || bookingResponse);
       }
       setShowSuccess(true);
@@ -336,7 +337,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         try {
           await cancelBooking(pendingBookingId);
         } catch (cancelErr) {
-          console.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
+          logger.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
         }
       }
       Alert.alert('Payment Failed', extractErrorMessage(error));
@@ -400,7 +401,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         const full = await getBooking(bookingResponse?.data?.id || bookingResponse?.id);
         setCreatedBookingData(full?.data || full);
       } catch (fetchErr) {
-        console.warn('Failed to fetch booking details for success screen:', fetchErr.message);
+        logger.warn('Failed to fetch booking details for success screen:', fetchErr.message);
         setCreatedBookingData(bookingResponse?.data || bookingResponse);
       }
       setShowSuccess(true);
@@ -409,7 +410,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         try {
           await cancelBooking(pendingBookingId);
         } catch (cancelErr) {
-          console.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
+          logger.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
         }
       }
       Alert.alert('Payment Failed', extractErrorMessage(error));
@@ -427,7 +428,10 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     }
     // Pre-flight validation: service requires a resource but none was auto-selected
     if (service?.requires_resource && !selectedResource?.id) {
-      Alert.alert('Error', 'This service requires a resource to be selected. Please go back and select a different time slot.');
+      Alert.alert(
+        'Unavailable',
+        'No resources are available for this time slot. Please go back and choose a different time.',
+      );
       return;
     }
     if (isMembershipBooking) {
@@ -996,6 +1000,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             onPress={handleConfirm}
             disabled={!canConfirm}
             activeOpacity={0.8}
+            testID="confirm-booking-button"
           >
             {isSubmitting ? (
               <ActivityIndicator color={colors.textInverse} />

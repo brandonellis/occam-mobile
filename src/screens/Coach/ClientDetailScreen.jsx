@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useCallback, useReducer, useRef } from 'react';
 import {
   View,
   Text,
@@ -11,9 +11,9 @@ import {
   UIManager,
   Platform,
 } from 'react-native';
-import { Snackbar } from 'react-native-paper';
+import { Snackbar, IconButton, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
 import MediaPickerModal from '../../components/MediaPickerModal';
@@ -38,12 +38,18 @@ import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
 import { resolveMediaUrl } from '../../helpers/media.helper';
 import AuthImage from '../../components/AuthImage';
+import logger from '../../helpers/logger.helper';
+import {
+  clientDetailReducer,
+  clientDetailInitialState,
+  CLIENT_DETAIL_ACTIONS,
+} from '../../reducers/clientDetail.reducer';
 
 const getDocIcon = (mime) => {
-  if (mime.startsWith('application/pdf')) return 'document-text';
+  if (mime.startsWith('application/pdf')) return 'file-document';
   if (mime.includes('spreadsheet') || mime.includes('excel')) return 'grid';
-  if (mime.includes('presentation') || mime.includes('powerpoint')) return 'easel';
-  return 'document';
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return 'presentation';
+  return 'file-document-outline';
 };
 
 const SharedMediaCard = ({ item, navigation, onUnshare }) => {
@@ -82,14 +88,14 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
                 resizeMode="cover"
               />
               <View style={styles.sharedMediaPlayOverlay}>
-                <Ionicons name="play-circle" size={48} color="rgba(255,255,255,0.9)" />
+                <MaterialCommunityIcons name="play-circle" size={48} color="rgba(255,255,255,0.9)" />
               </View>
             </View>
           ) : (
             <View style={styles.sharedMediaVideoPlaceholder}>
-              <Ionicons name="videocam" size={28} color={colors.textTertiary} />
+              <MaterialCommunityIcons name="video" size={28} color={colors.textTertiary} />
               <View style={styles.sharedMediaPlayOverlay}>
-                <Ionicons name="play-circle" size={48} color="rgba(255,255,255,0.7)" />
+                <MaterialCommunityIcons name="play-circle" size={48} color="rgba(255,255,255,0.7)" />
               </View>
             </View>
           )}
@@ -98,7 +104,7 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
 
       {!isImage && !isVideo && (
         <View style={styles.sharedMediaDocPlaceholder}>
-          <Ionicons name={getDocIcon(mime)} size={28} color={colors.textTertiary} />
+          <MaterialCommunityIcons name={getDocIcon(mime)} size={28} color={colors.textTertiary} />
           <Text style={styles.sharedMediaDocType}>
             {mime.split('/').pop()?.toUpperCase() || 'FILE'}
           </Text>
@@ -119,13 +125,17 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
         <View style={styles.sharedMediaActions}>
           {isVideo && mediaUrl && (
             <>
-              <TouchableOpacity
+              <IconButton
+                icon="play-circle-outline"
+                size={20}
+                iconColor={colors.accent}
                 onPress={handleVideoPress}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="play-circle-outline" size={20} color={colors.accent} />
-              </TouchableOpacity>
-              <TouchableOpacity
+                style={{ margin: 0 }}
+              />
+              <IconButton
+                icon="brush"
+                size={18}
+                iconColor={colors.accent}
                 onPress={() =>
                   navigation.navigate(SCREENS.VIDEO_ANNOTATION, {
                     uploadId: item.upload_id,
@@ -133,18 +143,17 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
                     videoTitle: item.filename || 'Video',
                   })
                 }
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="brush-outline" size={18} color={colors.accent} />
-              </TouchableOpacity>
+                style={{ margin: 0 }}
+              />
             </>
           )}
-          <TouchableOpacity
+          <IconButton
+            icon="close-circle-outline"
+            size={20}
+            iconColor={colors.error}
             onPress={() => onUnshare(item.id)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="close-circle-outline" size={20} color={colors.error} />
-          </TouchableOpacity>
+            style={{ margin: 0 }}
+          />
         </View>
       </View>
     </View>
@@ -168,34 +177,20 @@ const SECTIONS = {
 const ClientDetailScreen = ({ route, navigation }) => {
   const { company } = useAuth();
   const { clientId } = route.params;
-  const [client, setClient] = useState(null);
-  const [modules, setModules] = useState([]);
-  const [upcomingBookings, setUpcomingBookings] = useState([]);
-  const [pastBookings, setPastBookings] = useState([]);
-  const [sharedMedia, setSharedMedia] = useState([]);
-  const [snapshots, setSnapshots] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [showMediaPicker, setShowMediaPicker] = useState(false);
-  const [isSharing, setIsSharing] = useState(false);
-  const [isCreatingSnapshot, setIsCreatingSnapshot] = useState(false);
-  const [showAllModules, setShowAllModules] = useState(false);
-  const [activities, setActivities] = useState([]);
-  const [activitiesTotal, setActivitiesTotal] = useState(0);
-  const [selectedActivity, setSelectedActivity] = useState(null);
-  const [snackbar, setSnackbar] = useState({ visible: false, message: '', undoData: null });
+  const [state, dispatch] = useReducer(clientDetailReducer, clientDetailInitialState);
+  const {
+    client, modules, upcomingBookings, pastBookings, sharedMedia, snapshots,
+    activities, activitiesTotal, isLoading, isRefreshing, showMediaPicker,
+    isSharing, isCreatingSnapshot, showAllModules, selectedActivity, snackbar,
+    expandedSections, loadedSections, loadingSections,
+  } = state;
   const undoTimerRef = useRef(null);
-
-  // Track which sections are expanded and which have been loaded
-  const [expandedSections, setExpandedSections] = useState({});
-  const [loadedSections, setLoadedSections] = useState({});
-  const [loadingSections, setLoadingSections] = useState({});
 
   // Load only client profile + bookings on mount (essential data)
   const loadCoreData = useCallback(async (showRefresh = false) => {
     try {
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
+      if (showRefresh) dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_REFRESHING, payload: true });
+      else dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_LOADING, payload: true });
 
       const [clientRes, bookingsRes] = await Promise.allSettled([
         getClient(clientId),
@@ -203,7 +198,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
       ]);
 
       if (clientRes.status === 'fulfilled') {
-        setClient(clientRes.value.data);
+        dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_CLIENT, payload: clientRes.value.data });
       }
       if (bookingsRes.status === 'fulfilled') {
         const all = bookingsRes.value.data || [];
@@ -214,68 +209,65 @@ const ClientDetailScreen = ({ route, navigation }) => {
         const past = all
           .filter((b) => !b.start_time || new Date(b.start_time) <= now)
           .sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
-        setUpcomingBookings(upcoming.slice(0, 5));
-        setPastBookings(past.slice(0, 5));
+        dispatch({
+          type: CLIENT_DETAIL_ACTIONS.SET_BOOKINGS,
+          payload: { upcoming: upcoming.slice(0, 5), past: past.slice(0, 5) },
+        });
       }
     } catch (err) {
-      console.warn('Failed to load client data:', err?.message || err);
+      logger.warn('Failed to load client data:', err?.message || err);
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      dispatch({ type: CLIENT_DETAIL_ACTIONS.LOAD_COMPLETE });
     }
   }, [clientId]);
 
   // Lazy loaders for each section
   const loadSectionData = useCallback(async (section) => {
-    setLoadingSections((prev) => ({ ...prev, [section]: true }));
+    dispatch({ type: CLIENT_DETAIL_ACTIONS.SECTION_LOADING, payload: section });
     try {
       if (section === SECTIONS.ACTIVITY) {
         const res = await getClientActivities(clientId, { per_page: 10 });
         const items = Array.isArray(res?.data) ? res.data : (Array.isArray(res) ? res : []);
         const total = res?.meta?.total ?? items.length;
-        setActivities(items);
-        setActivitiesTotal(total);
+        dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_ACTIVITIES, payload: { items, total } });
       } else if (section === SECTIONS.CURRICULUM) {
         const res = await getClientPerformanceCurriculum(clientId);
         const data = res.data;
-        setModules(data?.modules || data || []);
+        dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_MODULES, payload: data?.modules || data || [] });
       } else if (section === SECTIONS.RESOURCES) {
         const res = await getClientSharedMedia(clientId);
-        setSharedMedia(res.data || []);
+        dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_SHARED_MEDIA, payload: res.data || [] });
       } else if (section === SECTIONS.REPORTS) {
         const res = await getClientPerformanceSnapshots(clientId);
-        setSnapshots(res.data || []);
+        dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_SNAPSHOTS, payload: res.data || [] });
       }
-      setLoadedSections((prev) => ({ ...prev, [section]: true }));
+      dispatch({ type: CLIENT_DETAIL_ACTIONS.SECTION_LOADED, payload: section });
     } catch (err) {
-      console.warn(`Failed to load ${section}:`, err?.message || err);
-    } finally {
-      setLoadingSections((prev) => ({ ...prev, [section]: false }));
+      logger.warn(`Failed to load ${section}:`, err?.message || err);
+      dispatch({ type: CLIENT_DETAIL_ACTIONS.SECTION_LOADED, payload: section });
     }
   }, [clientId]);
 
   const toggleSection = useCallback((section) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setExpandedSections((prev) => {
-      const willExpand = !prev[section];
-      // Fetch data on first expand
-      if (willExpand && !loadedSections[section] && !loadingSections[section]) {
-        loadSectionData(section);
-      }
-      return { ...prev, [section]: willExpand };
-    });
-  }, [loadedSections, loadingSections, loadSectionData]);
+    const willExpand = !expandedSections[section];
+    // Fetch data on first expand
+    if (willExpand && !loadedSections[section] && !loadingSections[section]) {
+      loadSectionData(section);
+    }
+    dispatch({ type: CLIENT_DETAIL_ACTIONS.TOGGLE_SECTION, payload: section });
+  }, [expandedSections, loadedSections, loadingSections, loadSectionData]);
 
   // Refresh handler reloads core data + any already-expanded sections
   const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
+    dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_REFRESHING, payload: true });
     await loadCoreData(true);
     // Re-fetch data for any sections that are currently expanded
     const expandedKeys = Object.keys(expandedSections).filter((k) => expandedSections[k]);
     if (expandedKeys.length > 0) {
       await Promise.allSettled(expandedKeys.map((s) => loadSectionData(s)));
     }
-    setIsRefreshing(false);
+    dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_REFRESHING, payload: false });
   }, [loadCoreData, expandedSections, loadSectionData]);
 
   // Load on mount + refresh when returning from curriculum editor or other screens
@@ -291,10 +283,10 @@ const ClientDetailScreen = ({ route, navigation }) => {
   }, [navigation, loadCoreData, loadedSections, loadSectionData]);
 
   const handleShareMedia = useCallback(async ({ upload_id, notes }) => {
-    setIsSharing(true);
+    dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_IS_SHARING, payload: true });
     try {
       await shareMediaWithClient(clientId, { upload_id, notes });
-      setShowMediaPicker(false);
+      dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_SHOW_MEDIA_PICKER, payload: false });
       loadSectionData(SECTIONS.RESOURCES);
     } catch (err) {
       const msg = err.response?.status === 409
@@ -302,7 +294,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
         : err.response?.data?.message || 'Failed to share resource.';
       Alert.alert('Error', msg);
     } finally {
-      setIsSharing(false);
+      dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_IS_SHARING, payload: false });
     }
   }, [clientId, loadSectionData]);
 
@@ -315,7 +307,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
         {
           text: 'Share',
           onPress: async () => {
-            setIsCreatingSnapshot(true);
+            dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_IS_CREATING_SNAPSHOT, payload: true });
             try {
               await createPerformanceSnapshot(clientId);
               Alert.alert('Success', 'Progress report shared with client.');
@@ -326,7 +318,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                 err.response?.data?.message || 'Failed to create progress report.'
               );
             } finally {
-              setIsCreatingSnapshot(false);
+              dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_IS_CREATING_SNAPSHOT, payload: false });
             }
           },
         },
@@ -341,16 +333,15 @@ const ClientDetailScreen = ({ route, navigation }) => {
 
     // Optimistic removal with smooth animation
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setSharedMedia((prev) => prev.filter((m) => m.id !== sharedMediaId));
+    dispatch({ type: CLIENT_DETAIL_ACTIONS.REMOVE_SHARED_MEDIA, payload: sharedMediaId });
 
     // Clear any pending undo timer from a previous removal
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
 
     // Show undo snackbar
-    setSnackbar({
-      visible: true,
-      message: 'Resource removed',
-      undoData: { sharedMediaId, removedItem },
+    dispatch({
+      type: CLIENT_DETAIL_ACTIONS.SET_SNACKBAR,
+      payload: { visible: true, message: 'Resource removed', undoData: { sharedMediaId, removedItem } },
     });
 
     // Fire the API delete after a short delay to allow undo
@@ -358,11 +349,11 @@ const ClientDetailScreen = ({ route, navigation }) => {
       try {
         await unshareMediaFromClient(clientId, sharedMediaId);
       } catch (err) {
-        console.warn('Failed to unshare media:', err.message);
+        logger.warn('Failed to unshare media:', err.message);
         // Restore the item on failure
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        setSharedMedia((prev) => [...prev, removedItem].sort((a, b) => b.id - a.id));
-        setSnackbar({ visible: false, message: '', undoData: null });
+        dispatch({ type: CLIENT_DETAIL_ACTIONS.RESTORE_SHARED_MEDIA, payload: removedItem });
+        dispatch({ type: CLIENT_DETAIL_ACTIONS.DISMISS_SNACKBAR });
         Alert.alert('Error', 'Failed to remove shared resource.');
       }
     }, 3500);
@@ -373,11 +364,9 @@ const ClientDetailScreen = ({ route, navigation }) => {
     const { undoData } = snackbar;
     if (undoData?.removedItem) {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-      setSharedMedia((prev) =>
-        [...prev, undoData.removedItem].sort((a, b) => b.id - a.id)
-      );
+      dispatch({ type: CLIENT_DETAIL_ACTIONS.RESTORE_SHARED_MEDIA, payload: undoData.removedItem });
     }
-    setSnackbar({ visible: false, message: '', undoData: null });
+    dispatch({ type: CLIENT_DETAIL_ACTIONS.DISMISS_SNACKBAR });
   }, [snackbar]);
 
   const renderBookingItem = (booking) => {
@@ -467,15 +456,15 @@ const ClientDetailScreen = ({ route, navigation }) => {
             activeOpacity={0.7}
             onPress={() => navigation.navigate(SCREENS.COACH_TABS, { screen: 'ScheduleTab', params: { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: { client } } } })}
           >
-            <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
+            <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.accent} />
             <Text style={styles.actionButtonText}>Book Session</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={styles.actionButton}
             activeOpacity={0.7}
-            onPress={() => setShowMediaPicker(true)}
+            onPress={() => dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_SHOW_MEDIA_PICKER, payload: true })}
           >
-            <Ionicons name="share-outline" size={18} color={colors.info} />
+            <MaterialCommunityIcons name="share-variant-outline" size={18} color={colors.info} />
             <Text style={styles.actionButtonText}>Share Resource</Text>
           </TouchableOpacity>
         </View>
@@ -488,7 +477,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
             activeOpacity={0.7}
           >
             <View style={styles.collapsibleHeaderLeft}>
-              <Ionicons name="newspaper-outline" size={18} color={colors.accent} />
+              <MaterialCommunityIcons name="newspaper-variant-outline" size={18} color={colors.accent} />
               <Text style={styles.sectionTitle}>Activity Feed</Text>
               {loadedSections[SECTIONS.ACTIVITY] && activitiesTotal > 0 && (
                 <View style={styles.countBadge}>
@@ -496,7 +485,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                 </View>
               )}
             </View>
-            <Ionicons
+            <MaterialCommunityIcons
               name={expandedSections[SECTIONS.ACTIVITY] ? 'chevron-up' : 'chevron-down'}
               size={18}
               color={colors.textTertiary}
@@ -519,7 +508,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                     key={item.id}
                     item={item}
                     company={company}
-                    onPress={(pressed) => setSelectedActivity(pressed)}
+                    onPress={(pressed) => dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_SELECTED_ACTIVITY, payload: pressed })}
                   />
                 ))}
                 {activitiesTotal > 3 && (
@@ -536,7 +525,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                     <Text style={styles.showMoreText}>
                       View All Activity ({activitiesTotal})
                     </Text>
-                    <Ionicons name="chevron-forward" size={14} color={colors.accent} />
+                    <MaterialCommunityIcons name="chevron-right" size={14} color={colors.accent} />
                   </TouchableOpacity>
                 )}
               </>
@@ -552,7 +541,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
             activeOpacity={0.7}
           >
             <View style={styles.collapsibleHeaderLeft}>
-              <Ionicons name="school-outline" size={18} color={colors.accent} />
+              <MaterialCommunityIcons name="school-outline" size={18} color={colors.accent} />
               <Text style={styles.sectionTitle}>Curriculum</Text>
               {loadedSections[SECTIONS.CURRICULUM] && modules.length > 0 && (
                 <View style={styles.countBadge}>
@@ -577,7 +566,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                   </Text>
                 </TouchableOpacity>
               )}
-              <Ionicons
+              <MaterialCommunityIcons
                 name={expandedSections[SECTIONS.CURRICULUM] ? 'chevron-up' : 'chevron-down'}
                 size={18}
                 color={colors.textTertiary}
@@ -602,7 +591,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                   const lessons = mod.lessons || [];
                   const completed = lessons.filter((l) => l.completed).length;
                   return (
-                    <TouchableOpacity
+                    <TouchableRipple
                       key={mod.id}
                       style={styles.moduleItem}
                       onPress={() =>
@@ -611,25 +600,27 @@ const ClientDetailScreen = ({ route, navigation }) => {
                           clientName: fullName,
                         })
                       }
-                      activeOpacity={0.7}
+                      borderless
                     >
-                      <Text style={styles.moduleName}>{mod.title || mod.name}</Text>
-                      <Text style={styles.moduleProgress}>
-                        {completed} / {lessons.length} lessons
-                      </Text>
-                    </TouchableOpacity>
+                      <View>
+                        <Text style={styles.moduleName}>{mod.title || mod.name}</Text>
+                        <Text style={styles.moduleProgress}>
+                          {completed} / {lessons.length} lessons
+                        </Text>
+                      </View>
+                    </TouchableRipple>
                   );
                 })}
                 {modules.length > 3 && (
                   <TouchableOpacity
                     style={styles.showMoreButton}
-                    onPress={() => setShowAllModules((prev) => !prev)}
+                    onPress={() => dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_SHOW_ALL_MODULES, payload: !showAllModules })}
                     activeOpacity={0.7}
                   >
                     <Text style={styles.showMoreText}>
                       {showAllModules ? 'Show Less' : `Show ${modules.length - 3} More`}
                     </Text>
-                    <Ionicons
+                    <MaterialCommunityIcons
                       name={showAllModules ? 'chevron-up' : 'chevron-down'}
                       size={14}
                       color={colors.accent}
@@ -649,7 +640,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
             activeOpacity={0.7}
           >
             <View style={styles.collapsibleHeaderLeft}>
-              <Ionicons name="folder-open-outline" size={18} color={colors.info} />
+              <MaterialCommunityIcons name="folder-open-outline" size={18} color={colors.info} />
               <Text style={styles.sectionTitle}>Shared Resources</Text>
               {loadedSections[SECTIONS.RESOURCES] && sharedMedia.length > 0 && (
                 <View style={styles.countBadge}>
@@ -657,7 +648,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                 </View>
               )}
             </View>
-            <Ionicons
+            <MaterialCommunityIcons
               name={expandedSections[SECTIONS.RESOURCES] ? 'chevron-up' : 'chevron-down'}
               size={18}
               color={colors.textTertiary}
@@ -697,7 +688,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                     <Text style={styles.showMoreText}>
                       Show All {sharedMedia.length} Resources
                     </Text>
-                    <Ionicons name="chevron-forward" size={14} color={colors.accent} />
+                    <MaterialCommunityIcons name="chevron-right" size={14} color={colors.accent} />
                   </TouchableOpacity>
                 )}
               </>
@@ -713,7 +704,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
             activeOpacity={0.7}
           >
             <View style={styles.collapsibleHeaderLeft}>
-              <Ionicons name="bar-chart-outline" size={18} color={colors.accent} />
+              <MaterialCommunityIcons name="chart-bar" size={18} color={colors.accent} />
               <Text style={styles.sectionTitle}>Progress Reports</Text>
               {loadedSections[SECTIONS.REPORTS] && snapshots.length > 0 && (
                 <View style={styles.countBadge}>
@@ -734,13 +725,13 @@ const ClientDetailScreen = ({ route, navigation }) => {
                     <ActivityIndicator size="small" color={colors.accent} />
                   ) : (
                     <>
-                      <Ionicons name="share-outline" size={14} color={colors.accent} />
+                      <MaterialCommunityIcons name="share-variant-outline" size={14} color={colors.accent} />
                       <Text style={styles.shareProgressText}>Share</Text>
                     </>
                   )}
                 </TouchableOpacity>
               )}
-              <Ionicons
+              <MaterialCommunityIcons
                 name={expandedSections[SECTIONS.REPORTS] ? 'chevron-up' : 'chevron-down'}
                 size={18}
                 color={colors.textTertiary}
@@ -771,7 +762,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                   }
                   activeOpacity={0.7}
                 >
-                  <Ionicons name="document-text-outline" size={18} color={colors.accent} />
+                  <MaterialCommunityIcons name="file-document-outline" size={18} color={colors.accent} />
                   <View style={styles.snapshotInfo}>
                     <Text style={styles.snapshotTitle}>
                       {snap.title || 'Progress Report'}
@@ -784,7 +775,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                       })}
                     </Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+                  <MaterialCommunityIcons name="chevron-right" size={16} color={colors.textTertiary} />
                 </TouchableOpacity>
               ))
             )
@@ -800,13 +791,13 @@ const ClientDetailScreen = ({ route, navigation }) => {
               activeOpacity={0.7}
             >
               <View style={styles.collapsibleHeaderLeft}>
-                <Ionicons name="calendar-outline" size={18} color={colors.success} />
+                <MaterialCommunityIcons name="calendar-outline" size={18} color={colors.success} />
                 <Text style={styles.sectionTitle}>Upcoming Bookings</Text>
                 <View style={styles.countBadge}>
                   <Text style={styles.countBadgeText}>{upcomingBookings.length}</Text>
                 </View>
               </View>
-              <Ionicons
+              <MaterialCommunityIcons
                 name={expandedSections[SECTIONS.UPCOMING] ? 'chevron-up' : 'chevron-down'}
                 size={18}
                 color={colors.textTertiary}
@@ -827,13 +818,13 @@ const ClientDetailScreen = ({ route, navigation }) => {
               activeOpacity={0.7}
             >
               <View style={styles.collapsibleHeaderLeft}>
-                <Ionicons name="time-outline" size={18} color={colors.textTertiary} />
+                <MaterialCommunityIcons name="clock-outline" size={18} color={colors.textTertiary} />
                 <Text style={styles.sectionTitle}>Recent Bookings</Text>
                 <View style={styles.countBadge}>
                   <Text style={styles.countBadgeText}>{pastBookings.length}</Text>
                 </View>
               </View>
-              <Ionicons
+              <MaterialCommunityIcons
                 name={expandedSections[SECTIONS.PAST] ? 'chevron-up' : 'chevron-down'}
                 size={18}
                 color={colors.textTertiary}
@@ -848,7 +839,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
 
       <MediaPickerModal
         visible={showMediaPicker}
-        onClose={() => setShowMediaPicker(false)}
+        onClose={() => dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_SHOW_MEDIA_PICKER, payload: false })}
         onSelect={handleShareMedia}
         alreadySharedIds={sharedMedia.map((m) => m.upload_id)}
         isSharing={isSharing}
@@ -857,12 +848,12 @@ const ClientDetailScreen = ({ route, navigation }) => {
       <ActivityDetailSheet
         item={selectedActivity}
         visible={!!selectedActivity}
-        onClose={() => setSelectedActivity(null)}
+        onClose={() => dispatch({ type: CLIENT_DETAIL_ACTIONS.SET_SELECTED_ACTIVITY, payload: null })}
       />
 
       <Snackbar
         visible={snackbar.visible}
-        onDismiss={() => setSnackbar({ visible: false, message: '', undoData: null })}
+        onDismiss={() => dispatch({ type: CLIENT_DETAIL_ACTIONS.DISMISS_SNACKBAR })}
         duration={3000}
         action={{ label: 'Undo', onPress: handleUndoUnshare }}
         style={styles.snackbar}

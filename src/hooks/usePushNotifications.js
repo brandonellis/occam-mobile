@@ -6,6 +6,7 @@ import Constants from 'expo-constants';
 import { registerPushToken } from '../services/notifications.api';
 import { navigate } from '../helpers/navigation.helper';
 import { SCREENS } from '../constants/navigation.constants';
+import logger from '../helpers/logger.helper';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -23,7 +24,7 @@ const usePushNotifications = () => {
 
   const registerForPushNotifications = async () => {
     if (!Device.isDevice) {
-      console.warn('Push notifications require a physical device');
+      logger.warn('Push notifications require a physical device');
       return null;
     }
 
@@ -37,7 +38,7 @@ const usePushNotifications = () => {
     }
 
     if (finalStatus !== 'granted') {
-      console.warn('Push notification permission not granted');
+      logger.warn('Push notification permission not granted');
       return null;
     }
 
@@ -65,7 +66,7 @@ const usePushNotifications = () => {
         await registerPushToken(token, Platform.OS);
       }
     } catch (error) {
-      console.error('Failed to register push token:', error);
+      logger.error('Failed to register push token:', error);
     }
   };
 

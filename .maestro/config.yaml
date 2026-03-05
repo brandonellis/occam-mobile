@@ -1,0 +1,37 @@
+# Maestro E2E Test Configuration
+# https://maestro.mobile.dev/
+#
+# Mirrors the Playwright E2E test structure from occam-client/tests/e2e/
+#
+# Directory structure:
+#   .maestro/
+#   ├── config.yaml                              (this file)
+#   ├── helpers/
+#   │   └── login.yaml                           (shared login sub-flow)
+#   ├── external/
+#   │   ├── booking-flow.yaml                    (mirrors booking-flow.spec.js)
+#   │   ├── booking-flow-auth.yaml               (mirrors booking-flow.auth.spec.js)
+#   │   ├── variable-duration-booking.yaml       (mirrors variable-duration-booking.spec.js)
+#   │   ├── booking-visibility.yaml              (mirrors booking-visibility.spec.js)
+#   │   ├── booking-visibility-auth.yaml         (mirrors booking-visibility.auth.spec.js)
+#   │   └── online-booking-controls.yaml         (mirrors online-booking-controls.spec.js)
+#   └── README.md
+
+# App configuration
+appId: host.exp.Exponent  # Expo Go app ID for development testing
+
+# Environment variables (override via CLI with -e KEY=VALUE)
+#
+# Seeded test data (mirrors E2eTenantSeeder from occam-platform):
+#   - e2e-client@occam.test / password  — member client with Premium membership
+#   - "1:1 Coaching Session" (E2E-1ON1) — requires coach, booking_visibility='all'
+#   - "Member Lesson" (E2E-MEMBER)       — booking_visibility='members_only'
+#   - "Simulator Bay Rental"             — variable duration, requires_resource
+#   - "Range Session"                    — no coach required
+#   - "Staff Only Fitting"              — online_booking_enabled=false
+#   - "Short Game Lesson"               — advance_booking_limit_days=7
+#   - Coach Alpha, Coach Beta           — seeded coaches
+env:
+  CLIENT_EMAIL: ""
+  CLIENT_PASSWORD: ""
+  TEST_ORG: ""

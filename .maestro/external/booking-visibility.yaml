@@ -1,0 +1,55 @@
+# External Booking — booking visibility filtering (non-member client)
+# Mirrors: occam-client/tests/e2e/external/booking-visibility.spec.js
+#
+# Tests that services with booking_visibility='members_only' are NOT shown
+# to clients without an active membership.
+#
+# Seeded data:
+#   - "Member Lesson" (E2E-MEMBER) has booking_visibility='members_only'
+#   - All other services have booking_visibility='all' (default)
+#
+# Web test equivalents covered:
+#   ✓ non-member user does NOT see members_only services
+#   ✓ non-member user CAN see regular services
+#
+# NOTE: This flow requires a NON-MEMBER client account.
+#
+# Usage:
+#   maestro test .maestro/external/booking-visibility.yaml \
+#     -e CLIENT_EMAIL=e2e-nonmember@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: host.exp.Exponent
+
+---
+
+# ── Login as non-member client ─────────────────────────────────────────
+- runFlow: ../helpers/login.yaml
+
+# ── Navigate to booking ────────────────────────────────────────────────
+- runFlow: ../helpers/navigate-to-booking.yaml
+
+# Wait for service cards to load
+- assertVisible:
+    id: "service-selection-list"
+    timeout: 10000
+
+# ── Test: non-member does NOT see members_only services ────────────────
+# "Member Lesson" should NOT be visible (members_only)
+# Mirrors: const memberLesson = page.locator('.ant-card').filter({ hasText: 'Member Lesson' })
+#          await expect(memberLesson).toHaveCount(0)
+- assertNotVisible:
+    text: "Member Lesson"
+
+# ── Test: non-member CAN see regular services ─────────────────────────
+# "1:1 Coaching Session" should be visible (booking_visibility='all')
+# Mirrors: expect(coaching.first()).toBeVisible()
+- assertVisible:
+    text: "1:1 Coaching"
+    timeout: 5000
+
+# "Range Session" should be visible
+# Mirrors: expect(range.first()).toBeVisible()
+- assertVisible:
+    text: "Range Session"
+    timeout: 5000

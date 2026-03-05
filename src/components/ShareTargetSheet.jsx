@@ -8,11 +8,12 @@ import {
   ActivityIndicator,
   TextInput,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getClients, getClientGroups } from '../services/accounts.api';
 import { shareTargetSheetStyles as styles } from '../styles/shareTargetSheet.styles';
 import { colors } from '../theme';
+import logger from '../helpers/logger.helper';
 
 const TABS = { CLIENTS: 'clients', GROUPS: 'groups' };
 const SEARCH_DEBOUNCE_MS = 300;
@@ -37,7 +38,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
       setClients(clientsRes?.data || clientsRes || []);
       setGroups(groupsRes?.data || groupsRes || []);
     } catch (err) {
-      console.warn('Failed to load share targets:', err?.message || err);
+      logger.warn('Failed to load share targets:', err?.message || err);
     } finally {
       setIsLoading(false);
     }
@@ -53,7 +54,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
         const res = await getClients({ per_page: 100 });
         setClients(res?.data || res || []);
       } catch (err) {
-        console.warn('Failed to reload clients:', err?.message || err);
+        logger.warn('Failed to reload clients:', err?.message || err);
       } finally {
         setIsSearching(false);
       }
@@ -64,7 +65,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
       const res = await getClients({ search: trimmed, per_page: 50 });
       setClients(res?.data || res || []);
     } catch (err) {
-      console.warn('Failed to search clients:', err?.message || err);
+      logger.warn('Failed to search clients:', err?.message || err);
     } finally {
       setIsSearching(false);
     }
@@ -144,8 +145,8 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
             <Text style={styles.targetMeta} numberOfLines={1}>{item.email}</Text>
           )}
         </View>
-        <Ionicons
-          name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+        <MaterialCommunityIcons
+          name={selected ? 'check-circle' : 'circle-outline'}
           size={24}
           color={selected ? colors.accent : colors.gray400}
         />
@@ -164,7 +165,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
         activeOpacity={0.7}
       >
         <View style={[styles.groupIcon, selected && styles.groupIconSelected]}>
-          <Ionicons
+          <MaterialCommunityIcons
             name="people"
             size={18}
             color={selected ? colors.white : colors.accent}
@@ -178,8 +179,8 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
             </Text>
           )}
         </View>
-        <Ionicons
-          name={selected ? 'checkmark-circle' : 'ellipse-outline'}
+        <MaterialCommunityIcons
+          name={selected ? 'check-circle' : 'circle-outline'}
           size={24}
           color={selected ? colors.accent : colors.gray400}
         />
@@ -200,7 +201,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Ionicons name="close" size={24} color={colors.textPrimary} />
+            <MaterialCommunityIcons name="close" size={24} color={colors.textPrimary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Share Video</Text>
           <TouchableOpacity
@@ -219,7 +220,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
 
         {/* Search */}
         <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color={colors.textTertiary} />
+          <MaterialCommunityIcons name="magnify" size={18} color={colors.textTertiary} />
           <TextInput
             style={styles.searchInput}
             placeholder="Search..."
@@ -233,7 +234,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
           )}
           {!isSearching && search.length > 0 && (
             <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
+              <MaterialCommunityIcons name="close-circle" size={18} color={colors.textTertiary} />
             </TouchableOpacity>
           )}
         </View>
@@ -268,7 +269,7 @@ const ShareTargetSheet = ({ visible, onClose, onSelect }) => {
                 onPress={() => toggleTarget(t)}
               >
                 <Text style={styles.chipText} numberOfLines={1}>{t.name}</Text>
-                <Ionicons name="close-circle" size={14} color={colors.accent} />
+                <MaterialCommunityIcons name="close-circle" size={14} color={colors.accent} />
               </TouchableOpacity>
             ))}
           </View>

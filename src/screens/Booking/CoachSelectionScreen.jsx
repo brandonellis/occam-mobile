@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, ActivityIndicator } from 'react-native-paper';
+import { Text, ActivityIndicator, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
@@ -10,6 +10,7 @@ import { getCoaches } from '../../services/bookings.api';
 import { getAllowedCoachesForService } from '../../services/accounts.api';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
+import logger from '../../helpers/logger.helper';
 
 const CoachSelectionScreen = ({ route, navigation }) => {
   const { bookingData = {} } = route.params || {};
@@ -60,13 +61,13 @@ const CoachSelectionScreen = ({ route, navigation }) => {
             coachList = coachList.filter((c) => allowedIds.includes(c.id));
           }
         } catch (assignErr) {
-          console.warn('Failed to fetch coach assignments, showing all coaches:', assignErr.message);
+          logger.warn('Failed to fetch coach assignments, showing all coaches:', assignErr.message);
         }
       }
 
       setState({ coaches: coachList, isLoading: false, error: null });
     } catch (err) {
-      console.warn('Failed to load coaches:', err.message);
+      logger.warn('Failed to load coaches:', err.message);
       setState((prev) => ({
         ...prev,
         isLoading: false,
@@ -107,31 +108,34 @@ const CoachSelectionScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} testID="coach-selection-list">
           <Text style={styles.sectionHeader}>
             Available coaches for {service?.name}
           </Text>
           {state.coaches.map((coach) => (
-            <TouchableOpacity
+            <TouchableRipple
               key={coach.id}
               style={styles.coachCard}
               onPress={() => handleSelectCoach(coach)}
-              activeOpacity={0.7}
+              borderless
+              testID={`coach-card-${coach.id}`}
             >
-              <Avatar
-                uri={coach.avatar_url}
-                name={`${coach.first_name} ${coach.last_name}`}
-                size={48}
-              />
-              <View style={styles.coachInfo}>
-                <Text style={styles.coachName}>
-                  {coach.first_name} {coach.last_name}
-                </Text>
-                {coach.specialty && (
-                  <Text style={styles.coachSpecialty}>{coach.specialty}</Text>
-                )}
+              <View style={styles.coachCardRow}>
+                <Avatar
+                  uri={coach.avatar_url}
+                  name={`${coach.first_name} ${coach.last_name}`}
+                  size={48}
+                />
+                <View style={styles.coachInfo}>
+                  <Text style={styles.coachName}>
+                    {coach.first_name} {coach.last_name}
+                  </Text>
+                  {coach.specialty && (
+                    <Text style={styles.coachSpecialty}>{coach.specialty}</Text>
+                  )}
+                </View>
               </View>
-            </TouchableOpacity>
+            </TouchableRipple>
           ))}
           {state.coaches.length === 0 && (
             <Text style={styles.noSlotsText}>

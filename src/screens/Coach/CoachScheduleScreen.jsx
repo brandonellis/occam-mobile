@@ -10,7 +10,8 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { IconButton } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings, cancelBooking } from '../../services/bookings.api';
@@ -19,6 +20,7 @@ import { scheduleStyles as styles } from '../../styles/schedule.styles';
 import { globalStyles } from '../../styles/global.styles';
 import EmptyState from '../../components/EmptyState';
 import { colors, spacing } from '../../theme';
+import logger from '../../helpers/logger.helper';
 
 const CoachScheduleScreen = ({ navigation }) => {
   const { user, company } = useAuth();
@@ -46,7 +48,7 @@ const CoachScheduleScreen = ({ navigation }) => {
       );
       setSessions(sorted);
     } catch (err) {
-      console.warn('Failed to load sessions:', err?.message || err);
+      logger.warn('Failed to load sessions:', err?.message || err);
       setSessions([]);
     } finally {
       setIsLoading(false);
@@ -130,7 +132,7 @@ const CoachScheduleScreen = ({ navigation }) => {
           onPress={() => navigation.navigate(SCREENS.CLIENT_SELECTION, { bookingData: {} })}
           activeOpacity={0.7}
         >
-          <Ionicons name="add" size={18} color={colors.accent} />
+          <MaterialCommunityIcons name="plus" size={18} color={colors.accent} />
           <Text style={styles.newBookingText}>New</Text>
         </TouchableOpacity>
       </View>
@@ -194,17 +196,17 @@ const CoachScheduleScreen = ({ navigation }) => {
                             {session.end_time ? ` — ${formatTimeInTz(session.end_time, company)}` : ''}
                           </Text>
                         </View>
-                        <TouchableOpacity
-                          style={styles.cancelButton}
+                        <IconButton
+                          icon="close-circle-outline"
+                          size={20}
+                          iconColor={colors.error}
                           onPress={() => handleCancelBooking(session.id, serviceName)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                          <Ionicons name="close-circle-outline" size={20} color={colors.error} />
-                        </TouchableOpacity>
+                          style={{ margin: 0 }}
+                        />
                       </View>
                       {session.location && (
                         <View style={styles.sessionLocation}>
-                          <Ionicons name="location-outline" size={13} color={colors.textTertiary} />
+                          <MaterialCommunityIcons name="map-marker-outline" size={13} color={colors.textTertiary} />
                           <Text style={styles.sessionLocationText}>
                             {session.location.name}
                           </Text>

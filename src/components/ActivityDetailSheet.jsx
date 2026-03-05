@@ -11,7 +11,7 @@ import {
   Linking,
   ActivityIndicator,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { activityFeedStyles as styles } from '../styles/activityFeed.styles';
 import { ACTIVITY_TYPE_CONFIG } from '../constants/activity.constants';
@@ -106,7 +106,7 @@ const NoteItem = ({ note }) => {
               if (url) Linking.openURL(url);
             }}
           >
-            <Ionicons name="videocam-outline" size={18} color={colors.accent} />
+            <MaterialCommunityIcons name="video-outline" size={18} color={colors.accent} />
             <Text style={[styles.noteText, { marginTop: 0, marginLeft: spacing.sm, color: colors.accent }]}>
               {upload?.file_name || 'Video'}
             </Text>
@@ -121,7 +121,7 @@ const NoteItem = ({ note }) => {
               if (url) Linking.openURL(url);
             }}
           >
-            <Ionicons name="musical-note-outline" size={18} color={colors.accent} />
+            <MaterialCommunityIcons name="music-note-outline" size={18} color={colors.accent} />
             <Text style={[styles.noteText, { marginTop: 0, marginLeft: spacing.sm, color: colors.accent }]}>
               Voice note
             </Text>
@@ -232,11 +232,11 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
         {/* Header */}
         <View style={styles.sheetHeader}>
           <View style={[styles.cardIconContainer, { backgroundColor: `${accentColor}15`, marginRight: spacing.md }]}>
-            <Ionicons name={typeConfig?.icon || 'ellipse-outline'} size={20} color={accentColor} />
+            <MaterialCommunityIcons name={typeConfig?.icon || 'circle-outline'} size={20} color={accentColor} />
           </View>
           <Text style={styles.sheetTitle} numberOfLines={2}>{item.title || 'Activity'}</Text>
           <TouchableOpacity style={styles.sheetClose} onPress={onClose} activeOpacity={0.7}>
-            <Ionicons name="close" size={18} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="close" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -251,7 +251,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
             <View style={styles.sheetSection}>
               {item.start_time ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
-                  <Ionicons name="time-outline" size={16} color={colors.textTertiary} />
+                  <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textTertiary} />
                   <Text style={[styles.cardMeta, { marginLeft: spacing.sm, marginTop: 0 }]}>
                     {formatDateTime(item.start_time)}
                   </Text>
@@ -259,7 +259,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
               ) : null}
               {item.created_at && !item.start_time ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
-                  <Ionicons name="time-outline" size={16} color={colors.textTertiary} />
+                  <MaterialCommunityIcons name="clock-outline" size={16} color={colors.textTertiary} />
                   <Text style={[styles.cardMeta, { marginLeft: spacing.sm, marginTop: 0 }]}>
                     {formatDateTime(item.created_at)}
                   </Text>
@@ -267,7 +267,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
               ) : null}
               {coachName ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
-                  <Ionicons name="person-outline" size={16} color={colors.textTertiary} />
+                  <MaterialCommunityIcons name="account-outline" size={16} color={colors.textTertiary} />
                   <Text style={[styles.cardMeta, { marginLeft: spacing.sm, marginTop: 0, fontWeight: '500' }]}>
                     {coachName}
                   </Text>
@@ -275,13 +275,13 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
               ) : null}
               {serviceName ? (
                 <View style={styles.cardServiceBadge}>
-                  <Ionicons name="pricetag-outline" size={12} color={colors.accent} />
+                  <MaterialCommunityIcons name="tag-outline" size={12} color={colors.accent} />
                   <Text style={styles.cardServiceText}>{serviceName}</Text>
                 </View>
               ) : null}
               {item.status ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: spacing.sm }}>
-                  <Ionicons name="checkmark-circle-outline" size={16} color={colors.success} />
+                  <MaterialCommunityIcons name="check-circle-outline" size={16} color={colors.success} />
                   <Text style={[styles.cardMeta, { marginLeft: spacing.sm, marginTop: 0, color: colors.success }]}>
                     {item.status}
                   </Text>
@@ -319,7 +319,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
                     style={{ backgroundColor: colors.gray100, borderRadius: 12, padding: spacing.lg, flexDirection: 'row', alignItems: 'center' }}
                     onPress={() => Linking.openURL(resourceData.url)}
                   >
-                    <Ionicons name="document-outline" size={24} color={colors.accent} />
+                    <MaterialCommunityIcons name="file-document-outline" size={24} color={colors.accent} />
                     <View style={{ marginLeft: spacing.md, flex: 1 }}>
                       <Text style={styles.cardTitle}>{resourceData.filename || 'File'}</Text>
                       <Text style={styles.cardMeta}>Tap to open</Text>
@@ -334,7 +334,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
               <View style={styles.sheetSection}>
                 <Text style={styles.sheetSectionTitle}>PROGRESS REPORT</Text>
                 <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderLight }}>
-                  <Ionicons name="analytics-outline" size={24} color={accentColor} />
+                  <MaterialCommunityIcons name="chart-line" size={24} color={accentColor} />
                   <Text style={[styles.cardTitle, { marginTop: spacing.sm }]}>{item.title}</Text>
                   {reportData.coach ? (
                     <Text style={styles.cardMeta}>
@@ -405,7 +405,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
               {submitting ? (
                 <ActivityIndicator size="small" color={colors.textInverse} />
               ) : (
-                <Ionicons name="send" size={18} color={colors.textInverse} />
+                <MaterialCommunityIcons name="send" size={18} color={colors.textInverse} />
               )}
             </TouchableOpacity>
           </View>

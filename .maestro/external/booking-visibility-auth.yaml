@@ -1,0 +1,78 @@
+# External Booking — booking visibility + coach assignment filtering (authenticated member)
+# Mirrors: occam-client/tests/e2e/external/booking-visibility.auth.spec.js
+#
+# Tests that:
+#   1. Members CAN see members_only services
+#   2. Coach assignment filtering restricts which coaches are shown
+#
+# Seeded data (from E2eTenantSeeder):
+#   - e2e-client@occam.test has active Premium membership
+#   - "Member Lesson" (E2E-MEMBER) has booking_visibility='members_only'
+#   - Client-Coach Assignment: e2e-client -> Coach Alpha for 1:1 Coaching (E2E-1ON1)
+#     This means Coach Beta should NOT appear for 1:1 Coaching when this client books.
+#
+# Web test equivalents covered:
+#   ✓ member client CAN see members_only services
+#   ✓ member client also sees regular services
+#   ✓ selecting 1:1 Coaching shows only assigned coach (Coach Alpha)
+#
+# Usage:
+#   maestro test .maestro/external/booking-visibility-auth.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: host.exp.Exponent
+
+---
+
+# ── Login as member client ─────────────────────────────────────────────
+- runFlow: ../helpers/login.yaml
+
+# ── Navigate to booking ────────────────────────────────────────────────
+- runFlow: ../helpers/navigate-to-booking.yaml
+
+# Wait for service cards to load
+- assertVisible:
+    id: "service-selection-list"
+    timeout: 10000
+
+# ── Test: member client CAN see members_only services ──────────────────
+# "Member Lesson" should be visible for a member client
+# Mirrors: expect(memberLesson.first()).toBeVisible()
+- assertVisible:
+    text: "Member Lesson"
+    timeout: 5000
+
+# ── Test: member client also sees regular services ─────────────────────
+# "1:1 Coaching Session" (booking_visibility='all') should also be visible
+# Mirrors: expect(coaching.first()).toBeVisible()
+- assertVisible:
+    text: "1:1 Coaching"
+    timeout: 5000
+
+# ── Test: coach assignment filtering ───────────────────────────────────
+# Select "1:1 Coaching Session" — client has assignment: only Coach Alpha
+# Mirrors: coachingCard.click()
+- tapOn:
+    text: "1:1 Coaching"
+- waitForAnimationToEnd
+
+# Handle location selection if shown (multi-location service)
+- runFlow: ../helpers/handle-location-selection.yaml
+
+# Coach selection should now appear
+# Mirrors: await expect(coachSelection).toBeVisible()
+- assertVisible:
+    text: "Select a Coach"
+    timeout: 15000
+
+# Coach Alpha should be visible (assigned)
+# Mirrors: expect(coachAlpha.first()).toBeVisible()
+- assertVisible:
+    text: "Coach Alpha"
+    timeout: 10000
+
+# Coach Beta should NOT be visible (not assigned for this service)
+# Mirrors: await expect(coachBeta).toHaveCount(0)
+- assertNotVisible:
+    text: "Coach Beta"

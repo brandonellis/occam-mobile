@@ -1,0 +1,96 @@
+# External Booking Flow — authenticated client (mobile equivalent of public web flow)
+# Mirrors: occam-client/tests/e2e/external/booking-flow.spec.js
+#
+# The mobile app always requires authentication, so this flow logs in first.
+# Tests the booking route for a 1:1 coaching session:
+#   login → service → location (if multi) → coach → timeslot → confirmation
+#
+# Web test equivalents covered:
+#   ✓ loads the booking page and shows service selection
+#   ✓ shows service cards on booking page load
+#   ✓ selecting a coaching service shows coach selection
+#   ✓ selecting a coach advances to timeslot selection
+#   ✓ selecting a timeslot advances to confirmation
+#   ✓ full one-off booking flow reaches confirmation screen
+#
+# Usage:
+#   maestro test .maestro/external/booking-flow.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: host.exp.Exponent
+
+---
+
+# ── Login ──────────────────────────────────────────────────────────────
+- runFlow: ../helpers/login.yaml
+
+# ── Test: loads booking page and shows service selection ───────────────
+- runFlow: ../helpers/navigate-to-booking.yaml
+
+# Service cards should be visible
+- assertVisible:
+    id: "service-selection-list"
+    timeout: 10000
+
+# ── Test: selecting a coaching service shows coach selection ───────────
+# Select "1:1 Coaching" — requires coach (mirrors web test selecting "1:1 Coaching")
+- tapOn:
+    text: "1:1 Coaching"
+- waitForAnimationToEnd
+
+# Handle location selection if shown (multi-location service)
+# Mirrors: if (await locationCard.isVisible(...)) { await locationCard.click(); }
+- runFlow: ../helpers/handle-location-selection.yaml
+
+# ── Test: coach selection should appear ────────────────────────────────
+- assertVisible:
+    text: "Select a Coach"
+    timeout: 15000
+
+# Select first coach (mirrors: coachCard.filter({ hasText: 'Coach Alpha' }).click())
+- runFlow: ../helpers/handle-coach-selection.yaml
+
+# ── Test: selecting a coach advances to timeslot selection ─────────────
+- assertVisible:
+    text: "Select Date & Time"
+    timeout: 15000
+
+# Wait for time slots to load
+- extendedWaitUntil:
+    visible: "Available Times"
+    timeout: 20000
+
+# ── Test: selecting a timeslot advances to confirmation ────────────────
+# Select first available timeslot
+# Mirrors: page.locator('[role="radiogroup"] [role="radio"]').first().click()
+- tapOn:
+    text: "\\d{1,2}:\\d{2}.*"
+    index: 0
+
+# Tap Continue
+- tapOn:
+    id: "continue-button"
+- waitForAnimationToEnd
+
+# ── Test: full booking flow reaches confirmation screen ────────────────
+# Verify booking summary is visible (Total line, confirm button)
+# Mirrors: expect(confirmation).toBeVisible()
+- assertVisible:
+    text: "Total"
+    timeout: 15000
+
+- assertVisible:
+    id: "confirm-booking-button"
+
+# Auth users in mobile see the confirm/pay button directly (no customer info step)
+# Mirrors web auth test: auth users skip customer info → go to payment
+#
+# NOTE: We stop here to avoid creating a real booking.
+# To test full confirmation, uncomment:
+# - tapOn:
+#     id: "confirm-booking-button"
+# - waitForAnimationToEnd
+# - assertVisible:
+#     text: "Booked"
+#     timeout: 30000

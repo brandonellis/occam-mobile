@@ -3,6 +3,7 @@ import { View, Platform } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { reportFrontendError } from '../services/errorReporting.api';
 import { colors } from '../theme';
+import logger from '../helpers/logger.helper';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -15,7 +16,7 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught an error:', error);
+    logger.error('ErrorBoundary caught an error:', error);
 
     reportFrontendError({
       message: error?.message || error?.toString() || 'Unknown error',

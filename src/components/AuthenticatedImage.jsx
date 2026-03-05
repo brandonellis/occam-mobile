@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Image, View, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getToken, getTenantId } from '../helpers/storage.helper';
 import { colors } from '../theme';
 
@@ -53,7 +53,7 @@ const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon 
   if (failed || !uri) {
     return (
       <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.gray100 }]}>
-        <Ionicons name={placeholderIcon} size={placeholderSize} color={colors.gray400} />
+        <MaterialCommunityIcons name={placeholderIcon} size={placeholderSize} color={colors.gray400} />
       </View>
     );
   }

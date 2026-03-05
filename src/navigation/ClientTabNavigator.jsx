@@ -16,9 +16,9 @@ const Tab = createBottomTabNavigator();
 const TAB_ICONS = {
   HomeTab: { focused: 'home', unfocused: 'home-outline' },
   [SCREENS.CLIENT_BOOKINGS]: { focused: 'calendar', unfocused: 'calendar-outline' },
-  [SCREENS.CLIENT_ACTIVITY]: { focused: 'pulse', unfocused: 'pulse-outline' },
-  ProgressTab: { focused: 'trending-up', unfocused: 'trending-up-outline' },
-  [SCREENS.CLIENT_PROFILE]: { focused: 'person-circle', unfocused: 'person-circle-outline' },
+  [SCREENS.CLIENT_ACTIVITY]: { focused: 'pulse', unfocused: 'pulse' },
+  ProgressTab: { focused: 'trending-up', unfocused: 'trending-up' },
+  [SCREENS.CLIENT_PROFILE]: { focused: 'account-circle', unfocused: 'account-circle-outline' },
 };
 
 const ClientTabNavigator = () => {

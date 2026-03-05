@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 
@@ -93,7 +93,7 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons, badges = {} })
               style={styles.tabItem}
             >
               <View style={styles.iconWrapper}>
-                <Ionicons
+                <MaterialCommunityIcons
                   name={iconName}
                   size={24}
                   color={isFocused ? colors.accent : colors.textInverseMuted}

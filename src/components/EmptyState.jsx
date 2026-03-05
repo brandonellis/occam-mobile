@@ -1,14 +1,14 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text, Button } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { spacing } from '../theme/spacing';
 
 const EmptyState = ({ icon = 'folder-open-outline', title, message, actionLabel, onAction }) => {
   return (
     <View style={styles.container}>
-      <Ionicons name={icon} size={48} color={colors.textTertiary} />
+      <MaterialCommunityIcons name={icon} size={48} color={colors.textTertiary} />
       {title && <Text variant="titleMedium" style={styles.title}>{title}</Text>}
       {message && <Text variant="bodyMedium" style={styles.message}>{message}</Text>}
       {actionLabel && onAction && (

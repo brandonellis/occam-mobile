@@ -11,10 +11,10 @@ import CoachProfileScreen from '../screens/Coach/CoachProfileScreen';
 const Tab = createBottomTabNavigator();
 
 const TAB_ICONS = {
-  [SCREENS.COACH_DASHBOARD]: { focused: 'grid', unfocused: 'grid-outline' },
+  [SCREENS.COACH_DASHBOARD]: { focused: 'view-dashboard', unfocused: 'view-dashboard-outline' },
   ScheduleTab: { focused: 'calendar', unfocused: 'calendar-outline' },
-  [SCREENS.COACH_CLIENTS]: { focused: 'people', unfocused: 'people-outline' },
-  [SCREENS.COACH_PROFILE]: { focused: 'person-circle', unfocused: 'person-circle-outline' },
+  [SCREENS.COACH_CLIENTS]: { focused: 'account-group', unfocused: 'account-group-outline' },
+  [SCREENS.COACH_PROFILE]: { focused: 'account-circle', unfocused: 'account-circle-outline' },
 };
 
 const CoachTabNavigator = () => {

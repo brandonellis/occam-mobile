@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { IconButton } from 'react-native-paper';
 import { colors } from '../../theme/colors';
 import { progressReportDetailStyles as styles } from '../../styles/progressReportDetail.styles';
 
@@ -35,13 +36,13 @@ const ProgressReportDetailScreen = ({ navigation, route }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
+        <IconButton
+          icon="chevron-left"
+          size={24}
+          iconColor={colors.textPrimary}
           onPress={() => navigation.goBack()}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+          style={{ margin: 0 }}
+        />
         <View style={styles.headerContent}>
           <Text style={styles.headerTitle} numberOfLines={1}>
             {report?.title || 'Progress Report'}
@@ -57,7 +58,7 @@ const ProgressReportDetailScreen = ({ navigation, route }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {program && (
           <View style={styles.programBadge}>
-            <Ionicons name="flag-outline" size={14} color={colors.accent} />
+            <MaterialCommunityIcons name="flag-outline" size={14} color={colors.accent} />
             <Text style={styles.programBadgeText}>{program.name}</Text>
           </View>
         )}
@@ -65,7 +66,7 @@ const ProgressReportDetailScreen = ({ navigation, route }) => {
         {/* Curriculum Section */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Ionicons name="school-outline" size={20} color={colors.accent} />
+            <MaterialCommunityIcons name="school-outline" size={20} color={colors.accent} />
             <Text style={styles.sectionTitle}>Curriculum</Text>
           </View>
 
@@ -104,11 +105,11 @@ const ProgressReportDetailScreen = ({ navigation, route }) => {
                       const isComplete = lesson.completed;
                       return (
                         <View key={lesson.id} style={styles.lessonRow}>
-                          <Ionicons
+                          <MaterialCommunityIcons
                             name={
                               isComplete
-                                ? 'checkmark-circle'
-                                : 'ellipse-outline'
+                                ? 'check-circle'
+                                : 'circle-outline'
                             }
                             size={16}
                             color={
@@ -143,8 +144,8 @@ const ProgressReportDetailScreen = ({ navigation, route }) => {
         {assessment && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Ionicons
-                name="bar-chart-outline"
+              <MaterialCommunityIcons
+                name="chart-bar"
                 size={20}
                 color={colors.accent}
               />
@@ -179,7 +180,7 @@ const ProgressReportDetailScreen = ({ navigation, route }) => {
                   </Text>
                   <View style={styles.scoreDelta}>
                     {delta != null && delta !== 0 && (
-                      <Ionicons
+                      <MaterialCommunityIcons
                         name={delta > 0 ? 'trending-up' : 'trending-down'}
                         size={14}
                         color={delta > 0 ? colors.success : colors.error}
@@ -199,7 +200,7 @@ const ProgressReportDetailScreen = ({ navigation, route }) => {
                   </Text>
                   {deltas?.overall_score != null &&
                     deltas.overall_score !== 0 && (
-                      <Ionicons
+                      <MaterialCommunityIcons
                         name={
                           deltas.overall_score > 0
                             ? 'trending-up'

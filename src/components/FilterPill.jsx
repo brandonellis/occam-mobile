@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { activityFeedStyles as styles } from '../styles/activityFeed.styles';
 import { colors } from '../theme';
 
@@ -10,7 +10,7 @@ const FilterPill = ({ icon, label, isActive, count, onPress }) => (
     onPress={onPress}
     activeOpacity={0.7}
   >
-    <Ionicons
+    <MaterialCommunityIcons
       name={icon}
       size={14}
       color={isActive ? colors.textInverse : colors.textSecondary}
@@ -23,7 +23,7 @@ const FilterPill = ({ icon, label, isActive, count, onPress }) => (
         <Text style={styles.filterPillBadgeText}>{count}</Text>
       </View>
     ) : (
-      <Ionicons
+      <MaterialCommunityIcons
         name="chevron-down"
         size={12}
         color={isActive ? colors.textInverse : colors.textTertiary}

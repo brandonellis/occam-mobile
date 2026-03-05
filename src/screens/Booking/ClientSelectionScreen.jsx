@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Searchbar, ActivityIndicator } from 'react-native-paper';
+import { Text, Searchbar, ActivityIndicator, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
@@ -83,26 +83,28 @@ const ClientSelectionScreen = ({ route, navigation }) => {
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
           {clients.map((client) => (
-            <TouchableOpacity
+            <TouchableRipple
               key={client.id}
               style={styles.coachCard}
               onPress={() => handleSelectClient(client)}
-              activeOpacity={0.7}
+              borderless
             >
-              <Avatar
-                uri={client.avatar_url}
-                name={`${client.first_name} ${client.last_name}`}
-                size={48}
-              />
-              <View style={styles.coachInfo}>
-                <Text style={styles.coachName}>
-                  {client.first_name} {client.last_name}
-                </Text>
-                {client.email && (
-                  <Text style={styles.coachSpecialty}>{client.email}</Text>
-                )}
+              <View style={styles.coachCardRow}>
+                <Avatar
+                  uri={client.avatar_url}
+                  name={`${client.first_name} ${client.last_name}`}
+                  size={48}
+                />
+                <View style={styles.coachInfo}>
+                  <Text style={styles.coachName}>
+                    {client.first_name} {client.last_name}
+                  </Text>
+                  {client.email && (
+                    <Text style={styles.coachSpecialty}>{client.email}</Text>
+                  )}
+                </View>
               </View>
-            </TouchableOpacity>
+            </TouchableRipple>
           ))}
           {clients.length === 0 && !isLoading && (
             <Text style={styles.noSlotsText}>No clients found.</Text>

@@ -11,7 +11,7 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
 import {
   getClientPerformanceCurriculum,
@@ -25,6 +25,7 @@ import {
 import { curriculumEditorStyles as styles } from '../../styles/curriculumEditor.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
+import logger from '../../helpers/logger.helper';
 
 const CurriculumEditorScreen = ({ route, navigation }) => {
   const { clientId, clientName } = route.params;
@@ -51,7 +52,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
       const data = res.data;
       setModules(data?.modules || data || []);
     } catch (err) {
-      console.warn('Failed to load curriculum:', err.message);
+      logger.warn('Failed to load curriculum:', err.message);
       setModules([]);
     } finally {
       setIsLoading(false);
@@ -89,7 +90,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
     try {
       await toggleLesson(clientId, lessonId, newCompleted);
     } catch (err) {
-      console.warn('Failed to toggle lesson:', err.message);
+      logger.warn('Failed to toggle lesson:', err.message);
       setModules(previousModules);
       Alert.alert('Error', 'Failed to update lesson.');
     }
@@ -109,7 +110,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
               await deleteClientModule(clientId, moduleId);
               loadCurriculum(true);
             } catch (err) {
-              console.warn('Failed to delete module:', err.message);
+              logger.warn('Failed to delete module:', err.message);
               Alert.alert('Error', 'Failed to remove module.');
             }
           },
@@ -140,7 +141,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
         setPackages(packagesRes.value.data || []);
       }
     } catch (err) {
-      console.warn('Failed to load templates/packages:', err.message);
+      logger.warn('Failed to load templates/packages:', err.message);
     } finally {
       setIsLoadingAdd(false);
     }
@@ -200,8 +201,8 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
           activeOpacity={0.7}
         >
           <View style={styles.moduleHeaderLeft}>
-            <Ionicons
-              name={isExpanded ? 'chevron-down' : 'chevron-forward'}
+            <MaterialCommunityIcons
+              name={isExpanded ? 'chevron-down' : 'chevron-right'}
               size={18}
               color={colors.textSecondary}
             />
@@ -222,7 +223,7 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
               onPress={() => handleDeleteModule(mod.id, mod.title || mod.name)}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="trash-outline" size={16} color={colors.error} />
+              <MaterialCommunityIcons name="trash-can-outline" size={16} color={colors.error} />
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -238,8 +239,8 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
                   onPress={() => handleToggleLesson(lesson.id)}
                   activeOpacity={0.6}
                 >
-                  <Ionicons
-                    name={isDone ? 'checkmark-circle' : 'ellipse-outline'}
+                  <MaterialCommunityIcons
+                    name={isDone ? 'check-circle' : 'circle-outline'}
                     size={20}
                     color={isDone ? colors.success : colors.textTertiary}
                   />
@@ -298,14 +299,14 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
               onPress={handleOpenAddModal}
               activeOpacity={0.7}
             >
-              <Ionicons name="add" size={18} color={colors.accent} />
+              <MaterialCommunityIcons name="plus" size={18} color={colors.accent} />
               <Text style={styles.addButtonText}>Add Module</Text>
             </TouchableOpacity>
           </View>
 
           {modules.length === 0 ? (
             <View style={styles.emptyState}>
-              <Ionicons name="book-outline" size={40} color={colors.textTertiary} />
+              <MaterialCommunityIcons name="book-outline" size={40} color={colors.textTertiary} />
               <Text style={styles.emptyTitle}>No Curriculum Yet</Text>
               <Text style={styles.emptyMessage}>
                 Add modules from templates or apply a curriculum package.
@@ -389,13 +390,13 @@ const CurriculumEditorScreen = ({ route, navigation }) => {
                   {isApplying ? (
                     <ActivityIndicator size="small" color={colors.accent} />
                   ) : (
-                    <Ionicons name="add-circle-outline" size={22} color={colors.accent} />
+                    <MaterialCommunityIcons name="plus-circle-outline" size={22} color={colors.accent} />
                   )}
                 </TouchableOpacity>
               )}
               ListEmptyComponent={
                 <View style={styles.emptyState}>
-                  <Ionicons name="documents-outline" size={36} color={colors.textTertiary} />
+                  <MaterialCommunityIcons name="file-multiple-outline" size={36} color={colors.textTertiary} />
                   <Text style={styles.emptyMessage}>
                     No {addTab === 'templates' ? 'templates' : 'packages'} available
                   </Text>

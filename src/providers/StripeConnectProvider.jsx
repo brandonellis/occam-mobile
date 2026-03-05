@@ -3,6 +3,7 @@ import { StripeProvider } from '@stripe/stripe-react-native';
 import config from '../config';
 import { getEcommerceConfig } from '../services/bookings.api';
 import useAuth from '../hooks/useAuth';
+import logger from '../helpers/logger.helper';
 
 /**
  * Wraps children in a StripeProvider that dynamically sets stripeAccountId
@@ -33,7 +34,7 @@ const StripeConnectProvider = ({ children }) => {
           setConnectAccountId(null);
         }
       } catch (err) {
-        console.warn('StripeConnectProvider: failed to fetch connect account:', err.message);
+        logger.warn('StripeConnectProvider: failed to fetch connect account:', err.message);
         if (!cancelled) setConnectAccountId(null);
       }
     })();

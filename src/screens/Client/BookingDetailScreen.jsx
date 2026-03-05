@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getBooking, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
@@ -16,12 +16,13 @@ import { bookingDetailStyles as styles } from '../../styles/bookingDetail.styles
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
 import ScreenHeader from '../../components/ScreenHeader';
+import logger from '../../helpers/logger.helper';
 
 const STATUS_CONFIG = {
-  confirmed: { icon: 'checkmark-circle', color: colors.success, label: 'Confirmed' },
-  pending: { icon: 'time-outline', color: colors.warning, label: 'Pending' },
+  confirmed: { icon: 'check-circle', color: colors.success, label: 'Confirmed' },
+  pending: { icon: 'clock-outline', color: colors.warning, label: 'Pending' },
   cancelled: { icon: 'close-circle', color: colors.error, label: 'Cancelled' },
-  completed: { icon: 'checkmark-done-circle', color: colors.textTertiary, label: 'Completed' },
+  completed: { icon: 'check-circle-outline', color: colors.textTertiary, label: 'Completed' },
 };
 
 const BookingDetailScreen = ({ navigation, route }) => {
@@ -38,7 +39,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
       const { data } = await getBooking(bookingId || passedBooking?.id);
       setBooking(data);
     } catch (err) {
-      console.warn('Failed to load booking:', err?.message || err);
+      logger.warn('Failed to load booking:', err?.message || err);
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +71,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
               if (status === 403 && serverMsg) {
                 Alert.alert('Cannot Cancel', serverMsg);
               } else {
-                console.warn('Failed to cancel booking:', err?.message || err);
+                logger.warn('Failed to cancel booking:', err?.message || err);
                 Alert.alert('Error', 'Failed to cancel booking.');
               }
             }
@@ -119,7 +120,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Status banner */}
         <View style={[styles.statusBanner, { backgroundColor: status.color + '14' }]}>
-          <Ionicons name={status.icon} size={20} color={status.color} />
+          <MaterialCommunityIcons name={status.icon} size={20} color={status.color} />
           <Text style={[styles.statusBannerText, { color: status.color }]}>
             {status.label}
           </Text>
@@ -128,7 +129,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
         {/* Date & Time */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
-            <Ionicons name="calendar-outline" size={18} color={colors.textSecondary} />
+            <MaterialCommunityIcons name="calendar-outline" size={18} color={colors.textSecondary} />
             <Text style={styles.cardTitle}>Date & Time</Text>
           </View>
           <Text style={styles.dateText}>
@@ -144,7 +145,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
         {service && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="golf-outline" size={18} color={colors.textSecondary} />
+              <MaterialCommunityIcons name="golf" size={18} color={colors.textSecondary} />
               <Text style={styles.cardTitle}>Service</Text>
             </View>
             <Text style={styles.primaryText}>{service.name}</Text>
@@ -158,7 +159,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
         {coach && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+              <MaterialCommunityIcons name="account-outline" size={18} color={colors.textSecondary} />
               <Text style={styles.cardTitle}>Coach</Text>
             </View>
             <Text style={styles.primaryText}>
@@ -171,7 +172,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
         {location && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="location-outline" size={18} color={colors.textSecondary} />
+              <MaterialCommunityIcons name="map-marker-outline" size={18} color={colors.textSecondary} />
               <Text style={styles.cardTitle}>Location</Text>
             </View>
             <Text style={styles.primaryText}>{location.name}</Text>
@@ -185,7 +186,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
         {resources.length > 0 && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="cube-outline" size={18} color={colors.textSecondary} />
+              <MaterialCommunityIcons name="cube-outline" size={18} color={colors.textSecondary} />
               <Text style={styles.cardTitle}>Resources</Text>
             </View>
             {resources.map((r) => (
@@ -198,7 +199,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
         {booking.notes && (
           <View style={styles.card}>
             <View style={styles.cardHeader}>
-              <Ionicons name="document-text-outline" size={18} color={colors.textSecondary} />
+              <MaterialCommunityIcons name="file-document-outline" size={18} color={colors.textSecondary} />
               <Text style={styles.cardTitle}>Notes</Text>
             </View>
             <Text style={styles.secondaryText}>{booking.notes}</Text>
@@ -212,7 +213,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
             onPress={handleCancel}
             activeOpacity={0.7}
           >
-            <Ionicons name="close-circle-outline" size={18} color={colors.error} />
+            <MaterialCommunityIcons name="close-circle-outline" size={18} color={colors.error} />
             <Text style={styles.cancelButtonText}>Cancel Booking</Text>
           </TouchableOpacity>
         )}

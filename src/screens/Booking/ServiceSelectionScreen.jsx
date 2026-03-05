@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, ActivityIndicator } from 'react-native-paper';
+import { Text, ActivityIndicator, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
@@ -15,6 +15,7 @@ import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import { COACH_ROLES } from '../../constants/auth.constants';
+import logger from '../../helpers/logger.helper';
 
 const ServiceSelectionScreen = ({ route, navigation }) => {
   const { bookingData = {} } = route.params || {};
@@ -93,7 +94,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
         membershipPlanName,
       });
     } catch (err) {
-      console.warn('Failed to load services:', err.message);
+      logger.warn('Failed to load services:', err.message);
       setState((prev) => ({
         ...prev,
         isLoading: false,
@@ -161,7 +162,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} testID="service-selection-list">
           {state.membershipFiltered && (
             <View style={styles.membershipHint}>
               <Text style={styles.membershipHintText}>
@@ -179,28 +180,31 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
             </View>
           )}
           {state.services.map((service) => (
-            <TouchableOpacity
+            <TouchableRipple
               key={service.id}
               style={styles.serviceCard}
               onPress={() => handleSelectService(service)}
-              activeOpacity={0.7}
+              borderless
+              testID={`service-card-${service.id}`}
             >
-              <Text style={styles.serviceName}>{service.name}</Text>
-              {service.description && (
-                <Text style={styles.serviceDescription} numberOfLines={2}>
-                  {service.description}
-                </Text>
-              )}
-              <View style={styles.serviceFooter}>
-                <Text style={styles.servicePrice}>
-                  {service.is_variable_duration ? 'From ' : ''}
-                  {formatCurrency(parseFloat(service.price) || 0)}
-                </Text>
-                <Text style={styles.serviceDuration}>
-                  {formatDuration(service.duration_minutes)}
-                </Text>
+              <View>
+                <Text style={styles.serviceName}>{service.name}</Text>
+                {service.description && (
+                  <Text style={styles.serviceDescription} numberOfLines={2}>
+                    {service.description}
+                  </Text>
+                )}
+                <View style={styles.serviceFooter}>
+                  <Text style={styles.servicePrice}>
+                    {service.is_variable_duration ? 'From ' : ''}
+                    {formatCurrency(parseFloat(service.price) || 0)}
+                  </Text>
+                  <Text style={styles.serviceDuration}>
+                    {formatDuration(service.duration_minutes)}
+                  </Text>
+                </View>
               </View>
-            </TouchableOpacity>
+            </TouchableRipple>
           ))}
         </ScrollView>
       )}

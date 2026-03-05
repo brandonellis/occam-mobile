@@ -13,7 +13,7 @@ import {
   Linking,
   Alert,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   GoogleSignin,
@@ -26,6 +26,7 @@ import { searchTenants } from '../../services/tenants.api';
 import { loginStyles as styles } from '../../styles/login.styles';
 import { colors } from '../../theme';
 import config from '../../config';
+import logger from '../../helpers/logger.helper';
 
 const logoColor = require('../../../assets/images/logo-color.png');
 const googleIcon = require('../../../assets/images/g-logo.png');
@@ -145,7 +146,7 @@ const LoginScreen = () => {
       }
       const message = err?.response?.data?.message || err?.message || 'Google sign-in failed. Please try again.';
       setError(message);
-      console.warn('Google sign-in error:', message);
+      logger.warn('Google sign-in error:', message);
     } finally {
       setGoogleLoading(false);
     }
@@ -205,9 +206,9 @@ const LoginScreen = () => {
                 selectedOrg && styles.orgInputSelected,
               ]}>
                 {selectedOrg ? (
-                  <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+                  <MaterialCommunityIcons name="check-circle" size={18} color={colors.success} />
                 ) : (
-                  <Ionicons name="search" size={16} color="rgba(255,255,255,0.4)" />
+                  <MaterialCommunityIcons name="magnify" size={16} color="rgba(255,255,255,0.4)" />
                 )}
                 <TextInput
                   style={styles.orgTextInput}
@@ -228,7 +229,7 @@ const LoginScreen = () => {
                 )}
                 {selectedOrg && (
                   <TouchableOpacity onPress={handleClearOrg} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <Ionicons name="close-circle" size={18} color="rgba(255,255,255,0.5)" />
+                    <MaterialCommunityIcons name="close-circle" size={18} color="rgba(255,255,255,0.5)" />
                   </TouchableOpacity>
                 )}
               </View>
@@ -244,7 +245,7 @@ const LoginScreen = () => {
                       activeOpacity={0.7}
                     >
                       <View style={styles.orgResultIcon}>
-                        <Ionicons name="business-outline" size={16} color={colors.accent} />
+                        <MaterialCommunityIcons name="domain" size={16} color={colors.accent} />
                       </View>
                       <View style={styles.orgResultText}>
                         <Text style={styles.orgResultName}>{org.name || org.id}</Text>

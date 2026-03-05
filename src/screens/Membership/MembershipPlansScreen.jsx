@@ -7,7 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
 import { membershipStyles as styles } from '../../styles/membership.styles';
 import { globalStyles } from '../../styles/global.styles';
@@ -16,6 +16,7 @@ import { formatCurrency } from '../../helpers/pricing.helper';
 import { getBillingCycleLabel } from '../../constants/billing.constants';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
+import logger from '../../helpers/logger.helper';
 
 const MembershipPlansScreen = ({ navigation }) => {
   const [plans, setPlans] = useState([]);
@@ -40,7 +41,7 @@ const MembershipPlansScreen = ({ navigation }) => {
       });
       setSelectedCycles(defaults);
     } catch (err) {
-      console.warn('Failed to load membership plans:', err?.message || err);
+      logger.warn('Failed to load membership plans:', err?.message || err);
       setError('Failed to load membership plans.');
     } finally {
       setIsLoading(false);
@@ -163,8 +164,8 @@ const MembershipPlansScreen = ({ navigation }) => {
                   <View style={styles.planServicesSection}>
                     {planServices.map((ps, i) => (
                       <View key={ps.id || i} style={styles.planServiceRow}>
-                        <Ionicons
-                          name="checkmark-circle"
+                        <MaterialCommunityIcons
+                          name="check-circle"
                           size={18}
                           color={colors.success}
                         />
@@ -184,8 +185,8 @@ const MembershipPlansScreen = ({ navigation }) => {
                   <View style={styles.planBenefits}>
                     {plan.benefits.map((benefit, i) => (
                       <View key={i} style={styles.benefitRow}>
-                        <Ionicons
-                          name="checkmark-circle"
+                        <MaterialCommunityIcons
+                          name="check-circle"
                           size={18}
                           color={colors.success}
                         />

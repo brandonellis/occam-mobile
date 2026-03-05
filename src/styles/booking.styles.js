@@ -87,13 +87,15 @@ export const bookingStyles = StyleSheet.create({
   coachCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
     marginBottom: spacing.md,
-    flexDirection: 'row',
-    alignItems: 'center',
     ...shadows.sm,
     borderWidth: 1.5,
     borderColor: 'transparent',
+  },
+  coachCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.lg,
   },
   coachCardSelected: {
     borderColor: colors.accent,
@@ -313,14 +315,16 @@ export const bookingStyles = StyleSheet.create({
   durationCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
     marginBottom: spacing.md,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     ...shadows.sm,
     borderWidth: 1.5,
     borderColor: 'transparent',
+  },
+  durationCardContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: spacing.lg,
   },
   durationCardSelected: {
     borderColor: colors.accent,

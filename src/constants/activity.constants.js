@@ -22,23 +22,23 @@ export const ACTIVITY_TYPE_CONFIG = {
   [ACTIVITY_TYPES.RESOURCE]: {
     label: 'Resources',
     singular: 'Resource',
-    icon: 'share-social-outline',
+    icon: 'share-variant-outline',
     color: '#C7B8EA',
   },
   [ACTIVITY_TYPES.REPORT]: {
     label: 'Reports',
     singular: 'Report',
-    icon: 'analytics-outline',
+    icon: 'chart-line',
     color: '#FFD2A6',
   },
 };
 
 export const TYPE_FILTER_OPTIONS = [
-  { value: ACTIVITY_TYPES.ALL, label: 'All', icon: 'grid-outline' },
+  { value: ACTIVITY_TYPES.ALL, label: 'All', icon: 'view-grid-outline' },
   { value: ACTIVITY_TYPES.ACTIVITY, label: 'Activities', icon: 'flask-outline' },
   { value: ACTIVITY_TYPES.BOOKING, label: 'Bookings', icon: 'calendar-outline' },
-  { value: ACTIVITY_TYPES.RESOURCE, label: 'Resources', icon: 'share-social-outline' },
-  { value: ACTIVITY_TYPES.REPORT, label: 'Reports', icon: 'analytics-outline' },
+  { value: ACTIVITY_TYPES.RESOURCE, label: 'Resources', icon: 'share-variant-outline' },
+  { value: ACTIVITY_TYPES.REPORT, label: 'Reports', icon: 'chart-line' },
 ];
 
 export const DATE_FILTER_OPTIONS = [

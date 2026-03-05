@@ -7,7 +7,8 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { IconButton, TouchableRipple } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
@@ -97,12 +98,14 @@ const CoachDashboardScreen = ({ navigation }) => {
             <Text style={styles.greeting}>Hello, {firstName}</Text>
             <Text style={styles.subtitle}>Here's your day at a glance</Text>
           </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate(SCREENS.NOTIFICATIONS)}
-            activeOpacity={0.7}
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="notifications-outline" size={24} color={colors.primary} />
+          <View>
+            <IconButton
+              icon="bell-outline"
+              size={24}
+              iconColor={colors.primary}
+              onPress={() => navigation.navigate(SCREENS.NOTIFICATIONS)}
+              style={{ margin: 0 }}
+            />
             {unreadCount > 0 && (
               <View style={styles.notificationBadge}>
                 <Text style={styles.notificationBadgeText}>
@@ -110,7 +113,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                 </Text>
               </View>
             )}
-          </TouchableOpacity>
+          </View>
         </View>
 
         {isLoading ? (
@@ -147,7 +150,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                   onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.CLIENT_SELECTION, params: { bookingData: {} } })}
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: colors.accentLight }]}>
-                    <Ionicons name="add-circle-outline" size={18} color={colors.accent} />
+                    <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.accent} />
                   </View>
                   <Text style={styles.quickActionLabel} numberOfLines={1}>New Booking</Text>
                 </TouchableOpacity>
@@ -157,7 +160,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                   onPress={() => navigation.navigate(SCREENS.VIDEO_RECORDING)}
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: colors.lavenderMistLight }]}>
-                    <Ionicons name="videocam-outline" size={18} color={colors.twilightPurple} />
+                    <MaterialCommunityIcons name="video-outline" size={18} color={colors.twilightPurple} />
                   </View>
                   <Text style={styles.quickActionLabel} numberOfLines={1}>Record Video</Text>
                 </TouchableOpacity>
@@ -167,7 +170,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                   onPress={() => navigation.navigate(SCREENS.COACH_CLIENTS)}
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: colors.successLight }]}>
-                    <Ionicons name="people-outline" size={18} color={colors.success} />
+                    <MaterialCommunityIcons name="account-group-outline" size={18} color={colors.success} />
                   </View>
                   <Text style={styles.quickActionLabel} numberOfLines={1}>View Clients</Text>
                 </TouchableOpacity>
@@ -177,12 +180,12 @@ const CoachDashboardScreen = ({ navigation }) => {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Upcoming Sessions</Text>
-                <TouchableOpacity
+                <TouchableRipple
                   onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.COACH_SCHEDULE })}
-                  activeOpacity={0.7}
+                  borderless
                 >
                   <Text style={styles.seeAllLink}>See All</Text>
-                </TouchableOpacity>
+                </TouchableRipple>
               </View>
               {upcomingSessions.length === 0 ? (
                 <EmptyState
@@ -192,11 +195,11 @@ const CoachDashboardScreen = ({ navigation }) => {
                 />
               ) : (
                 upcomingSessions.slice(0, 5).map((session) => (
-                  <TouchableOpacity
+                  <TouchableRipple
                     key={session.id}
                     style={styles.bookingCard}
-                    activeOpacity={0.7}
                     onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { booking: session })}
+                    borderless
                   >
                     <View style={styles.bookingCardRow}>
                       <View style={styles.bookingTimeBlock}>
@@ -219,13 +222,13 @@ const CoachDashboardScreen = ({ navigation }) => {
                           </Text>
                         )}
                       </View>
-                      <Ionicons
-                        name="chevron-forward"
+                      <MaterialCommunityIcons
+                        name="chevron-right"
                         size={18}
                         color={colors.textTertiary}
                       />
                     </View>
-                  </TouchableOpacity>
+                  </TouchableRipple>
                 ))
               )}
             </View>

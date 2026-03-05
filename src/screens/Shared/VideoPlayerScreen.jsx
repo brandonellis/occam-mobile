@@ -2,11 +2,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { videoPlayerStyles as styles } from '../../styles/videoPlayer.styles';
 import { colors } from '../../theme';
 import { getToken, getTenantId } from '../../helpers/storage.helper';
 import { resolveMediaUrl } from '../../helpers/media.helper';
+import logger from '../../helpers/logger.helper';
 
 /**
  * Build a VideoSourceObject with auth headers so expo-video can access
@@ -37,7 +38,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
       const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
       if (!cancelled) {
         const source = buildVideoSource(videoUrl, token, tenantId);
-        console.log('[VideoPlayer] source:', source?.uri);
+        logger.log('[VideoPlayer] source:', source?.uri);
         setVideoSource(source);
       }
     })();
@@ -55,7 +56,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
     if (!player) return;
 
     const statusSub = player.addListener('statusChange', ({ status, error }) => {
-      console.log('[VideoPlayer] status:', status, error?.message || '');
+      logger.log('[VideoPlayer] status:', status, error?.message || '');
       setPlayerStatus(status);
       if (status === 'error') {
         setErrorMsg(error?.message || 'Failed to load video');
@@ -114,7 +115,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
           onPress={() => navigation.goBack()}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="arrow-back" size={24} color={colors.textInverse} />
+          <MaterialCommunityIcons name="arrow-left" size={24} color={colors.textInverse} />
         </TouchableOpacity>
         <Text style={styles.headerTitle} numberOfLines={1}>
           {videoTitle || 'Video'}
@@ -125,12 +126,12 @@ const VideoPlayerScreen = ({ route, navigation }) => {
       <View style={styles.videoWrapper}>
         {playerStatus === 'error' ? (
           <View style={styles.errorContainer}>
-            <Ionicons name="alert-circle-outline" size={48} color={colors.error} />
+            <MaterialCommunityIcons name="alert-circle-outline" size={48} color={colors.error} />
             <Text style={styles.errorText}>
               {errorMsg || 'Unable to play this video'}
             </Text>
             <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
-              <Ionicons name="refresh" size={20} color={colors.textInverse} />
+              <MaterialCommunityIcons name="refresh" size={20} color={colors.textInverse} />
               <Text style={styles.retryText}>Retry</Text>
             </TouchableOpacity>
           </View>
@@ -154,7 +155,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
       {playerStatus !== 'error' && (
         <View style={styles.controlsRow}>
           <TouchableOpacity onPress={handlePlayPause} style={styles.controlButton}>
-            <Ionicons
+            <MaterialCommunityIcons
               name={isPlaying ? 'pause-circle' : 'play-circle'}
               size={48}
               color={colors.textInverse}

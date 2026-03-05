@@ -12,8 +12,8 @@ import {
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Snackbar } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
+import { Snackbar, IconButton } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
 import { SCREENS } from '../../constants/navigation.constants';
 import {
@@ -24,16 +24,17 @@ import { clientDetailStyles as styles } from '../../styles/clientDetail.styles';
 import { colors } from '../../theme';
 import { resolveMediaUrl } from '../../helpers/media.helper';
 import AuthImage from '../../components/AuthImage';
+import logger from '../../helpers/logger.helper';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
 const getDocIcon = (mime) => {
-  if (mime.startsWith('application/pdf')) return 'document-text';
+  if (mime.startsWith('application/pdf')) return 'file-document';
   if (mime.includes('spreadsheet') || mime.includes('excel')) return 'grid';
-  if (mime.includes('presentation') || mime.includes('powerpoint')) return 'easel';
-  return 'document';
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return 'presentation';
+  return 'file-document-outline';
 };
 
 const SharedMediaCard = ({ item, navigation, onUnshare }) => {
@@ -72,14 +73,14 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
                 resizeMode="cover"
               />
               <View style={styles.sharedMediaPlayOverlay}>
-                <Ionicons name="play-circle" size={48} color="rgba(255,255,255,0.9)" />
+                <MaterialCommunityIcons name="play-circle" size={48} color="rgba(255,255,255,0.9)" />
               </View>
             </View>
           ) : (
             <View style={styles.sharedMediaVideoPlaceholder}>
-              <Ionicons name="videocam" size={28} color={colors.textTertiary} />
+              <MaterialCommunityIcons name="video" size={28} color={colors.textTertiary} />
               <View style={styles.sharedMediaPlayOverlay}>
-                <Ionicons name="play-circle" size={48} color="rgba(255,255,255,0.7)" />
+                <MaterialCommunityIcons name="play-circle" size={48} color="rgba(255,255,255,0.7)" />
               </View>
             </View>
           )}
@@ -88,7 +89,7 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
 
       {!isImage && !isVideo && (
         <View style={styles.sharedMediaDocPlaceholder}>
-          <Ionicons name={getDocIcon(mime)} size={28} color={colors.textTertiary} />
+          <MaterialCommunityIcons name={getDocIcon(mime)} size={28} color={colors.textTertiary} />
           <Text style={styles.sharedMediaDocType}>
             {mime.split('/').pop()?.toUpperCase() || 'FILE'}
           </Text>
@@ -109,13 +110,17 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
         <View style={styles.sharedMediaActions}>
           {isVideo && mediaUrl && (
             <>
-              <TouchableOpacity
+              <IconButton
+                icon="play-circle-outline"
+                size={20}
+                iconColor={colors.accent}
                 onPress={handleVideoPress}
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="play-circle-outline" size={20} color={colors.accent} />
-              </TouchableOpacity>
-              <TouchableOpacity
+                style={{ margin: 0 }}
+              />
+              <IconButton
+                icon="brush"
+                size={18}
+                iconColor={colors.accent}
                 onPress={() =>
                   navigation.navigate(SCREENS.VIDEO_ANNOTATION, {
                     uploadId: item.upload_id,
@@ -123,18 +128,17 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
                     videoTitle: item.filename || 'Video',
                   })
                 }
-                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              >
-                <Ionicons name="brush-outline" size={18} color={colors.accent} />
-              </TouchableOpacity>
+                style={{ margin: 0 }}
+              />
             </>
           )}
-          <TouchableOpacity
+          <IconButton
+            icon="close-circle-outline"
+            size={20}
+            iconColor={colors.error}
             onPress={() => onUnshare(item.id)}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="close-circle-outline" size={20} color={colors.error} />
-          </TouchableOpacity>
+            style={{ margin: 0 }}
+          />
         </View>
       </View>
     </View>
@@ -156,7 +160,7 @@ const ClientSharedMediaScreen = ({ route, navigation }) => {
       const res = await getClientSharedMedia(clientId);
       setSharedMedia(res.data || []);
     } catch (err) {
-      console.warn('Failed to load shared media:', err.message);
+      logger.warn('Failed to load shared media:', err.message);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -186,7 +190,7 @@ const ClientSharedMediaScreen = ({ route, navigation }) => {
       try {
         await unshareMediaFromClient(clientId, sharedMediaId);
       } catch (err) {
-        console.warn('Failed to unshare media:', err.message);
+        logger.warn('Failed to unshare media:', err.message);
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
         setSharedMedia((prev) => [...prev, removedItem].sort((a, b) => b.id - a.id));
         setSnackbar({ visible: false, message: '', undoData: null });

@@ -1,0 +1,37 @@
+# Shared login sub-flow — called by other flows via runFlow.
+# Mirrors the auth setup in occam-client/tests/e2e/client.setup.js
+#
+# Requires env vars: CLIENT_EMAIL, CLIENT_PASSWORD, TEST_ORG
+appId: host.exp.Exponent
+
+---
+
+# Wait for the login screen to load
+- waitForAnimationToEnd
+
+# Select organization
+- tapOn:
+    text: "Search for your organization"
+    optional: true
+- inputText: ${TEST_ORG}
+- waitForAnimationToEnd
+- tapOn:
+    text: ${TEST_ORG}
+
+# Enter credentials
+- tapOn:
+    text: "Email"
+- inputText: ${CLIENT_EMAIL}
+- tapOn:
+    text: "Password"
+- inputText: ${CLIENT_PASSWORD}
+
+# Sign in
+- tapOn:
+    text: "Sign In"
+
+# Wait for home screen to load (client sees "Book" tab)
+- waitForAnimationToEnd
+- assertVisible:
+    text: "Book"
+    optional: true

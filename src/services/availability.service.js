@@ -2,6 +2,7 @@ import dayjs, { getEffectiveTimezone } from '../utils/dayjs';
 import { getCoachSchedule, getBookingsCompact } from './bookings.api';
 import { processAvailabilityData, generateTimeSlots } from '../utils/timeSlotGenerator';
 import { filterSlotsByClosures } from '../helpers/closure.helper';
+import logger from '../helpers/logger.helper';
 
 /**
  * Mobile Availability Service
@@ -112,7 +113,7 @@ export const getAvailableTimeSlots = async ({
         durationMinutes
       );
     } catch (error) {
-      console.warn('generateTimeSlots failed:', error.message);
+      logger.warn('generateTimeSlots failed:', error.message);
       timeSlots = [];
     }
 
@@ -126,7 +127,7 @@ export const getAvailableTimeSlots = async ({
     if (error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError' || error?.name === 'AbortError') {
       return [];
     }
-    console.error('Error fetching availability:', error);
+    logger.error('Error fetching availability:', error);
     throw error;
   }
 };

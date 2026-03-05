@@ -15,6 +15,7 @@ import { SCREENS } from '../../constants/navigation.constants';
 import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
 import { generateDateRangeInTz, getFutureDateKey } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
+import logger from '../../helpers/logger.helper';
 
 
 const AVAILABILITY_COLORS = {
@@ -51,6 +52,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [availabilityMap, setAvailabilityMap] = useState({});
   const [resourcePool, setResourcePool] = useState([]);
+  const [resourcePoolReady, setResourcePoolReady] = useState(!service?.requires_resource);
   // Class session state
   const [classSlots, setClassSlots] = useState([]);
   const [classGroups, setClassGroups] = useState([]);
@@ -95,6 +97,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   useEffect(() => {
     if (isClassService || !service?.requires_resource || !location?.id) {
       setResourcePool([]);
+      setResourcePoolReady(true);
       return;
     }
     let cancelled = false;
@@ -102,24 +105,39 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       try {
         const resp = await getResources();
         const allResources = resp?.data || resp || [];
-        // Filter by active status, location, and service resource type
-        const filtered = allResources.filter((r) => {
+        // Filter by active status, service resource type, and location (soft match).
+        // Location filtering is relaxed: prefer resources at the booking location,
+        // but fall back to all type-matched resources if none match the location.
+        // This mirrors the web client behaviour where the backend validates the
+        // final booking and doesn't strictly enforce resource–location pairing.
+        const serviceTypeIds = service.resource_type_ids ||
+          (service.resource_type?.id ? [service.resource_type.id] : (service.resource_type_id ? [service.resource_type_id] : []));
+
+        const typeMatched = allResources.filter((r) => {
           if (r.status === 'inactive' || r.status === 'disabled') return false;
-          const locMatch = r.location_id === location.id ||
-            (Array.isArray(r.location_ids) && r.location_ids.includes(location.id)) ||
-            (!r.location_id && !r.location_ids);
-          if (!locMatch) return false;
-          const serviceTypeIds = service.resource_type_ids ||
-            (service.resource_type?.id ? [service.resource_type.id] : (service.resource_type_id ? [service.resource_type_id] : []));
           if (serviceTypeIds.length > 0) {
             const rTypeId = r.resource_type_id || r.type?.id || r.resource_type?.id;
             if (rTypeId && !serviceTypeIds.includes(rTypeId)) return false;
           }
           return true;
         });
-        if (!cancelled) setResourcePool(filtered);
+
+        // Prefer resources at the booking location
+        const atLocation = typeMatched.filter((r) => {
+          if (r.location_id === location.id) return true;
+          if (Array.isArray(r.location_ids) && r.location_ids.includes(location.id)) return true;
+          if (!r.location_id && !r.location_ids) return true;
+          return false;
+        });
+
+        const filtered = atLocation.length > 0 ? atLocation : typeMatched;
+        if (!cancelled) {
+          setResourcePool(filtered);
+          setResourcePoolReady(true);
+        }
       } catch (err) {
-        console.warn('Failed to fetch resources:', err.message);
+        logger.warn('Failed to fetch resources:', err.message);
+        if (!cancelled) setResourcePoolReady(true);
       }
     })();
     return () => { cancelled = true; };
@@ -132,37 +150,74 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     return Array.from(months);
   }, [dates]);
 
-  // Fetch monthly availability summary for date coloring
+  // Fetch availability indicators for date coloring.
+  // For class/group services: fetch actual class sessions across the visible date range
+  // so green dots only appear on days with real sessions.
+  // For 1:1 services: use the monthly summary endpoint as before.
   useEffect(() => {
     if (!service?.id || !location?.id) return;
 
     const fetchSummaries = async () => {
       const map = {};
       try {
-        const promises = monthsToFetch.map((month) =>
-          getAvailabilityMonthlySummary({
+        if (isClassService && dates.length > 0) {
+          // Build UTC window spanning all visible dates
+          const firstDayjs = dayjs.tz(dates[0].key, 'YYYY-MM-DD', companyTz);
+          const lastDayjs = dayjs.tz(dates[dates.length - 1].key, 'YYYY-MM-DD', companyTz);
+          const after = new Date(firstDayjs.valueOf()).toISOString();
+          const before = new Date(lastDayjs.valueOf() + 86400000).toISOString();
+
+          const result = await getAvailableClassSessionsByCoach({
             service_id: service.id,
             location_id: location.id,
-            month,
-            ...(coach?.id ? { coach_ids: [coach.id] } : {}),
-            ...(bookingData.duration_minutes ? { duration_minutes: bookingData.duration_minutes } : {}),
-          })
-        );
-        const results = await Promise.all(promises);
-        results.forEach((result) => {
-          const data = result?.data || result || {};
-          Object.entries(data).forEach(([dateKey, info]) => {
-            map[dateKey] = info?.hasAvailability ?? false;
+            after,
+            before,
+            client_id: bookingData?.client?.id || user?.id || undefined,
           });
-        });
+
+          // result is typically { data: { coachId: [...sessions] } } or similar
+          const coachGroups = result?.data || result || {};
+          const sessionDates = new Set();
+          Object.values(coachGroups).forEach((sessions) => {
+            (Array.isArray(sessions) ? sessions : []).forEach((s) => {
+              if (s.start_time) {
+                const dateKey = dayjs(s.start_time).tz(companyTz).format('YYYY-MM-DD');
+                sessionDates.add(dateKey);
+              }
+            });
+          });
+
+          // Mark each visible date: true only if actual sessions exist
+          dates.forEach((d) => {
+            map[d.key] = sessionDates.has(d.key);
+          });
+        } else {
+          // 1:1 services: use monthly summary
+          const promises = monthsToFetch.map((month) =>
+            getAvailabilityMonthlySummary({
+              service_id: service.id,
+              location_id: location.id,
+              month,
+              ...(coach?.id ? { coach_ids: [coach.id] } : {}),
+              ...(bookingData.duration_minutes ? { duration_minutes: bookingData.duration_minutes } : {}),
+            })
+          );
+          const results = await Promise.all(promises);
+          results.forEach((result) => {
+            const data = result?.data || result || {};
+            Object.entries(data).forEach(([dateKey, info]) => {
+              map[dateKey] = info?.hasAvailability ?? false;
+            });
+          });
+        }
       } catch (err) {
-        console.warn('Failed to fetch availability summary:', err.message);
+        logger.warn('Failed to fetch availability summary:', err.message);
       }
       setAvailabilityMap(map);
     };
 
     fetchSummaries();
-  }, [service?.id, location?.id, coach?.id, monthsToFetch]);
+  }, [service?.id, location?.id, coach?.id, isClassService, dates, monthsToFetch, companyTz, bookingData?.client?.id, user?.id]);
 
   // Apply closure filtering to resource pool for the selected date
   const effectiveResourcePool = useMemo(() => {
@@ -200,7 +255,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       setClassGroups(groups);
       setClassSlots(flat);
     } catch (err) {
-      console.warn('Failed to load class sessions:', err.message);
+      logger.warn('Failed to load class sessions:', err.message);
       setClassSlots([]);
       setClassGroups([]);
     } finally {
@@ -226,7 +281,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
 
       setTimeSlots(slots);
     } catch (err) {
-      console.warn('Failed to load time slots:', err.message);
+      logger.warn('Failed to load time slots:', err.message);
       setTimeSlots([]);
     } finally {
       setIsLoading(false);
@@ -239,8 +294,9 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   }, [selectedDate]);
 
   // Fetch slots when date changes (show skeleton) or when resource pool updates (silent refetch)
+  // Wait for resourcePoolReady before first fetch so slots include available_resource_ids.
   useEffect(() => {
-    if (!selectedDate || !company) return;
+    if (!selectedDate || !company || !resourcePoolReady) return;
 
     if (!hasFetchedSlots.current) {
       // Fresh date selection — show skeleton
@@ -255,7 +311,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       // Resource pool changed — silent refetch without skeleton
       loadTimeSlots(selectedDate, { showSkeleton: false });
     }
-  }, [selectedDate, isClassService, loadClassSessions, loadTimeSlots, company]);
+  }, [selectedDate, isClassService, loadClassSessions, loadTimeSlots, company, resourcePoolReady]);
 
   const handleSelectSlot = useCallback((slot) => {
     setSelectedSlot(slot);
@@ -279,10 +335,14 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       return;
     }
 
+    // Look up the latest version of the selected slot from timeSlots (may have
+    // been silently refetched with available_resource_ids after resourcePool loaded).
+    const currentSlot = timeSlots.find((s) => s.id === selectedSlot.id) || selectedSlot;
+
     // Auto-assign first available resource from the selected time slot
     let selectedResource = null;
-    if (service?.requires_resource && selectedSlot?.available_resource_ids?.length > 0) {
-      const resourceId = selectedSlot.available_resource_ids[0];
+    if (service?.requires_resource && currentSlot?.available_resource_ids?.length > 0) {
+      const resourceId = currentSlot.available_resource_ids[0];
       selectedResource = effectiveResourcePool.find(
         (r) => (r.id || r.resource_id)?.toString() === resourceId?.toString()
       ) || { id: resourceId };
@@ -292,11 +352,11 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       bookingData: {
         ...bookingData,
         date: selectedDate.key,
-        timeSlot: selectedSlot,
+        timeSlot: currentSlot,
         ...(selectedResource ? { selectedResource } : {}),
       },
     });
-  }, [navigation, bookingData, selectedDate, selectedSlot, service, effectiveResourcePool, isClassService]);
+  }, [navigation, bookingData, selectedDate, selectedSlot, timeSlots, service, effectiveResourcePool, isClassService]);
 
   const getDateIndicatorColor = useCallback(
     (dateKey) => {
@@ -316,6 +376,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         style={[styles.dateItem, isSelected && styles.dateItemSelected]}
         onPress={() => setSelectedDate(item)}
         activeOpacity={0.7}
+        testID={`date-item-${item.key}`}
       >
         <Text
           style={[
@@ -400,6 +461,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
                         onPress={() => !isDisabled && handleSelectSlot(slot)}
                         activeOpacity={isDisabled ? 1 : 0.7}
                         disabled={isDisabled}
+                        testID={`class-slot-${slot.class_session_id}`}
                       >
                         <Text
                           style={[
@@ -448,6 +510,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
                     ]}
                     onPress={() => handleSelectSlot(slot)}
                     activeOpacity={0.7}
+                    testID={`time-slot-${slot.id}`}
                   >
                     <Text
                       style={[
@@ -471,6 +534,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
           onPress={handleContinue}
           disabled={!selectedSlot}
           activeOpacity={0.8}
+          testID="continue-button"
         >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>

@@ -12,7 +12,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { uploadFile } from '../../services/uploads.api';
 import { shareMediaWithClient, shareMediaWithGroup } from '../../services/accounts.api';
@@ -20,6 +20,7 @@ import ShareTargetSheet from '../../components/ShareTargetSheet';
 import { videoReviewStyles as styles } from '../../styles/videoReview.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
+import logger from '../../helpers/logger.helper';
 
 const VideoReviewScreen = ({ route, navigation }) => {
   const { videoUri } = route.params;
@@ -81,7 +82,7 @@ const VideoReviewScreen = ({ route, navigation }) => {
         );
       }, 400);
     } catch (err) {
-      console.error('Upload failed:', err);
+      logger.error('Upload failed:', err);
       setIsUploading(false);
       Alert.alert(
         'Upload Failed',
@@ -129,7 +130,7 @@ const VideoReviewScreen = ({ route, navigation }) => {
         [{ text: 'Done', onPress: () => navigation.popToTop() }]
       );
     } catch (err) {
-      console.error('Share failed:', err);
+      logger.error('Share failed:', err);
       Alert.alert(
         'Share Failed',
         err.response?.data?.message || 'Could not share with one or more targets.',
@@ -151,8 +152,8 @@ const VideoReviewScreen = ({ route, navigation }) => {
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           disabled={isUploading}
         >
-          <Ionicons
-            name="arrow-back"
+          <MaterialCommunityIcons
+            name="arrow-left"
             size={24}
             color={isUploading ? colors.textInverseDisabled : colors.textInverse}
           />
@@ -225,7 +226,7 @@ const VideoReviewScreen = ({ route, navigation }) => {
                 <ActivityIndicator size="small" color={colors.textInverse} />
               ) : (
                 <>
-                  <Ionicons name="cloud-upload-outline" size={20} color={colors.textInverse} />
+                  <MaterialCommunityIcons name="cloud-upload-outline" size={20} color={colors.textInverse} />
                   <Text style={styles.uploadButtonText}>
                     Upload to Media Library
                   </Text>

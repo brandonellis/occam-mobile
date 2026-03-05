@@ -8,7 +8,8 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { TouchableRipple } from 'react-native-paper';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
@@ -17,6 +18,7 @@ import { bookingsListStyles as styles } from '../../styles/bookingsList.styles';
 import { ListSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import { colors } from '../../theme';
+import logger from '../../helpers/logger.helper';
 
 const TABS = { UPCOMING: 'upcoming', PAST: 'past' };
 
@@ -102,7 +104,7 @@ const ClientBookingsScreen = ({ navigation }) => {
         setBookings(past);
       }
     } catch (err) {
-      console.warn('Failed to load bookings:', err?.message || err);
+      logger.warn('Failed to load bookings:', err?.message || err);
       setBookings([]);
     } finally {
       setIsLoading(false);
@@ -139,7 +141,7 @@ const ClientBookingsScreen = ({ navigation }) => {
               if (status === 403 && serverMsg) {
                 Alert.alert('Cannot Cancel', serverMsg);
               } else {
-                console.warn('Failed to cancel booking:', err?.message || err);
+                logger.warn('Failed to cancel booking:', err?.message || err);
                 Alert.alert('Error', 'Failed to cancel booking.');
               }
             }
@@ -156,75 +158,77 @@ const ClientBookingsScreen = ({ navigation }) => {
     const coach = item.coaches?.[0] || null;
 
     return (
-      <TouchableOpacity
+      <TouchableRipple
         style={styles.bookingCard}
         onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { booking: item })}
-        activeOpacity={0.7}
+        borderless
       >
-        <View style={styles.bookingCardRow}>
-          <View style={styles.bookingTimeBlock}>
-            <Text style={styles.bookingTimeValue}>
-              {formatTimeInTz(item.start_time, company)}
-            </Text>
-            <Text style={styles.bookingTimeDate}>
-              {formatDateInTz(item.start_time, company)}
-            </Text>
-          </View>
-          <View style={styles.bookingCardContent}>
-            <Text style={styles.bookingService}>
-              {item.services?.[0]?.name || 'Session'}
-            </Text>
-            {coach && (
-              <Text style={styles.bookingCoach}>
-                {coach.first_name} {coach.last_name}
+        <View>
+          <View style={styles.bookingCardRow}>
+            <View style={styles.bookingTimeBlock}>
+              <Text style={styles.bookingTimeValue}>
+                {formatTimeInTz(item.start_time, company)}
               </Text>
-            )}
-            {item.location && (
-              <Text style={styles.bookingLocation}>
-                {item.location.name}
-              </Text>
-            )}
-          </View>
-          <View style={styles.bookingEndColumn}>
-            <View style={[styles.statusBadge, status.style]}>
-              <Text style={[styles.statusText, status.textStyle]}>
-                {status.label}
+              <Text style={styles.bookingTimeDate}>
+                {formatDateInTz(item.start_time, company)}
               </Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+            <View style={styles.bookingCardContent}>
+              <Text style={styles.bookingService}>
+                {item.services?.[0]?.name || 'Session'}
+              </Text>
+              {coach && (
+                <Text style={styles.bookingCoach}>
+                  {coach.first_name} {coach.last_name}
+                </Text>
+              )}
+              {item.location && (
+                <Text style={styles.bookingLocation}>
+                  {item.location.name}
+                </Text>
+              )}
+            </View>
+            <View style={styles.bookingEndColumn}>
+              <View style={[styles.statusBadge, status.style]}>
+                <Text style={[styles.statusText, status.textStyle]}>
+                  {status.label}
+                </Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
+            </View>
           </View>
-        </View>
 
-        {isUpcoming && item.status !== 'cancelled' && (() => {
-          const windowHours = company?.cancellation_window_hours ?? 24;
-          const withinWindow = item.start_time &&
-            new Date(item.start_time).getTime() < Date.now() + windowHours * 3600000;
-          if (withinWindow) return null;
-          return (
+          {isUpcoming && item.status !== 'cancelled' && (() => {
+            const windowHours = company?.cancellation_window_hours ?? 24;
+            const withinWindow = item.start_time &&
+              new Date(item.start_time).getTime() < Date.now() + windowHours * 3600000;
+            if (withinWindow) return null;
+            return (
+              <View style={styles.bookingActions}>
+                <TouchableOpacity
+                  style={styles.cancelButton}
+                  onPress={() => handleCancel(item)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            );
+          })()}
+
+          {!isUpcoming && (
             <View style={styles.bookingActions}>
               <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => handleCancel(item)}
+                style={styles.rebookButton}
+                onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: {} } })}
                 activeOpacity={0.7}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={styles.rebookButtonText}>Book Again</Text>
               </TouchableOpacity>
             </View>
-          );
-        })()}
-
-        {!isUpcoming && (
-          <View style={styles.bookingActions}>
-            <TouchableOpacity
-              style={styles.rebookButton}
-              onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: {} } })}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.rebookButtonText}>Book Again</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </TouchableOpacity>
+          )}
+        </View>
+      </TouchableRipple>
     );
   }, [activeTab, company, handleCancel, navigation]);
 
@@ -299,7 +303,7 @@ const ClientBookingsScreen = ({ navigation }) => {
           removeClippedSubviews
           ListEmptyComponent={
             <EmptyState
-              icon={activeTab === TABS.UPCOMING ? 'calendar-outline' : 'time-outline'}
+              icon={activeTab === TABS.UPCOMING ? 'calendar-outline' : 'clock-outline'}
               title={activeTab === TABS.UPCOMING ? 'No Upcoming Bookings' : 'No Past Bookings'}
               message={
                 activeTab === TABS.UPCOMING

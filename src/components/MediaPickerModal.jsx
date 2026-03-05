@@ -18,12 +18,13 @@ import {
   ProgressBar,
   Snackbar,
 } from 'react-native-paper';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { getUploads, uploadFile } from '../services/uploads.api';
 import { mediaPickerStyles as styles } from '../styles/mediaPicker.styles';
 import { colors } from '../theme';
 import AuthImage from './AuthImage';
+import logger from '../helpers/logger.helper';
 
 const MIME_ICON_MAP = {
   video: 'video',
@@ -114,7 +115,7 @@ const MediaPickerModal = ({
       setSnackMessage('Upload complete');
       loadUploads();
     } catch (err) {
-      console.warn('Upload failed:', err.message);
+      logger.warn('Upload failed:', err.message);
       Alert.alert('Upload Failed', err.response?.data?.message || err.message || 'Something went wrong.');
     } finally {
       setIsUploading(false);
@@ -226,7 +227,7 @@ const MediaPickerModal = ({
             disabled={isUploading || isSharing}
             activeOpacity={0.7}
           >
-            <Ionicons name="cloud-upload-outline" size={22} color={colors.white} />
+            <MaterialCommunityIcons name="cloud-upload-outline" size={22} color={colors.white} />
           </TouchableOpacity>
         </View>
 

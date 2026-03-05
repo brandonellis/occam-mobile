@@ -7,7 +7,8 @@ import {
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { TouchableRipple } from 'react-native-paper';
 import ScreenHeader from '../../components/ScreenHeader';
 import EmptyState from '../../components/EmptyState';
 import { SCREENS } from '../../constants/navigation.constants';
@@ -20,14 +21,15 @@ import { getTimeAgo } from '../../helpers/date.helper';
 import { notificationsStyles as styles } from '../../styles/notifications.styles';
 import { ListSkeleton } from '../../components/SkeletonLoader';
 import { colors } from '../../theme';
+import logger from '../../helpers/logger.helper';
 
 const ICON_MAP = {
   booking: 'calendar',
-  video: 'videocam',
-  membership: 'card',
+  video: 'video',
+  membership: 'credit-card-outline',
   progress: 'trending-up',
-  message: 'chatbubble',
-  default: 'notifications',
+  message: 'chat',
+  default: 'bell',
 };
 
 const NotificationsScreen = ({ navigation }) => {
@@ -67,7 +69,7 @@ const NotificationsScreen = ({ navigation }) => {
           )
         );
       } catch (err) {
-        console.warn('Failed to mark notification as read:', err.message);
+        logger.warn('Failed to mark notification as read:', err.message);
       }
     }
 
@@ -85,7 +87,7 @@ const NotificationsScreen = ({ navigation }) => {
         prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
       );
     } catch (err) {
-      console.warn('Failed to mark all notifications as read:', err.message);
+      logger.warn('Failed to mark all notifications as read:', err.message);
     }
   }, []);
 
@@ -96,17 +98,17 @@ const NotificationsScreen = ({ navigation }) => {
     const iconName = ICON_MAP[item.data?.type] || ICON_MAP.default;
 
     return (
-      <TouchableOpacity
+      <TouchableRipple
         style={[
           styles.notificationItem,
           isUnread && styles.notificationUnread,
         ]}
         onPress={() => handleMarkRead(item)}
-        activeOpacity={0.7}
+        borderless
       >
         <View style={styles.notificationRow}>
           <View style={styles.iconContainer}>
-            <Ionicons name={iconName} size={18} color={colors.primary} />
+            <MaterialCommunityIcons name={iconName} size={18} color={colors.primary} />
           </View>
           <View style={styles.notificationContent}>
             <Text style={styles.notificationTitle}>
@@ -123,7 +125,7 @@ const NotificationsScreen = ({ navigation }) => {
           </View>
           {isUnread && <View style={styles.unreadDot} />}
         </View>
-      </TouchableOpacity>
+      </TouchableRipple>
     );
   };
 
@@ -168,7 +170,7 @@ const NotificationsScreen = ({ navigation }) => {
               />
             ) : (
               <EmptyState
-                icon="notifications-off-outline"
+                icon="bell-off-outline"
                 title="No Notifications"
                 message="You're all caught up."
               />

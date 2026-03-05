@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { Text } from 'react-native-paper';
+import { Text, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
@@ -63,22 +63,25 @@ const DurationSelectionScreen = ({ route, navigation }) => {
           const price = calculateEffectivePrice(service, minutes);
 
           return (
-            <TouchableOpacity
+            <TouchableRipple
               key={minutes}
               style={[
                 styles.durationCard,
                 isSelected && styles.durationCardSelected,
               ]}
               onPress={() => setSelectedDuration(minutes)}
-              activeOpacity={0.7}
+              borderless
+              testID={`duration-card-${minutes}`}
             >
-              <Text style={styles.durationLabel}>
-                {formatDuration(minutes)}
-              </Text>
-              <Text style={styles.durationPrice}>
-                {formatCurrency(price)}
-              </Text>
-            </TouchableOpacity>
+              <View style={styles.durationCardContent}>
+                <Text style={styles.durationLabel}>
+                  {formatDuration(minutes)}
+                </Text>
+                <Text style={styles.durationPrice}>
+                  {formatCurrency(price)}
+                </Text>
+              </View>
+            </TouchableRipple>
           );
         })}
       </ScrollView>
@@ -89,6 +92,7 @@ const DurationSelectionScreen = ({ route, navigation }) => {
           onPress={handleContinue}
           disabled={!selectedDuration}
           activeOpacity={0.8}
+          testID="duration-continue-button"
         >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>

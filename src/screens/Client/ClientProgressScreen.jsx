@@ -9,7 +9,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { TouchableRipple } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
 import {
   getClientPerformanceCurriculum,
@@ -23,14 +24,15 @@ import { SCREENS } from '../../constants/navigation.constants';
 import { colors } from '../../theme';
 import { resolveMediaUrl } from '../../helpers/media.helper';
 import AuthImage from '../../components/AuthImage';
+import logger from '../../helpers/logger.helper';
 
 const TABS = { CURRICULUM: 'curriculum', REPORTS: 'reports', RESOURCES: 'resources' };
 
 const getDocumentIcon = (mime) => {
-  if (mime.startsWith('application/pdf')) return 'document-text';
+  if (mime.startsWith('application/pdf')) return 'file-document';
   if (mime.includes('spreadsheet') || mime.includes('excel')) return 'grid';
-  if (mime.includes('presentation') || mime.includes('powerpoint')) return 'easel';
-  return 'document';
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return 'presentation';
+  return 'file-document-outline';
 };
 
 const ResourceCard = ({ resource, navigation }) => {
@@ -69,14 +71,14 @@ const ResourceCard = ({ resource, navigation }) => {
                 resizeMode="cover"
               />
               <View style={styles.resourcePlayOverlay}>
-                <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.9)" />
+                <MaterialCommunityIcons name="play-circle" size={56} color="rgba(255,255,255,0.9)" />
               </View>
             </View>
           ) : (
             <View style={styles.resourceVideoPlaceholder}>
-              <Ionicons name="videocam" size={32} color={colors.textTertiary} />
+              <MaterialCommunityIcons name="video" size={32} color={colors.textTertiary} />
               <View style={styles.resourcePlayOverlay}>
-                <Ionicons name="play-circle" size={56} color="rgba(255,255,255,0.7)" />
+                <MaterialCommunityIcons name="play-circle" size={56} color="rgba(255,255,255,0.7)" />
               </View>
             </View>
           )}
@@ -85,7 +87,7 @@ const ResourceCard = ({ resource, navigation }) => {
 
       {!isImage && !isVideo && (
         <View style={styles.resourceDocPlaceholder}>
-          <Ionicons name={getDocumentIcon(mime)} size={36} color={colors.textTertiary} />
+          <MaterialCommunityIcons name={getDocumentIcon(mime)} size={36} color={colors.textTertiary} />
           <Text style={styles.resourceDocType}>
             {mime.split('/').pop()?.toUpperCase() || 'FILE'}
           </Text>
@@ -176,7 +178,7 @@ const ClientProgressScreen = () => {
         setResources(data || []);
       }
     } catch (err) {
-      console.warn('Failed to load progress data:', err?.message || err);
+      logger.warn('Failed to load progress data:', err?.message || err);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -253,8 +255,8 @@ const ClientProgressScreen = () => {
                 const done = lesson.completed || lesson.completed_at || lesson.is_completed;
                 return (
                   <View key={lesson.id} style={styles.lessonRow}>
-                    <Ionicons
-                      name={done ? 'checkmark-circle' : 'ellipse-outline'}
+                    <MaterialCommunityIcons
+                      name={done ? 'check-circle' : 'circle-outline'}
                       size={18}
                       color={done ? colors.success : colors.textTertiary}
                     />
@@ -280,7 +282,7 @@ const ClientProgressScreen = () => {
     if (reports.length === 0) {
       return (
         <EmptyState
-          icon="bar-chart-outline"
+          icon="chart-bar"
           title="No Reports Yet"
           message="Your coach will share progress reports with you here."
         />
@@ -295,13 +297,13 @@ const ClientProgressScreen = () => {
       const programName = payload?.program?.name || null;
 
       return (
-        <TouchableOpacity
+        <TouchableRipple
           key={report.id}
           style={styles.reportCard}
-          activeOpacity={0.7}
           onPress={() =>
             navigation.navigate(SCREENS.PROGRESS_REPORT_DETAIL, { report })
           }
+          borderless
         >
           <View style={styles.reportCardRow}>
             <View style={styles.reportCardContent}>
@@ -320,7 +322,7 @@ const ClientProgressScreen = () => {
               )}
               {programName && (
                 <View style={styles.reportProgramBadge}>
-                  <Ionicons name="flag-outline" size={12} color={colors.accent} />
+                  <MaterialCommunityIcons name="flag-outline" size={12} color={colors.accent} />
                   <Text style={styles.reportProgramText}>{programName}</Text>
                 </View>
               )}
@@ -336,9 +338,9 @@ const ClientProgressScreen = () => {
                 </Text>
               )}
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+            <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
           </View>
-        </TouchableOpacity>
+        </TouchableRipple>
       );
     });
   };
@@ -394,12 +396,12 @@ const ClientProgressScreen = () => {
               style={[styles.resourceSectionHeader, styles.resourceSectionHeaderFirst]}
             >
               <View style={[styles.resourceSectionIcon, styles.resourceSectionIconPersonal]}>
-                <Ionicons name="person-outline" size={14} color={colors.accent} />
+                <MaterialCommunityIcons name="account-outline" size={14} color={colors.accent} />
               </View>
               <Text style={styles.resourceSectionTitle}>My Resources</Text>
               <Text style={styles.resourceSectionCount}>{personalResources.length}</Text>
-              <Ionicons
-                name={personalCollapsed ? 'chevron-forward' : 'chevron-down'}
+              <MaterialCommunityIcons
+                name={personalCollapsed ? 'chevron-right' : 'chevron-down'}
                 size={16}
                 color={colors.textTertiary}
               />
@@ -422,12 +424,12 @@ const ClientProgressScreen = () => {
                 style={[styles.resourceSectionHeader, !hasPersonal && index === 0 && styles.resourceSectionHeaderFirst]}
               >
                 <View style={[styles.resourceSectionIcon, styles.resourceSectionIconGroup]}>
-                  <Ionicons name="people-outline" size={14} color={colors.twilightPurple} />
+                  <MaterialCommunityIcons name="account-group-outline" size={14} color={colors.twilightPurple} />
                 </View>
                 <Text style={styles.resourceSectionTitle}>{group.name}</Text>
                 <Text style={styles.resourceSectionCount}>{group.items.length}</Text>
-                <Ionicons
-                  name={isCollapsed ? 'chevron-forward' : 'chevron-down'}
+                <MaterialCommunityIcons
+                  name={isCollapsed ? 'chevron-right' : 'chevron-down'}
                   size={16}
                   color={colors.textTertiary}
                 />

@@ -1,6 +1,7 @@
 import dayjs, { getEffectiveTimezone, parseDateTimeInTz } from './dayjs';
 import { EVENT_TYPES } from '../constants/events.constants';
 import { isClassLike } from '../helpers/normalizers.helper';
+import logger from '../helpers/logger.helper';
 
 /**
  * Generate available time slots based on availability windows and existing bookings
@@ -414,7 +415,7 @@ export const processAvailabilityData = (service, coach, selectedResource, locati
         allBookings = [...allBookings, ...classSessions];
       }
     } catch (e) {
-      console.warn('Failed to extract class sessions from coach data:', e.message);
+      logger.warn('Failed to extract class sessions from coach data:', e.message);
     }
 
     // Handle resource requirements

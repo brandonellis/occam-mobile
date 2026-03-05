@@ -9,7 +9,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { IconButton } from 'react-native-paper';
 import Avatar from '../../components/Avatar';
 import EmptyState from '../../components/EmptyState';
 import { SCREENS } from '../../constants/navigation.constants';
@@ -17,6 +18,7 @@ import { getClients } from '../../services/accounts.api';
 import { colors } from '../../theme';
 import { coachClientsStyles as styles } from '../../styles/coachClients.styles';
 import { ListSkeleton } from '../../components/SkeletonLoader';
+import logger from '../../helpers/logger.helper';
 
 const PER_PAGE = 50;
 const SEARCH_DEBOUNCE_MS = 350;
@@ -62,7 +64,7 @@ const CoachClientsScreen = ({ navigation }) => {
       setCurrentPage(meta.current_page ?? page);
       setLastPage(meta.last_page ?? page);
     } catch (err) {
-      console.warn('Failed to load clients:', err?.message || err);
+      logger.warn('Failed to load clients:', err?.message || err);
       if (!append) {
         setClients([]);
         setTotalCount(0);
@@ -75,16 +77,14 @@ const CoachClientsScreen = ({ navigation }) => {
     }
   }, []);
 
-  // Defer initial fetch to focus
+  // Fetch once on mount — pull-to-refresh handles subsequent refreshes
   const hasLoaded = useRef(false);
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      activeSearchRef.current = '';
-      fetchClients({ page: 1, searchTerm: '', refresh: hasLoaded.current });
+    if (!hasLoaded.current) {
       hasLoaded.current = true;
-    });
-    return unsubscribe;
-  }, [navigation, fetchClients]);
+      fetchClients({ page: 1, searchTerm: '' });
+    }
+  }, [fetchClients]);
 
   // Clean up debounce timer on unmount
   useEffect(() => {
@@ -143,7 +143,7 @@ const CoachClientsScreen = ({ navigation }) => {
           <Text style={styles.clientName}>{fullName || 'Client'}</Text>
           <Text style={styles.clientEmail}>{item.email}</Text>
         </View>
-        <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+        <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
       </TouchableOpacity>
     );
   }, [navigation]);
@@ -169,7 +169,7 @@ const CoachClientsScreen = ({ navigation }) => {
       </View>
 
       <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color={colors.textTertiary} />
+        <MaterialCommunityIcons name="magnify" size={18} color={colors.textTertiary} />
         <TextInput
           style={styles.searchInput}
           placeholder="Search clients..."
@@ -181,9 +181,13 @@ const CoachClientsScreen = ({ navigation }) => {
         {isSearching ? (
           <ActivityIndicator size="small" color={colors.accent} />
         ) : search.length > 0 ? (
-          <TouchableOpacity onPress={handleClearSearch}>
-            <Ionicons name="close-circle" size={18} color={colors.textTertiary} />
-          </TouchableOpacity>
+          <IconButton
+            icon="close-circle"
+            size={18}
+            iconColor={colors.textTertiary}
+            onPress={handleClearSearch}
+            style={{ margin: 0 }}
+          />
         ) : null}
       </View>
 
@@ -210,7 +214,7 @@ const CoachClientsScreen = ({ navigation }) => {
           ListFooterComponent={ListFooter}
           ListEmptyComponent={
             <EmptyState
-              icon="people-outline"
+              icon="account-group-outline"
               title={search ? 'No Results' : 'No Clients Yet'}
               message={
                 search

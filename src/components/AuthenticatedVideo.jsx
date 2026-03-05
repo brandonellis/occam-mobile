@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEvent } from 'expo';
-import { Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getToken, getTenantId } from '../helpers/storage.helper';
 import { colors } from '../theme';
 
@@ -64,7 +64,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
   if (failed || !uri) {
     return (
       <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.gray100, borderRadius }]}>
-        <Ionicons name="videocam-off-outline" size={32} color={colors.gray400} />
+        <MaterialCommunityIcons name="video-off-outline" size={32} color={colors.gray400} />
       </View>
     );
   }
@@ -109,7 +109,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
               justifyContent: 'center',
             }}
           >
-            <Ionicons name="play" size={28} color={colors.white} style={{ marginLeft: 3 }} />
+            <MaterialCommunityIcons name="play" size={28} color={colors.white} style={{ marginLeft: 3 }} />
           </View>
         </TouchableOpacity>
       ) : null}

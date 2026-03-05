@@ -1,0 +1,21 @@
+# Shared helper: wait for timeslots to load and select the first available one.
+# Mirrors the web test pattern:
+#   const slot = page.locator('[role="radiogroup"] [role="radio"]').first();
+#   if (await slot.isVisible(...)) { await slot.click(); }
+appId: host.exp.Exponent
+
+---
+
+- assertVisible:
+    text: "Select Date & Time"
+    timeout: 15000
+
+# Wait for time slots to finish loading
+- extendedWaitUntil:
+    visible: "Available Times"
+    timeout: 20000
+
+# Tap the first available time slot (matches HH:MM pattern)
+- tapOn:
+    text: "\\d{1,2}:\\d{2}.*"
+    index: 0
