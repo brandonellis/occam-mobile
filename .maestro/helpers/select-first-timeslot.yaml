@@ -6,8 +6,8 @@ appId: host.exp.Exponent
 
 ---
 
-- assertVisible:
-    text: "Select Date & Time"
+- extendedWaitUntil:
+    visible: "Select Date & Time"
     timeout: 15000
 
 # Wait for time slots to finish loading

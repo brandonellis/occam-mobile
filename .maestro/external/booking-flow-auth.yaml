@@ -26,8 +26,9 @@ appId: host.exp.Exponent
 - runFlow: ../helpers/navigate-to-booking.yaml
 
 # Service selection should be visible (no customer info gate for auth users)
-- assertVisible:
-    id: "service-selection-list"
+- extendedWaitUntil:
+    visible:
+      id: "service-selection-list"
     timeout: 10000
 
 # ── Test: membership-covered service → coach → timeslot ───────────────
@@ -42,8 +43,8 @@ appId: host.exp.Exponent
 
 # Coach selection should appear (service requires coach)
 # Mirrors: await expect(coachSelection).toBeVisible()
-- assertVisible:
-    text: "Select a Coach"
+- extendedWaitUntil:
+    visible: "Select a Coach"
     timeout: 15000
 
 # Select first coach
@@ -52,8 +53,8 @@ appId: host.exp.Exponent
 
 # Should advance to timeslot selection
 # Mirrors: await expect(page.locator('.timeslot-selection')).toBeVisible()
-- assertVisible:
-    text: "Select Date & Time"
+- extendedWaitUntil:
+    visible: "Select Date & Time"
     timeout: 15000
 
 # ── Test: selecting a timeslot advances to confirmation (skips customer info) ──
@@ -76,8 +77,8 @@ appId: host.exp.Exponent
 # Auth users skip customer info — should see confirmation directly
 # Mirrors: const paymentStep = page.locator('.external-payment')
 #          await expect(paymentStep).toBeVisible()
-- assertVisible:
-    text: "Total"
+- extendedWaitUntil:
+    visible: "Total"
     timeout: 15000
 
 # For a member client with coverage, should see membership indicator

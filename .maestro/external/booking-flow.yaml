@@ -29,8 +29,9 @@ appId: host.exp.Exponent
 - runFlow: ../helpers/navigate-to-booking.yaml
 
 # Service cards should be visible
-- assertVisible:
-    id: "service-selection-list"
+- extendedWaitUntil:
+    visible:
+      id: "service-selection-list"
     timeout: 10000
 
 # ── Test: selecting a coaching service shows coach selection ───────────
@@ -44,16 +45,16 @@ appId: host.exp.Exponent
 - runFlow: ../helpers/handle-location-selection.yaml
 
 # ── Test: coach selection should appear ────────────────────────────────
-- assertVisible:
-    text: "Select a Coach"
+- extendedWaitUntil:
+    visible: "Select a Coach"
     timeout: 15000
 
 # Select first coach (mirrors: coachCard.filter({ hasText: 'Coach Alpha' }).click())
 - runFlow: ../helpers/handle-coach-selection.yaml
 
 # ── Test: selecting a coach advances to timeslot selection ─────────────
-- assertVisible:
-    text: "Select Date & Time"
+- extendedWaitUntil:
+    visible: "Select Date & Time"
     timeout: 15000
 
 # Wait for time slots to load
@@ -76,8 +77,8 @@ appId: host.exp.Exponent
 # ── Test: full booking flow reaches confirmation screen ────────────────
 # Verify booking summary is visible (Total line, confirm button)
 # Mirrors: expect(confirmation).toBeVisible()
-- assertVisible:
-    text: "Total"
+- extendedWaitUntil:
+    visible: "Total"
     timeout: 15000
 
 - assertVisible:

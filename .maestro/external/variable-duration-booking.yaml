@@ -44,15 +44,15 @@ appId: host.exp.Exponent
 # Duration selection should appear (not directly to timeslots)
 # Mirrors: const durationStep = page.locator('.duration-selection')
 #          await expect(durationStep).toBeVisible()
-- assertVisible:
-    text: "Choose a duration"
+- extendedWaitUntil:
+    visible: "Choose a duration"
     timeout: 15000
 
 # ── Test: duration selection shows correct price scaling ───────────────
 # Base price is $50 for 60 min.
 # Mirrors: expect(oneHourCard.locator('text=/\\$50/i')).toBeVisible()
-- assertVisible:
-    text: "$50"
+- extendedWaitUntil:
+    visible: "$50"
     timeout: 10000
 
 # ── Test: selecting a duration advances to timeslot selection ──────────
@@ -72,8 +72,8 @@ appId: host.exp.Exponent
 
 # Should advance to timeslot selection (no coach required for Simulator Bay)
 # Mirrors: await expect(timeslotSelection).toBeVisible()
-- assertVisible:
-    text: "Select Date & Time"
+- extendedWaitUntil:
+    visible: "Select Date & Time"
     timeout: 15000
 
 # Wait for time slots to load
@@ -95,8 +95,8 @@ appId: host.exp.Exponent
 # ── Test: confirmation shows correct price ─────────────────────────────
 # Verify booking summary is visible with the correct price
 # Mirrors: expect(priceText.first()).toBeVisible()
-- assertVisible:
-    text: "Total"
+- extendedWaitUntil:
+    visible: "Total"
     timeout: 15000
 
 # Resource auto-selection should not trigger an error

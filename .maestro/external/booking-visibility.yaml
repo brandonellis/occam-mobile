@@ -30,8 +30,9 @@ appId: host.exp.Exponent
 - runFlow: ../helpers/navigate-to-booking.yaml
 
 # Wait for service cards to load
-- assertVisible:
-    id: "service-selection-list"
+- extendedWaitUntil:
+    visible:
+      id: "service-selection-list"
     timeout: 10000
 
 # ── Test: non-member does NOT see members_only services ────────────────
@@ -44,12 +45,8 @@ appId: host.exp.Exponent
 # ── Test: non-member CAN see regular services ─────────────────────────
 # "1:1 Coaching Session" should be visible (booking_visibility='all')
 # Mirrors: expect(coaching.first()).toBeVisible()
-- assertVisible:
-    text: "1:1 Coaching"
-    timeout: 5000
+- assertVisible: "1:1 Coaching"
 
 # "Range Session" should be visible
 # Mirrors: expect(range.first()).toBeVisible()
-- assertVisible:
-    text: "Range Session"
-    timeout: 5000
+- assertVisible: "Range Session"

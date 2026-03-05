@@ -32,23 +32,20 @@ appId: host.exp.Exponent
 - runFlow: ../helpers/navigate-to-booking.yaml
 
 # Wait for service cards to load
-- assertVisible:
-    id: "service-selection-list"
+- extendedWaitUntil:
+    visible:
+      id: "service-selection-list"
     timeout: 10000
 
 # ── Test: member client CAN see members_only services ──────────────────
 # "Member Lesson" should be visible for a member client
 # Mirrors: expect(memberLesson.first()).toBeVisible()
-- assertVisible:
-    text: "Member Lesson"
-    timeout: 5000
+- assertVisible: "Member Lesson"
 
 # ── Test: member client also sees regular services ─────────────────────
 # "1:1 Coaching Session" (booking_visibility='all') should also be visible
 # Mirrors: expect(coaching.first()).toBeVisible()
-- assertVisible:
-    text: "1:1 Coaching"
-    timeout: 5000
+- assertVisible: "1:1 Coaching"
 
 # ── Test: coach assignment filtering ───────────────────────────────────
 # Select "1:1 Coaching Session" — client has assignment: only Coach Alpha
@@ -62,14 +59,14 @@ appId: host.exp.Exponent
 
 # Coach selection should now appear
 # Mirrors: await expect(coachSelection).toBeVisible()
-- assertVisible:
-    text: "Select a Coach"
+- extendedWaitUntil:
+    visible: "Select a Coach"
     timeout: 15000
 
 # Coach Alpha should be visible (assigned)
 # Mirrors: expect(coachAlpha.first()).toBeVisible()
-- assertVisible:
-    text: "Coach Alpha"
+- extendedWaitUntil:
+    visible: "Coach Alpha"
     timeout: 10000
 
 # Coach Beta should NOT be visible (not assigned for this service)

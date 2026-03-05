@@ -11,6 +11,6 @@ appId: host.exp.Exponent
 - waitForAnimationToEnd
 
 # Wait for the service selection screen to load
-- assertVisible:
-    text: "Select a Service"
+- extendedWaitUntil:
+    visible: "Select a Service"
     timeout: 15000

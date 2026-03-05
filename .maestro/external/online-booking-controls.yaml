@@ -31,8 +31,9 @@ appId: host.exp.Exponent
 - runFlow: ../helpers/navigate-to-booking.yaml
 
 # Wait for service cards to load
-- assertVisible:
-    id: "service-selection-list"
+- extendedWaitUntil:
+    visible:
+      id: "service-selection-list"
     timeout: 10000
 
 # ── Test: client does NOT see services with online booking disabled ────
@@ -45,18 +46,12 @@ appId: host.exp.Exponent
 # ── Test: client CAN see services with online booking enabled ──────────
 # "1:1 Coaching Session" should be visible (online_booking_enabled defaults to true)
 # Mirrors: expect(coaching.first()).toBeVisible()
-- assertVisible:
-    text: "1:1 Coaching"
-    timeout: 5000
+- assertVisible: "1:1 Coaching"
 
 # "Short Game Lesson" should be visible (has advance limit but online booking is enabled)
 # Mirrors: expect(shortGame.first()).toBeVisible()
-- assertVisible:
-    text: "Short Game Lesson"
-    timeout: 5000
+- assertVisible: "Short Game Lesson"
 
 # ── Test: Short Game Lesson shows correct price ───────────────────────
 # Mirrors: await expect(shortGame.first()).toContainText('$55')
-- assertVisible:
-    text: "$55"
-    timeout: 5000
+- assertVisible: "$55"

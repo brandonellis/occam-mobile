@@ -2,6 +2,13 @@
 # Mirrors the auth setup in occam-client/tests/e2e/client.setup.js
 #
 # Requires env vars: CLIENT_EMAIL, CLIENT_PASSWORD, TEST_ORG
+#
+# LoginScreen.jsx UI:
+#   - Organization field: placeholder "Search your organization..."
+#   - Org results dropdown: shows org.name + org.domain, tap to select
+#   - Email field: placeholder "Enter your email"
+#   - Password field: placeholder "Enter your password"
+#   - Sign In button
 appId: host.exp.Exponent
 
 ---
@@ -9,29 +16,33 @@ appId: host.exp.Exponent
 # Wait for the login screen to load
 - waitForAnimationToEnd
 
-# Select organization
-- tapOn:
-    text: "Search for your organization"
-    optional: true
+# Step 1: Search and select organization
+- tapOn: "Search your organization..."
 - inputText: ${TEST_ORG}
-- waitForAnimationToEnd
+
+# Wait for search results to appear (debounced 400ms + API call)
+- extendedWaitUntil:
+    visible: ${TEST_ORG}
+    timeout: 10000
+
+# Tap the org result from the dropdown (it shows org.name)
 - tapOn:
     text: ${TEST_ORG}
+    index: 1
+- waitForAnimationToEnd
 
-# Enter credentials
-- tapOn:
-    text: "Email"
+# Step 2: Enter email
+- tapOn: "Enter your email"
 - inputText: ${CLIENT_EMAIL}
-- tapOn:
-    text: "Password"
+
+# Step 3: Enter password
+- tapOn: "Enter your password"
 - inputText: ${CLIENT_PASSWORD}
 
-# Sign in
-- tapOn:
-    text: "Sign In"
+# Step 4: Sign in
+- tapOn: "Sign In"
 
-# Wait for home screen to load (client sees "Book" tab)
-- waitForAnimationToEnd
-- assertVisible:
-    text: "Book"
-    optional: true
+# Wait for home screen to load (client sees bottom tab bar)
+- extendedWaitUntil:
+    visible: "Book"
+    timeout: 20000
