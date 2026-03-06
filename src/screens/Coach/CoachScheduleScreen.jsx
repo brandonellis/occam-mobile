@@ -126,12 +126,12 @@ const CoachScheduleScreen = ({ navigation }) => {
         <Text style={styles.headerTitle}>Schedule</Text>
         <TouchableOpacity
           testID="new-booking-button"
-          style={styles.newBookingButton}
+          style={globalStyles.headerActionButton}
           onPress={() => navigation.navigate(SCREENS.CLIENT_SELECTION, { bookingData: {} })}
           activeOpacity={0.7}
         >
           <MaterialCommunityIcons name="plus" size={18} color={colors.accent} />
-          <Text style={styles.newBookingText}>New</Text>
+          <Text style={globalStyles.headerActionText}>New</Text>
         </TouchableOpacity>
       </View>
 

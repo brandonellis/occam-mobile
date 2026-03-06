@@ -112,6 +112,23 @@ export const globalStyles = StyleSheet.create({
     color: colors.textPrimary,
   },
 
+  // Compact action pill (e.g. "+ New" booking button)
+  headerActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.peachGlowLight,
+  },
+  headerActionText: {
+    ...typography.label,
+    color: colors.accent,
+    fontSize: 13,
+    fontWeight: '600',
+  },
+
   // Text
   heading1: {
     ...typography.h1,

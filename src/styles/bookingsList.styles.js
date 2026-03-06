@@ -20,21 +20,6 @@ export const bookingsListStyles = StyleSheet.create({
     ...typography.h3,
     color: colors.textPrimary,
   },
-  newBookingButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.peachGlowLight,
-  },
-  newBookingText: {
-    ...typography.label,
-    color: colors.accent,
-    fontSize: 13,
-    fontWeight: '600',
-  },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: colors.white,

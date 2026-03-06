@@ -23,6 +23,7 @@ const CoachSelectionScreen = ({ route, navigation }) => {
     error: null,
   });
   const [rebooking, setRebooking] = React.useState(!!bookingData.rebookCoachId);
+  const didAutoSelect = useRef(false);
 
   const loadCoaches = useCallback(async () => {
     try {
@@ -70,6 +71,7 @@ const CoachSelectionScreen = ({ route, navigation }) => {
       setState({ coaches: coachList, isLoading: false, error: null });
     } catch (err) {
       logger.warn('Failed to load coaches:', err.message);
+      setRebooking(false);
       setState((prev) => ({
         ...prev,
         isLoading: false,
@@ -83,7 +85,6 @@ const CoachSelectionScreen = ({ route, navigation }) => {
   }, [loadCoaches]);
 
   // Rebook auto-select: if rebookCoachId is present, auto-pick the matching coach
-  const didAutoSelect = useRef(false);
   useEffect(() => {
     if (!bookingData.rebookCoachId || state.isLoading || state.error || didAutoSelect.current) return;
     const matched = state.coaches.find((c) => c.id === bookingData.rebookCoachId);
@@ -92,8 +93,9 @@ const CoachSelectionScreen = ({ route, navigation }) => {
       return;
     }
     didAutoSelect.current = true;
+    const { rebookCoachId, ...cleanData } = bookingData;
     navigation.replace(SCREENS.TIME_SLOT_SELECTION, {
-      bookingData: { ...bookingData, coach: matched },
+      bookingData: { ...cleanData, coach: matched },
     });
   }, [bookingData, state.isLoading, state.error, state.coaches, navigation]);
 

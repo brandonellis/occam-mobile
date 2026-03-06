@@ -58,3 +58,58 @@ export const getServiceLocations = (service, allLocations) => {
   }
   return allLocations || [];
 };
+
+/**
+ * Resolve the effective locations for a service (intersected with coach
+ * locations when applicable), auto-set the location if only one exists,
+ * and return a navigation target.
+ *
+ * Returns one of:
+ *   { resolved: true, bookingData, screen, params }   – location resolved, navigate to next screen
+ *   { resolved: false, bookingData, serviceLocations } – multiple locations, show picker
+ *
+ * @param {Object} opts
+ * @param {Object} opts.bookingData - Current bookingData (must include service; location will be set)
+ * @param {Array}  opts.allLocations - Full company location list
+ * @param {boolean} opts.isCoach
+ * @param {Object|null} opts.user
+ * @param {number|null} [opts.preferredLocationId] - Optional hint to prefer a specific location
+ */
+export const resolveLocationAndRoute = ({ bookingData, allLocations, isCoach, user, preferredLocationId = null }) => {
+  const service = bookingData.service;
+  const updatedData = { ...bookingData, location: null };
+
+  const serviceLocations = getServiceLocations(service, allLocations);
+  const coachLocationIds = isCoach ? (user?.location_ids || []) : [];
+  const effectiveLocations = coachLocationIds.length > 0
+    ? serviceLocations.filter((loc) => coachLocationIds.includes(loc.id))
+    : serviceLocations;
+
+  // Try preferred location first
+  if (preferredLocationId) {
+    const preferred = effectiveLocations.find((loc) => loc.id === preferredLocationId);
+    if (preferred) updatedData.location = preferred;
+  }
+
+  // Fall back to single-location auto-set
+  if (!updatedData.location && effectiveLocations.length === 1) {
+    updatedData.location = effectiveLocations[0];
+  }
+
+  if (updatedData.location) {
+    const { screen, params } = getNextBookingScreen(updatedData, isCoach, user);
+    return { resolved: true, bookingData: updatedData, screen, params };
+  }
+
+  if (effectiveLocations.length > 1) {
+    return {
+      resolved: false,
+      bookingData: updatedData,
+      serviceLocations: effectiveLocations,
+    };
+  }
+
+  // No locations — proceed anyway
+  const { screen, params } = getNextBookingScreen(updatedData, isCoach, user);
+  return { resolved: true, bookingData: updatedData, screen, params };
+};

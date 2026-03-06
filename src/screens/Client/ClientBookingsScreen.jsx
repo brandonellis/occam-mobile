@@ -15,6 +15,7 @@ import { getBookings, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 import { bookingsListStyles as styles } from '../../styles/bookingsList.styles';
+import { globalStyles } from '../../styles/global.styles';
 import { ListSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import { colors } from '../../theme';
@@ -263,12 +264,12 @@ const ClientBookingsScreen = ({ navigation }) => {
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Bookings</Text>
         <TouchableOpacity
-          style={styles.newBookingButton}
+          style={globalStyles.headerActionButton}
           onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: {} } })}
           activeOpacity={0.7}
         >
           <MaterialCommunityIcons name="plus" size={18} color={colors.accent} />
-          <Text style={styles.newBookingText}>New</Text>
+          <Text style={globalStyles.headerActionText}>New</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.tabBar}>

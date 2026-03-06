@@ -16,21 +16,6 @@ export const scheduleStyles = StyleSheet.create({
     paddingVertical: spacing.md,
     backgroundColor: colors.background,
   },
-  newBookingButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.full,
-    backgroundColor: colors.peachGlowLight,
-  },
-  newBookingText: {
-    ...typography.label,
-    color: colors.accent,
-    fontSize: 13,
-    fontWeight: '600',
-  },
   headerTitle: {
     ...typography.h3,
     color: colors.textPrimary,
