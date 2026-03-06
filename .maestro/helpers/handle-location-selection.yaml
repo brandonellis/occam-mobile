@@ -2,17 +2,15 @@
 # Mirrors the pattern in web tests:
 #   const locationCard = page.locator('.location-card').first();
 #   if (await locationCard.isVisible(...)) { await locationCard.click(); }
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 
+# If location selection is shown, tap "Main Facility" (the seeded primary location)
 - runFlow:
     when:
       visible: "Select a Location"
     commands:
       - tapOn:
-          id: "location-selection-list"
-          childOf:
-            index: 0
-          optional: true
+          text: ".*Main Facility.*"
       - waitForAnimationToEnd

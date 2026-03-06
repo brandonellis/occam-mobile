@@ -49,5 +49,9 @@ export default function useActivityBadge() {
     return () => clearInterval(interval);
   }, [checkUnread]);
 
-  return { unreadCount, refreshBadge: checkUnread };
+  const clearBadge = useCallback(() => {
+    setUnreadCount(0);
+  }, []);
+
+  return { unreadCount, refreshBadge: checkUnread, clearBadge };
 }

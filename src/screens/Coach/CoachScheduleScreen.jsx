@@ -123,11 +123,9 @@ const CoachScheduleScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Schedule</Text>
-          <Text style={styles.headerDate}>{formattedHeader}</Text>
-        </View>
+        <Text style={styles.headerTitle}>Schedule</Text>
         <TouchableOpacity
+          testID="new-booking-button"
           style={styles.newBookingButton}
           onPress={() => navigation.navigate(SCREENS.CLIENT_SELECTION, { bookingData: {} })}
           activeOpacity={0.7}

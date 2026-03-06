@@ -10,7 +10,7 @@ export const notificationsStyles = StyleSheet.create({
   },
   listContent: {
     paddingTop: spacing.sm,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.tabBarClearance,
   },
   notificationItem: {
     backgroundColor: colors.surface,

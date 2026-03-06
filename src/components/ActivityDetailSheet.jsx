@@ -21,6 +21,8 @@ import { getFeedItemNotes, addFeedItemNote } from '../services/activity.api';
 import useAuth from '../hooks/useAuth';
 import { colors } from '../theme';
 import { spacing } from '../theme/spacing';
+import { parseReportPayload } from '../helpers/report.helper';
+import { reportDetailStyles } from '../styles/reportSummary.styles';
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '';
@@ -134,6 +136,91 @@ const NoteItem = ({ note }) => {
     </View>
   );
 };
+
+const ReportDetailSection = ({ reportData, accentColor, title }) => {
+  const {
+    modules,
+    totalLessons,
+    completedLessons,
+    curriculumPct,
+    latestAssessment: latest,
+    scoreEntries,
+  } = parseReportPayload(reportData?.payload);
+
+  return (
+    <View style={reportDetailStyles.container}>
+      {/* Header */}
+      <View style={reportDetailStyles.header}>
+        <MaterialCommunityIcons name="chart-line" size={22} color={accentColor} />
+        <Text style={reportDetailStyles.headerTitle}>{title || 'Progress Report'}</Text>
+      </View>
+      {reportData.coach ? (
+        <Text style={reportDetailStyles.coachText}>
+          By {reportData.coach.first_name} {reportData.coach.last_name}
+        </Text>
+      ) : null}
+
+      {/* Curriculum progress */}
+      {totalLessons > 0 && (
+        <View style={reportDetailStyles.section}>
+          <View style={reportDetailStyles.sectionHeader}>
+            <MaterialCommunityIcons name="school-outline" size={16} color={accentColor} />
+            <Text style={reportDetailStyles.sectionTitle}>Curriculum Progress</Text>
+            <Text style={reportDetailStyles.sectionValue}>{completedLessons}/{totalLessons}</Text>
+          </View>
+          <View style={reportDetailStyles.progressTrack}>
+            <View style={[reportDetailStyles.progressFill, { width: `${Math.round(curriculumPct * 100)}%`, backgroundColor: accentColor }]} />
+          </View>
+          {/* Module breakdown */}
+          {modules.map((mod, idx) => {
+            const lessons = Array.isArray(mod?.lessons) ? mod.lessons : [];
+            const done = lessons.filter((l) => l?.completed).length;
+            return (
+              <View key={mod?.id || `module-${idx}`} style={reportDetailStyles.moduleRow}>
+                <Text style={reportDetailStyles.moduleTitle} numberOfLines={1}>{mod?.title || 'Module'}</Text>
+                <Text style={reportDetailStyles.moduleCount}>{done}/{lessons.length}</Text>
+              </View>
+            );
+          })}
+        </View>
+      )}
+
+      {/* Assessment scores */}
+      {scoreEntries.length > 0 && (
+        <View style={reportDetailStyles.section}>
+          <View style={reportDetailStyles.sectionHeader}>
+            <MaterialCommunityIcons name="clipboard-check-outline" size={16} color={accentColor} />
+            <Text style={reportDetailStyles.sectionTitle}>Latest Assessment</Text>
+          </View>
+          {latest?.assessed_at ? (
+            <Text style={reportDetailStyles.assessmentDate}>
+              {new Date(latest.assessed_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+            </Text>
+          ) : null}
+          <View style={reportDetailStyles.scoresGrid}>
+            {scoreEntries.map(([key, val]) => (
+              <View key={key} style={reportDetailStyles.scoreCard}>
+                <Text style={reportDetailStyles.scoreLabel} numberOfLines={1}>{key}</Text>
+                <Text style={[reportDetailStyles.scoreValue, { color: accentColor }]}>
+                  {typeof val === 'number' ? val.toFixed(1) : val}
+                </Text>
+                <View style={reportDetailStyles.scoreBar}>
+                  <View style={[reportDetailStyles.scoreBarFill, { width: `${Math.min(100, (typeof val === 'number' ? val : 0) * 10)}%`, backgroundColor: accentColor }]} />
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Fallback when no structured data */}
+      {totalLessons === 0 && scoreEntries.length === 0 && (
+        <Text style={reportDetailStyles.emptyText}>No detailed data available for this report.</Text>
+      )}
+    </View>
+  );
+};
+
 
 const ActivityDetailSheet = ({ item, visible, onClose }) => {
   const { user } = useAuth();
@@ -333,15 +420,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
             {reportData ? (
               <View style={styles.sheetSection}>
                 <Text style={styles.sheetSectionTitle}>PROGRESS REPORT</Text>
-                <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: spacing.lg, borderWidth: 1, borderColor: colors.borderLight }}>
-                  <MaterialCommunityIcons name="chart-line" size={24} color={accentColor} />
-                  <Text style={[styles.cardTitle, { marginTop: spacing.sm }]}>{item.title}</Text>
-                  {reportData.coach ? (
-                    <Text style={styles.cardMeta}>
-                      By {reportData.coach.first_name} {reportData.coach.last_name}
-                    </Text>
-                  ) : null}
-                </View>
+                <ReportDetailSection reportData={reportData} accentColor={accentColor} title={item.title} />
               </View>
             ) : null}
 

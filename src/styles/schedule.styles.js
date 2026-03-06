@@ -9,15 +9,12 @@ export const scheduleStyles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: colors.white,
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
   },
   newBookingButton: {
     flexDirection: 'row',
@@ -35,13 +32,8 @@ export const scheduleStyles = StyleSheet.create({
     fontWeight: '600',
   },
   headerTitle: {
-    ...typography.h2,
+    ...typography.h3,
     color: colors.textPrimary,
-  },
-  headerDate: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginTop: 2,
   },
   dateStrip: {
     backgroundColor: colors.white,
@@ -84,7 +76,7 @@ export const scheduleStyles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.tabBarClearance,
   },
   timelineRow: {
     flexDirection: 'row',

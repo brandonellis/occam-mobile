@@ -20,12 +20,24 @@
 #     -e CLIENT_EMAIL=e2e-client@occam.test \
 #     -e CLIENT_PASSWORD=password \
 #     -e TEST_ORG=e2e
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 
-# ── Login ──────────────────────────────────────────────────────────────
-- runFlow: ../helpers/login.yaml
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login (skip if already logged in) ─────────────────────────────────
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Ensure we're on the home screen ──────────────────────────────────
+- tapOn:
+    id: "tab-home"
+    optional: true
+- waitForAnimationToEnd
 
 # ── Navigate to booking ────────────────────────────────────────────────
 - runFlow: ../helpers/navigate-to-booking.yaml
@@ -41,17 +53,20 @@ appId: host.exp.Exponent
 # Mirrors: const staffOnly = page.locator('.ant-card').filter({ hasText: 'Staff Only Fitting' })
 #          await expect(staffOnly).toHaveCount(0)
 - assertNotVisible:
-    text: "Staff Only Fitting"
+    text: ".*Staff Only Fitting.*"
 
 # ── Test: client CAN see services with online booking enabled ──────────
 # "1:1 Coaching Session" should be visible (online_booking_enabled defaults to true)
 # Mirrors: expect(coaching.first()).toBeVisible()
-- assertVisible: "1:1 Coaching"
+- assertVisible:
+    text: ".*1:1 Coaching Session.*"
 
 # "Short Game Lesson" should be visible (has advance limit but online booking is enabled)
 # Mirrors: expect(shortGame.first()).toBeVisible()
-- assertVisible: "Short Game Lesson"
+- assertVisible:
+    text: ".*Short Game Lesson.*"
 
 # ── Test: Short Game Lesson shows correct price ───────────────────────
 # Mirrors: await expect(shortGame.first()).toContainText('$55')
-- assertVisible: "$55"
+- assertVisible:
+    text: ".*\\$55.*"

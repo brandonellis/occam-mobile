@@ -100,7 +100,7 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
   }, [cardComplete, createPaymentMethod, user, plan, billingCycle, navigation]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScreenHeader
         title="Checkout"
         onBack={() => navigation.goBack()}

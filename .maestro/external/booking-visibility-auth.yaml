@@ -21,12 +21,24 @@
 #     -e CLIENT_EMAIL=e2e-client@occam.test \
 #     -e CLIENT_PASSWORD=password \
 #     -e TEST_ORG=e2e
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 
-# ── Login as member client ─────────────────────────────────────────────
-- runFlow: ../helpers/login.yaml
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login as member client (skip if already logged in) ───────────────
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Ensure we're on the home screen ──────────────────────────────────
+- tapOn:
+    id: "tab-home"
+    optional: true
+- waitForAnimationToEnd
 
 # ── Navigate to booking ────────────────────────────────────────────────
 - runFlow: ../helpers/navigate-to-booking.yaml
@@ -37,21 +49,22 @@ appId: host.exp.Exponent
       id: "service-selection-list"
     timeout: 10000
 
-# ── Test: member client CAN see members_only services ──────────────────
-# "Member Lesson" should be visible for a member client
+# ── Test: member client CAN see members_only services ────────────────────
+# "Member Lesson" has booking_visibility='members_only' — visible to member clients
 # Mirrors: expect(memberLesson.first()).toBeVisible()
-- assertVisible: "Member Lesson"
+- assertVisible:
+    text: ".*Member Lesson.*"
 
-# ── Test: member client also sees regular services ─────────────────────
+# ── Test: member client also sees regular services ───────────────────────
 # "1:1 Coaching Session" (booking_visibility='all') should also be visible
-# Mirrors: expect(coaching.first()).toBeVisible()
-- assertVisible: "1:1 Coaching"
+- assertVisible:
+    text: ".*1:1 Coaching Session.*"
 
 # ── Test: coach assignment filtering ───────────────────────────────────
 # Select "1:1 Coaching Session" — client has assignment: only Coach Alpha
 # Mirrors: coachingCard.click()
 - tapOn:
-    text: "1:1 Coaching"
+    text: ".*1:1 Coaching Session.*"
 - waitForAnimationToEnd
 
 # Handle location selection if shown (multi-location service)
@@ -66,10 +79,11 @@ appId: host.exp.Exponent
 # Coach Alpha should be visible (assigned)
 # Mirrors: expect(coachAlpha.first()).toBeVisible()
 - extendedWaitUntil:
-    visible: "Coach Alpha"
+    visible:
+      text: ".*Coach Alpha.*"
     timeout: 10000
 
 # Coach Beta should NOT be visible (not assigned for this service)
 # Mirrors: await expect(coachBeta).toHaveCount(0)
 - assertNotVisible:
-    text: "Coach Beta"
+    text: ".*Coach Beta.*"

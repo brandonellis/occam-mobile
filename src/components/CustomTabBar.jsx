@@ -1,141 +1,180 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { useBadges } from '../context/BadgeContext';
 import { typography } from '../theme/typography';
+import { spacing, borderRadius, shadows } from '../theme/spacing';
 
-const INDICATOR_WIDTH_RATIO = 0.5;
+const PILL_PADDING_H = 6;
+const PILL_PADDING_V = 4;
+const BAR_MARGIN_H = spacing.lg;
+const BAR_MARGIN_BOTTOM = 8;
 
-const CustomTabBar = ({ state, descriptors, navigation, tabIcons, badges = {} }) => {
+// Exported so tab navigators can add matching bottom padding to their sceneStyle
+export const TAB_BAR_HEIGHT = 80;
+
+const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
+  const badges = useBadges();
   const insets = useSafeAreaInsets();
-  const contentPaddingTop = insets.bottom > 0 ? 8 : 0;
+  const bottomOffset = Math.max(insets.bottom - 8, BAR_MARGIN_BOTTOM);
   const tabCount = state.routes.length;
 
   const [containerWidth, setContainerWidth] = useState(0);
-  const translateX = useRef(new Animated.Value(0)).current;
+  const pillTranslateX = useRef(new Animated.Value(0)).current;
 
-  const tabWidth = containerWidth / tabCount;
-  const indicatorWidth = tabWidth * INDICATOR_WIDTH_RATIO;
-  const indicatorOffset = (tabWidth - indicatorWidth) / 2;
+  const tabWidth = containerWidth > 0 ? containerWidth / tabCount : 0;
 
   useEffect(() => {
     if (containerWidth === 0) return;
-    const targetX = state.index * tabWidth + indicatorOffset;
-    Animated.spring(translateX, {
+    const targetX = state.index * tabWidth + PILL_PADDING_H;
+    Animated.spring(pillTranslateX, {
       toValue: targetX,
       useNativeDriver: true,
-      damping: 18,
-      stiffness: 160,
-      mass: 0.8,
+      damping: 20,
+      stiffness: 200,
+      mass: 0.6,
     }).start();
-  }, [state.index, containerWidth, tabWidth, indicatorOffset, translateX]);
+  }, [state.index, containerWidth, tabWidth, pillTranslateX]);
+
+  // Hide tab bar when a nested stack navigator is deeper than its root screen
+  const focusedRoute = state.routes[state.index];
+  const nestedState = focusedRoute?.state;
+  const isNestedDeep = nestedState && nestedState.index > 0;
+  if (isNestedDeep) return null;
 
   const handleLayout = (e) => {
     const width = e.nativeEvent.layout.width;
     setContainerWidth(width);
-    const initialX = state.index * (width / tabCount) + ((width / tabCount) - (width / tabCount * INDICATOR_WIDTH_RATIO)) / 2;
-    translateX.setValue(initialX);
+    const initialX = state.index * (width / tabCount) + PILL_PADDING_H;
+    pillTranslateX.setValue(initialX);
   };
 
+  const pillWidth = tabWidth > 0 ? tabWidth - PILL_PADDING_H * 2 : 0;
+
   return (
-    <View
-      style={[styles.container, { paddingBottom: insets.bottom }]}
-      onLayout={handleLayout}
-    >
-      {containerWidth > 0 && (
-        <Animated.View
-          style={[
-            styles.indicator,
-            {
-              width: indicatorWidth,
-              transform: [{ translateX }],
-            },
-          ]}
-        />
-      )}
-      <View style={[styles.tabRow, { paddingTop: contentPaddingTop }]}>
-        {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const label = options.tabBarLabel ?? options.title ?? route.name;
-          const isFocused = state.index === index;
-          const icons = tabIcons[route.name];
-          const iconName = isFocused ? icons?.focused : icons?.unfocused;
-          const badgeCount = badges[route.name] || 0;
+    <View style={[styles.outerWrap, { paddingBottom: bottomOffset }]} pointerEvents="box-none">
+      {/* Opaque backdrop so scrolling content doesn't show through */}
+      <View style={styles.backdrop} pointerEvents="none" />
+      <View style={styles.container} onLayout={handleLayout}>
+        {containerWidth > 0 && pillWidth > 0 && (
+          <Animated.View
+            style={[
+              styles.activePill,
+              {
+                width: pillWidth,
+                transform: [{ translateX: pillTranslateX }],
+              },
+            ]}
+          />
+        )}
+        <View style={styles.tabRow}>
+          {state.routes.map((route, index) => {
+            const { options } = descriptors[route.key];
+            const label = options.tabBarLabel ?? options.title ?? route.name;
+            const isFocused = state.index === index;
+            const icons = tabIcons[route.name];
+            const iconName = isFocused ? icons?.focused : icons?.unfocused;
+            const badgeCount = (badges && badges[route.name]) || 0;
 
-          const onPress = () => {
-            const event = navigation.emit({
-              type: 'tabPress',
-              target: route.key,
-              canPreventDefault: true,
-            });
-            if (!isFocused && !event.defaultPrevented) {
-              navigation.navigate(route.name, route.params);
-            }
-          };
+            const onPress = () => {
+              const event = navigation.emit({
+                type: 'tabPress',
+                target: route.key,
+                canPreventDefault: true,
+              });
+              if (!isFocused && !event.defaultPrevented) {
+                navigation.navigate(route.name, route.params);
+              }
+            };
 
-          const onLongPress = () => {
-            navigation.emit({
-              type: 'tabLongPress',
-              target: route.key,
-            });
-          };
+            const onLongPress = () => {
+              navigation.emit({
+                type: 'tabLongPress',
+                target: route.key,
+              });
+            };
 
-          return (
-            <TouchableOpacity
-              key={route.key}
-              accessibilityRole="button"
-              accessibilityState={isFocused ? { selected: true } : {}}
-              accessibilityLabel={options.tabBarAccessibilityLabel}
-              onPress={onPress}
-              onLongPress={onLongPress}
-              activeOpacity={0.7}
-              style={styles.tabItem}
-            >
-              <View style={styles.iconWrapper}>
-                <MaterialCommunityIcons
-                  name={iconName}
-                  size={24}
-                  color={isFocused ? colors.accent : colors.textInverseMuted}
-                  style={styles.icon}
-                />
-                {badgeCount > 0 && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText} numberOfLines={1}>
-                      {badgeCount > 99 ? '99+' : badgeCount}
-                    </Text>
-                  </View>
-                )}
-              </View>
-              <Animated.Text
-                style={[
-                  styles.label,
-                  { color: isFocused ? colors.accent : colors.textInverseMuted },
-                ]}
-                numberOfLines={1}
+            return (
+              <TouchableOpacity
+                key={route.key}
+                accessibilityRole="button"
+                accessibilityState={isFocused ? { selected: true } : {}}
+                accessibilityLabel={options.tabBarAccessibilityLabel}
+                testID={`tab-${label.toString().toLowerCase().replace(/\s+/g, '-')}`}
+                onPress={onPress}
+                onLongPress={onLongPress}
+                activeOpacity={0.7}
+                style={styles.tabItem}
               >
-                {label}
-              </Animated.Text>
-            </TouchableOpacity>
-          );
-        })}
+                <View style={styles.iconWrapper}>
+                  <MaterialCommunityIcons
+                    name={iconName}
+                    size={22}
+                    color={isFocused ? colors.accent : colors.textInverseMuted}
+                    style={styles.icon}
+                  />
+                  {badgeCount > 0 && (
+                    <View style={styles.badge}>
+                      <Text style={styles.badgeText} numberOfLines={1}>
+                        {badgeCount > 99 ? '99+' : badgeCount}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+                <Text
+                  style={[
+                    styles.label,
+                    isFocused ? styles.labelFocused : styles.labelUnfocused,
+                  ]}
+                  numberOfLines={1}
+                >
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
       </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  outerWrap: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    paddingHorizontal: BAR_MARGIN_H,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.background,
+  },
   container: {
     backgroundColor: colors.primary,
-    borderTopColor: colors.gray800,
-    borderTopWidth: 1,
+    borderRadius: borderRadius.full,
+    ...shadows.lg,
+    // Extra shadow for the floating effect
+    ...(Platform.OS === 'ios' ? {
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.25,
+      shadowRadius: 24,
+    } : {
+      elevation: 12,
+    }),
+    overflow: 'hidden',
+    pointerEvents: 'auto',
   },
-  indicator: {
+  activePill: {
     position: 'absolute',
-    top: 0,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: colors.accent,
+    top: PILL_PADDING_V,
+    bottom: PILL_PADDING_V,
+    borderRadius: borderRadius.full,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   tabRow: {
     flexDirection: 'row',
@@ -144,8 +183,8 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 6,
-    paddingBottom: 6,
+    paddingVertical: 10,
+    minHeight: 56,
   },
   iconWrapper: {
     position: 'relative',
@@ -178,9 +217,16 @@ const styles = StyleSheet.create({
   label: {
     fontFamily: typography.fontFamily,
     fontSize: 10,
-    fontWeight: '600',
     lineHeight: 14,
-    letterSpacing: 0,
+    letterSpacing: 0.2,
+  },
+  labelFocused: {
+    color: colors.accent,
+    fontWeight: '700',
+  },
+  labelUnfocused: {
+    color: colors.textInverseMuted,
+    fontWeight: '500',
   },
 });
 

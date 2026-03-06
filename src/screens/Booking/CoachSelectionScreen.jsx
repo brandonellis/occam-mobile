@@ -10,6 +10,7 @@ import { getCoaches } from '../../services/bookings.api';
 import { getAllowedCoachesForService } from '../../services/accounts.api';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
+import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import logger from '../../helpers/logger.helper';
 
 const CoachSelectionScreen = ({ route, navigation }) => {
@@ -94,6 +95,7 @@ const CoachSelectionScreen = ({ route, navigation }) => {
       <ScreenHeader
         title="Select a Coach"
         onBack={() => navigation.goBack()}
+        onClose={() => confirmCancelBooking(navigation)}
       />
 
       {state.isLoading ? (

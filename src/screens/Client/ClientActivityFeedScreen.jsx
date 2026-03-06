@@ -216,9 +216,6 @@ const ClientActivityFeedScreen = () => {
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Activity</Text>
-        <Text style={styles.headerSubtitle}>
-          Your lessons, resources, and progress
-        </Text>
       </View>
 
       {/* ── Unified filter toolbar ── */}

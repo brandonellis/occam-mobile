@@ -6,6 +6,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import EmptyState from '../../components/EmptyState';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { getNextBookingScreen } from '../../helpers/booking.helper';
+import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import useAuth from '../../hooks/useAuth';
 import { COACH_ROLES } from '../../constants/auth.constants';
 
@@ -28,6 +29,7 @@ const LocationSelectionScreen = ({ route, navigation }) => {
       <ScreenHeader
         title="Select a Location"
         onBack={() => navigation.goBack()}
+        onClose={() => confirmCancelBooking(navigation)}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} testID="location-selection-list">

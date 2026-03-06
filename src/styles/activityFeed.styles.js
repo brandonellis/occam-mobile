@@ -12,19 +12,16 @@ export const activityFeedStyles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
+    paddingVertical: spacing.md,
     backgroundColor: colors.background,
   },
   headerTitle: {
-    ...typography.h2,
+    ...typography.h3,
     color: colors.textPrimary,
-  },
-  headerSubtitle: {
-    ...typography.bodySmall,
-    color: colors.textTertiary,
-    marginTop: 2,
   },
 
   // ── Unified filter toolbar ────────────────────────────────
@@ -111,7 +108,7 @@ export const activityFeedStyles = StyleSheet.create({
   // ── Timeline ───────────────────────────────────────────
   listContent: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.tabBarClearance,
   },
 
   // ── Date separator ─────────────────────────────────────

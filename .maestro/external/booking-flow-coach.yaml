@@ -1,0 +1,147 @@
+# Coach Booking Flow — coach books on behalf of a client
+# Mirrors: occam-client/tests/e2e/internal/ booking patterns (coach-initiated)
+#
+# The coach booking flow differs from the client flow:
+#   - Coach starts from Schedule → "New" → ClientSelection
+#   - Coach selects a client first, then a service
+#   - Coach auto-sets themselves as the provider (skips CoachSelection)
+#   - Confirmation shows "Book Session" (not "Pay $X")
+#   - No payment required — booking created as confirmed directly
+#   - Success screen shows "Back to Schedule" + "Book Another Session"
+#
+# Flow:
+#   login (coach) → schedule → new → client → service → location (if multi)
+#   → [duration if variable] → timeslot → confirmation
+#
+# Seeded data (from E2eTenantSeeder):
+#   - Coach Alpha (coach.alpha@e2e-golf.test / password)
+#   - "1:1 Coaching Session" — requires_coach, coach auto-sets self
+#   - E2E Client (e2e-client@occam.test) — seeded client the coach can select
+#
+# Usage:
+#   maestro test .maestro/external/booking-flow-coach.yaml \
+#     -e COACH_EMAIL=coach.alpha@e2e-golf.test \
+#     -e COACH_PASSWORD=password \
+#     -e TEST_ORG=e2e \
+#     -e TEST_CLIENT_NAME="E2E Client"
+appId: com.occamgolf.app
+
+---
+
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login as coach (conditional — skip if already logged in as coach) ─
+# If we see the login screen, run coach login flow
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login-coach.yaml
+
+# Wait for coach dashboard to be ready
+- extendedWaitUntil:
+    visible: ".*Hello.*Coach.*"
+    timeout: 60000
+
+# ── Start a new booking from Dashboard quick action ──────────────────
+# After login, coach lands on Dashboard with "New Booking" quick action.
+# This navigates directly to ClientSelection (same as Schedule → New).
+- tapOn:
+    text: ".*New Booking.*"
+- waitForAnimationToEnd
+
+# ── Test: client selection screen appears ──────────────────────────────
+- extendedWaitUntil:
+    visible: "Select a Client"
+    timeout: 15000
+
+# Client list should load
+- extendedWaitUntil:
+    visible:
+      id: "client-selection-list"
+    timeout: 10000
+
+# ── Test: coach selects a client ───────────────────────────────────────
+# Search for the test client
+- tapOn: "Search clients..."
+- inputText: ${TEST_CLIENT_NAME}
+- waitForAnimationToEnd
+
+# Wait for client card to appear in results
+- extendedWaitUntil:
+    visible:
+      id: "client-card-.*"
+    timeout: 10000
+
+# Dismiss keyboard so tap lands on the card, not the search input
+- hideKeyboard
+
+# Tap the first matching client card by testID
+- tapOn:
+    id: "client-card-.*"
+    index: 0
+- waitForAnimationToEnd
+
+# ── Test: service selection appears after client selection ─────────────
+- extendedWaitUntil:
+    visible: "Select a Service"
+    timeout: 15000
+
+# Service cards should be visible
+- extendedWaitUntil:
+    visible:
+      id: "service-selection-list"
+    timeout: 10000
+
+# ── Test: coach selects a service (1:1 Coaching) ──────────────────────
+# Select "1:1 Coaching Session" — requires_coach, so coach auto-sets self (skips coach selection)
+- tapOn:
+    text: ".*1:1 Coaching Session.*"
+- waitForAnimationToEnd
+
+# Handle location selection if shown (multi-location service)
+- runFlow: ../helpers/handle-location-selection.yaml
+
+# ── Test: coach skips coach selection (auto-sets self) ─────────────────
+# Should go directly to timeslot selection (NOT coach selection)
+# This is the key difference from client flow — booking.helper.js:
+#   if (isCoach) → navigate(TIME_SLOT_SELECTION, { coach: user })
+- extendedWaitUntil:
+    visible: "Select Date & Time"
+    timeout: 15000
+
+# Wait for time slots to load (header is uppercase, e.g. 'MAR 5 — AVAILABLE TIMES')
+- extendedWaitUntil:
+    visible: ".*AVAILABLE TIMES.*"
+    timeout: 30000
+
+# ── Test: selecting a timeslot advances to confirmation ────────────────
+# Tap first time slot by testID (text taps hit inner Text, not TouchableOpacity)
+- tapOn:
+    id: "time-slot-.*"
+    index: 0
+- waitForAnimationToEnd
+
+# Tap Continue
+- tapOn:
+    id: "continue-button"
+- waitForAnimationToEnd
+
+# ── Test: confirmation screen is visible ──────────────────────────────
+# Verify confirm button is present (text varies: "Book Session" or "Confirm Session"
+# depending on whether client has membership coverage)
+- extendedWaitUntil:
+    visible:
+      id: "confirm-booking-button"
+    timeout: 15000
+
+- assertVisible:
+    id: "confirm-booking-button"
+
+# NOTE: We stop before confirming to avoid creating a real booking.
+# To test full coach booking:
+# - tapOn:
+#     id: "confirm-booking-button"
+# - waitForAnimationToEnd
+# - assertVisible: "Back to Schedule"
+# - assertVisible: "Book Another Session"

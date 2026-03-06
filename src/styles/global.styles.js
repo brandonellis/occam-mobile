@@ -98,6 +98,20 @@ export const globalStyles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
+  // Screen header — compact row for all tab screens
+  screenHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
+  },
+  screenHeaderTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+  },
+
   // Text
   heading1: {
     ...typography.h1,

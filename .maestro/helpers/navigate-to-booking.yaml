@@ -1,13 +1,13 @@
 # Shared helper: navigate to the booking service selection screen.
 # Mirrors the navigateToServiceSelection() helper in the web Playwright tests.
 # Assumes user is already logged in.
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 
-# Tap the "Book" tab on the bottom navigation
+# Tap the "Book Session" quick action on the client home screen (by testID)
 - tapOn:
-    text: "Book"
+    id: "book-session-button"
 - waitForAnimationToEnd
 
 # Wait for the service selection screen to load

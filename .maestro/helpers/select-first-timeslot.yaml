@@ -2,7 +2,7 @@
 # Mirrors the web test pattern:
 #   const slot = page.locator('[role="radiogroup"] [role="radio"]').first();
 #   if (await slot.isVisible(...)) { await slot.click(); }
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 

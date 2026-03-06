@@ -88,10 +88,7 @@ const ClientHomeScreen = ({ navigation }) => {
           }
         >
           <View style={styles.header}>
-            <View>
-              <Text style={styles.greeting}>Welcome, {firstName}</Text>
-              <Text style={styles.subtitle}>Ready to improve your game?</Text>
-            </View>
+            <Text style={styles.greeting}>Welcome, {firstName}</Text>
           </View>
           <EmptyState
             icon="cloud-offline-outline"
@@ -118,10 +115,7 @@ const ClientHomeScreen = ({ navigation }) => {
         }
       >
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Welcome, {firstName}</Text>
-            <Text style={styles.subtitle}>Ready to improve your game?</Text>
-          </View>
+          <Text style={styles.greeting}>Welcome, {firstName}</Text>
           <View>
             <IconButton
               icon="bell-outline"
@@ -147,6 +141,7 @@ const ClientHomeScreen = ({ navigation }) => {
               style={styles.quickActionButton}
               activeOpacity={0.7}
               onPress={() => navigation.navigate(SCREENS.SERVICE_SELECTION, { bookingData: {} })}
+              testID="book-session-button"
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.accentLight }]}>
                 <MaterialCommunityIcons name="calendar-outline" size={18} color={colors.accent} />

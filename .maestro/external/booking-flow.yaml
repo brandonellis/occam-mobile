@@ -18,12 +18,24 @@
 #     -e CLIENT_EMAIL=e2e-client@occam.test \
 #     -e CLIENT_PASSWORD=password \
 #     -e TEST_ORG=e2e
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 
-# ── Login ──────────────────────────────────────────────────────────────
-- runFlow: ../helpers/login.yaml
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login (skip if already logged in) ─────────────────────────────────
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Ensure we're on the home screen ──────────────────────────────────
+- tapOn:
+    id: "tab-home"
+    optional: true
+- waitForAnimationToEnd
 
 # ── Test: loads booking page and shows service selection ───────────────
 - runFlow: ../helpers/navigate-to-booking.yaml
@@ -37,7 +49,7 @@ appId: host.exp.Exponent
 # ── Test: selecting a coaching service shows coach selection ───────────
 # Select "1:1 Coaching" — requires coach (mirrors web test selecting "1:1 Coaching")
 - tapOn:
-    text: "1:1 Coaching"
+    text: ".*1:1 Coaching Session.*"
 - waitForAnimationToEnd
 
 # Handle location selection if shown (multi-location service)
@@ -57,17 +69,17 @@ appId: host.exp.Exponent
     visible: "Select Date & Time"
     timeout: 15000
 
-# Wait for time slots to load
+# Wait for time slots to load (header is uppercase, e.g. 'MAR 5 — AVAILABLE TIMES')
 - extendedWaitUntil:
-    visible: "Available Times"
-    timeout: 20000
+    visible: ".*AVAILABLE TIMES.*"
+    timeout: 30000
 
 # ── Test: selecting a timeslot advances to confirmation ────────────────
-# Select first available timeslot
-# Mirrors: page.locator('[role="radiogroup"] [role="radio"]').first().click()
+# Select first available timeslot by testID (tap the TouchableOpacity, not the Text)
 - tapOn:
-    text: "\\d{1,2}:\\d{2}.*"
+    id: "time-slot-.*"
     index: 0
+- waitForAnimationToEnd
 
 # Tap Continue
 - tapOn:
@@ -78,7 +90,7 @@ appId: host.exp.Exponent
 # Verify booking summary is visible (Total line, confirm button)
 # Mirrors: expect(confirmation).toBeVisible()
 - extendedWaitUntil:
-    visible: "Total"
+    visible: ".*Total.*"
     timeout: 15000
 
 - assertVisible:

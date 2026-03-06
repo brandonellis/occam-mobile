@@ -1,0 +1,17 @@
+# Shared logout sub-flow.
+# Triggers logout via deep link (occamgolf://logout) and waits for login screen.
+# Works for both client and coach sessions.
+#
+# Note: Maestro's testID/text/point taps on React Navigation custom tab bars
+# do NOT trigger onPress on iOS. Deep link is the only reliable approach.
+appId: com.occamgolf.app
+
+---
+
+# Trigger logout via deep link
+- openLink: "occamgolf://logout"
+
+# Wait for login screen to appear
+- extendedWaitUntil:
+    visible: "Sign In"
+    timeout: 15000

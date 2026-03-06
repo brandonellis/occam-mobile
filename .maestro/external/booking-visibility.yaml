@@ -19,12 +19,24 @@
 #     -e CLIENT_EMAIL=e2e-nonmember@occam.test \
 #     -e CLIENT_PASSWORD=password \
 #     -e TEST_ORG=e2e
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 
-# ── Login as non-member client ─────────────────────────────────────────
-- runFlow: ../helpers/login.yaml
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login as non-member client (skip if already logged in) ────────────
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Ensure we're on the home screen ──────────────────────────────────
+- tapOn:
+    id: "tab-home"
+    optional: true
+- waitForAnimationToEnd
 
 # ── Navigate to booking ────────────────────────────────────────────────
 - runFlow: ../helpers/navigate-to-booking.yaml
@@ -40,13 +52,15 @@ appId: host.exp.Exponent
 # Mirrors: const memberLesson = page.locator('.ant-card').filter({ hasText: 'Member Lesson' })
 #          await expect(memberLesson).toHaveCount(0)
 - assertNotVisible:
-    text: "Member Lesson"
+    text: ".*Member Lesson.*"
 
 # ── Test: non-member CAN see regular services ─────────────────────────
 # "1:1 Coaching Session" should be visible (booking_visibility='all')
 # Mirrors: expect(coaching.first()).toBeVisible()
-- assertVisible: "1:1 Coaching"
+- assertVisible:
+    text: ".*1:1 Coaching Session.*"
 
 # "Range Session" should be visible
 # Mirrors: expect(range.first()).toBeVisible()
-- assertVisible: "Range Session"
+- assertVisible:
+    text: ".*Range Session.*"

@@ -9,6 +9,7 @@ import { globalStyles } from '../../styles/global.styles';
 import { getClients } from '../../services/accounts.api';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
+import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 
 const ClientSelectionScreen = ({ route, navigation }) => {
   const { bookingData = {} } = route.params || {};
@@ -60,6 +61,7 @@ const ClientSelectionScreen = ({ route, navigation }) => {
       <ScreenHeader
         title="Select a Client"
         onBack={() => navigation.goBack()}
+        onClose={() => confirmCancelBooking(navigation)}
       />
 
       <Searchbar
@@ -81,13 +83,14 @@ const ClientSelectionScreen = ({ route, navigation }) => {
           </TouchableOpacity>
         </View>
       ) : (
-        <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ScrollView contentContainerStyle={styles.scrollContent} testID="client-selection-list">
           {clients.map((client) => (
             <TouchableRipple
               key={client.id}
               style={styles.coachCard}
               onPress={() => handleSelectClient(client)}
               borderless
+              testID={`client-card-${client.id}`}
             >
               <View style={styles.coachCardRow}>
                 <Avatar

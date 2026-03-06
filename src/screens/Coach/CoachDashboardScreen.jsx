@@ -94,10 +94,7 @@ const CoachDashboardScreen = ({ navigation }) => {
         }
       >
         <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Hello, {firstName}</Text>
-            <Text style={styles.subtitle}>Here's your day at a glance</Text>
-          </View>
+          <Text style={styles.greeting}>Hello, {firstName}</Text>
           <View>
             <IconButton
               icon="bell-outline"
@@ -145,6 +142,7 @@ const CoachDashboardScreen = ({ navigation }) => {
               <Text style={styles.sectionTitle}>Quick Actions</Text>
               <View style={styles.quickActions}>
                 <TouchableOpacity
+                  testID="new-booking-quick-action"
                   style={styles.quickActionButton}
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.CLIENT_SELECTION, params: { bookingData: {} } })}
@@ -167,7 +165,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={styles.quickActionButton}
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate(SCREENS.COACH_CLIENTS)}
+                  onPress={() => navigation.navigate('ClientsTab', { screen: SCREENS.COACH_CLIENTS })}
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: colors.successLight }]}>
                     <MaterialCommunityIcons name="account-group-outline" size={18} color={colors.success} />

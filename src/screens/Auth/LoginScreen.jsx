@@ -15,11 +15,18 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import {
-  GoogleSignin,
-  isErrorWithCode,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
+// Lazy-load Google Sign-In — native module unavailable on iOS Simulator / Expo Go
+let GoogleSignin = null;
+let isErrorWithCode = () => false;
+let statusCodes = {};
+try {
+  const gsi = require('@react-native-google-signin/google-signin');
+  GoogleSignin = gsi.GoogleSignin;
+  isErrorWithCode = gsi.isErrorWithCode;
+  statusCodes = gsi.statusCodes;
+} catch (e) {
+  // Native module not available — Google Sign-In will be disabled
+}
 import useAuth from '../../hooks/useAuth';
 import { googleSignInNative } from '../../services/auth.api';
 import { searchTenants } from '../../services/tenants.api';
@@ -104,18 +111,25 @@ const LoginScreen = () => {
   const [googleLoading, setGoogleLoading] = useState(false);
 
   // Configure Google Sign-In once on mount
+  // Wrapped in try/catch — native module unavailable in Expo Go
+  const [googleAvailable, setGoogleAvailable] = useState(false);
   useEffect(() => {
-    if (config.googleWebClientId) {
-      GoogleSignin.configure({
-        webClientId: config.googleWebClientId,
-        iosClientId: config.googleIosClientId,
-        offlineAccess: false,
-      });
+    if (config.googleWebClientId && GoogleSignin) {
+      try {
+        GoogleSignin.configure({
+          webClientId: config.googleWebClientId,
+          iosClientId: config.googleIosClientId,
+          offlineAccess: false,
+        });
+        setGoogleAvailable(true);
+      } catch (err) {
+        logger.warn('Google Sign-In not available (Expo Go?):', err.message);
+      }
     }
   }, []);
 
   const handleGoogleSignIn = useCallback(async () => {
-    if (!selectedOrg) return;
+    if (!selectedOrg || !googleAvailable) return;
 
     setGoogleLoading(true);
     if (error) clearError();
@@ -243,6 +257,7 @@ const LoginScreen = () => {
                       style={styles.orgResultItem}
                       onPress={() => handleSelectOrg(org)}
                       activeOpacity={0.7}
+                      testID={`org-result-${org.id}`}
                     >
                       <View style={styles.orgResultIcon}>
                         <MaterialCommunityIcons name="domain" size={16} color={colors.accent} />

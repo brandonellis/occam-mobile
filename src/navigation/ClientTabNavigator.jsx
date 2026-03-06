@@ -10,6 +10,7 @@ import ClientProgressStack from './ClientProgressStack';
 import ClientProfileScreen from '../screens/Client/ClientProfileScreen';
 import useActivityBadge from '../hooks/useActivityBadge';
 import { setLastSeenTimestamp } from '../helpers/activity.helper';
+import { BadgeProvider } from '../context/BadgeContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -22,23 +23,23 @@ const TAB_ICONS = {
 };
 
 const ClientTabNavigator = () => {
-  const { unreadCount, refreshBadge } = useActivityBadge();
+  const { unreadCount, clearBadge } = useActivityBadge();
 
-  const badges = useMemo(() => ({
-    [SCREENS.CLIENT_ACTIVITY]: unreadCount,
-  }), [unreadCount]);
+  const badgeValue = useMemo(() => ({ [SCREENS.CLIENT_ACTIVITY]: unreadCount }), [unreadCount]);
 
   return (
+    <BadgeProvider value={badgeValue}>
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         freezeOnBlur: true,
         sceneStyle: { backgroundColor: colors.background },
+        tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0, shadowOpacity: 0 },
         animation: 'shift',
       }}
       lazy={false}
       detachInactiveScreens={false}
-      tabBar={(props) => <CustomTabBar {...props} tabIcons={TAB_ICONS} badges={badges} />}
+      tabBar={(props) => <CustomTabBar {...props} tabIcons={TAB_ICONS} />}
     >
       <Tab.Screen
         name="HomeTab"
@@ -48,10 +49,9 @@ const ClientTabNavigator = () => {
           tabPress: (e) => {
             const state = navigation.getState();
             const homeTabRoute = state.routes.find((r) => r.name === 'HomeTab');
-            const isOnHomeTab = state.index === state.routes.indexOf(homeTabRoute);
             const isNested = homeTabRoute?.state?.routes?.length > 1;
 
-            if (isOnHomeTab && isNested) {
+            if (isNested) {
               e.preventDefault();
               navigation.navigate('HomeTab', {
                 screen: SCREENS.CLIENT_HOME,
@@ -71,7 +71,8 @@ const ClientTabNavigator = () => {
         options={{ tabBarLabel: 'Activity' }}
         listeners={{
           tabPress: () => {
-            setLastSeenTimestamp().then(refreshBadge);
+            clearBadge();
+            setLastSeenTimestamp();
           },
         }}
       />
@@ -86,6 +87,7 @@ const ClientTabNavigator = () => {
         options={{ tabBarLabel: 'Profile' }}
       />
     </Tab.Navigator>
+    </BadgeProvider>
   );
 };
 

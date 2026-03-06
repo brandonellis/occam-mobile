@@ -114,13 +114,27 @@ const ClientBookingsScreen = ({ navigation }) => {
 
   // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
   const hasLoaded = useRef(false);
+  const isFocused = useRef(false);
+
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
+    const onFocus = () => {
+      isFocused.current = true;
       loadBookings(hasLoaded.current);
       hasLoaded.current = true;
-    });
-    return unsubscribe;
+    };
+    const onBlur = () => { isFocused.current = false; };
+
+    const unsubFocus = navigation.addListener('focus', onFocus);
+    const unsubBlur = navigation.addListener('blur', onBlur);
+    return () => { unsubFocus(); unsubBlur(); };
   }, [navigation, loadBookings]);
+
+  // Re-fetch when tab or date filter changes while screen is visible
+  useEffect(() => {
+    if (hasLoaded.current && isFocused.current) {
+      loadBookings();
+    }
+  }, [activeTab, dateFilter, loadBookings]);
 
   const handleCancel = useCallback((booking) => {
     Alert.alert(
@@ -236,6 +250,9 @@ const ClientBookingsScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Bookings</Text>
+      </View>
       <View style={styles.tabBar}>
         {[TABS.UPCOMING, TABS.PAST].map((tab) => (
           <TouchableOpacity

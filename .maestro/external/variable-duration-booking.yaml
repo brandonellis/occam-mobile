@@ -19,12 +19,24 @@
 #     -e CLIENT_EMAIL=e2e-client@occam.test \
 #     -e CLIENT_PASSWORD=password \
 #     -e TEST_ORG=e2e
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 
-# ── Login ──────────────────────────────────────────────────────────────
-- runFlow: ../helpers/login.yaml
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login (skip if already logged in) ─────────────────────────────────
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Ensure we're on the home screen ──────────────────────────────────
+- tapOn:
+    id: "tab-home"
+    optional: true
+- waitForAnimationToEnd
 
 # ── Navigate to booking ────────────────────────────────────────────────
 - runFlow: ../helpers/navigate-to-booking.yaml
@@ -32,7 +44,7 @@ appId: host.exp.Exponent
 # ── Test: selecting a variable duration service shows duration step ─────
 # Mirrors: selectSimulatorService(page) → expect(durationStep).toBeVisible()
 - tapOn:
-    text: "Simulator Bay Rental"
+    text: ".*Simulator Bay Rental.*"
 - waitForAnimationToEnd
 
 # Handle location selection if shown
@@ -45,25 +57,21 @@ appId: host.exp.Exponent
 # Mirrors: const durationStep = page.locator('.duration-selection')
 #          await expect(durationStep).toBeVisible()
 - extendedWaitUntil:
-    visible: "Choose a duration"
+    visible: "Select Duration"
     timeout: 15000
 
 # ── Test: duration selection shows correct price scaling ───────────────
 # Base price is $50 for 60 min.
 # Mirrors: expect(oneHourCard.locator('text=/\\$50/i')).toBeVisible()
 - extendedWaitUntil:
-    visible: "$50"
+    visible: ".*\\$50.*"
     timeout: 10000
 
 # ── Test: selecting a duration advances to timeslot selection ──────────
-# Select 1-hour duration (most likely to have availability)
-# Mirrors: oneHourCard.click()
+# Select 1-hour duration by tapping the duration card testID
 - tapOn:
-    text: "1 Hour"
-    optional: true
-- tapOn:
-    text: "60 min"
-    optional: true
+    id: "duration-card-60"
+- waitForAnimationToEnd
 
 # Tap Continue on duration screen
 - tapOn:
@@ -76,16 +84,17 @@ appId: host.exp.Exponent
     visible: "Select Date & Time"
     timeout: 15000
 
-# Wait for time slots to load
+# Wait for time slots to load (header is uppercase)
 - extendedWaitUntil:
-    visible: "Available Times"
-    timeout: 20000
+    visible: ".*AVAILABLE TIMES.*"
+    timeout: 30000
 
 # ── Test: selecting a timeslot advances to confirmation ────────────────
-# Select first available timeslot
+# Select first available timeslot by testID
 - tapOn:
-    text: "\\d{1,2}:\\d{2}.*"
+    id: "time-slot-.*"
     index: 0
+- waitForAnimationToEnd
 
 # Tap Continue
 - tapOn:
@@ -96,7 +105,7 @@ appId: host.exp.Exponent
 # Verify booking summary is visible with the correct price
 # Mirrors: expect(priceText.first()).toBeVisible()
 - extendedWaitUntil:
-    visible: "Total"
+    visible: ".*Total.*"
     timeout: 15000
 
 # Resource auto-selection should not trigger an error

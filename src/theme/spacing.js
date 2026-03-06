@@ -6,6 +6,8 @@ export const spacing = {
   xl: 24,
   xxl: 32,
   xxxl: 48,
+  // Bottom clearance for screens behind the floating tab bar
+  tabBarClearance: 100,
 };
 
 export const borderRadius = {

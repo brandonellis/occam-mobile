@@ -109,11 +109,13 @@ const AuthProvider = ({ children }) => {
     dispatch({ type: AUTH_ACTIONS.CLEAR_ERROR });
 
     try {
+      // Store tenant ID first so apiClient interceptor can set baseURL + X-Tenant header
+      await setTenantId(tenantId);
+
       const loginResponse = await authApi.login(email, password, tenantId);
       const token = loginResponse.access_token;
 
       await setToken(token);
-      await setTenantId(tenantId);
 
       const user = await authApi.getUser();
       const role = resolveRole(user);
@@ -129,6 +131,8 @@ const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
+      // Clear tenant ID on login failure so stale tenant doesn't persist
+      await clearAllStorage();
       const message =
         error.response?.data?.message || 'Login failed. Please try again.';
       dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: message });

@@ -9,7 +9,7 @@ export const clientDetailStyles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   scrollContent: {
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.tabBarClearance,
   },
   profileSection: {
     backgroundColor: colors.white,

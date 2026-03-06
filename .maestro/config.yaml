@@ -7,18 +7,21 @@
 #   .maestro/
 #   ├── config.yaml                              (this file)
 #   ├── helpers/
-#   │   └── login.yaml                           (shared login sub-flow)
+#   │   ├── login.yaml                           (client login sub-flow)
+#   │   ├── login-coach.yaml                     (coach login sub-flow)
+#   │   ├── navigate-to-new-booking-coach.yaml   (coach new booking entry point)
 #   ├── external/
 #   │   ├── booking-flow.yaml                    (mirrors booking-flow.spec.js)
 #   │   ├── booking-flow-auth.yaml               (mirrors booking-flow.auth.spec.js)
 #   │   ├── variable-duration-booking.yaml       (mirrors variable-duration-booking.spec.js)
 #   │   ├── booking-visibility.yaml              (mirrors booking-visibility.spec.js)
 #   │   ├── booking-visibility-auth.yaml         (mirrors booking-visibility.auth.spec.js)
-#   │   └── online-booking-controls.yaml         (mirrors online-booking-controls.spec.js)
+#   │   ├── online-booking-controls.yaml         (mirrors online-booking-controls.spec.js)
+#   │   └── booking-flow-coach.yaml              (coach-initiated booking)
 #   └── README.md
 
 # App configuration
-appId: host.exp.Exponent  # Expo Go app ID for development testing
+appId: com.occamgolf.app  # Dev build app ID
 
 # Environment variables (override via CLI with -e KEY=VALUE)
 #
@@ -30,8 +33,12 @@ appId: host.exp.Exponent  # Expo Go app ID for development testing
 #   - "Range Session"                    — no coach required
 #   - "Staff Only Fitting"              — online_booking_enabled=false
 #   - "Short Game Lesson"               — advance_booking_limit_days=7
-#   - Coach Alpha, Coach Beta           — seeded coaches
+#   - Coach Alpha (e2e-coach@occam.test) — seeded coach
+#   - Coach Beta                        — second seeded coach
 env:
   CLIENT_EMAIL: ""
   CLIENT_PASSWORD: ""
+  COACH_EMAIL: ""
+  COACH_PASSWORD: ""
   TEST_ORG: ""
+  TEST_CLIENT_NAME: ""

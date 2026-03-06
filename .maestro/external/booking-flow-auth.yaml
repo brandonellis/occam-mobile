@@ -15,12 +15,24 @@
 #     -e CLIENT_EMAIL=e2e-client@occam.test \
 #     -e CLIENT_PASSWORD=password \
 #     -e TEST_ORG=e2e
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 
-# ── Login as member client ─────────────────────────────────────────────
-- runFlow: ../helpers/login.yaml
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login as member client (skip if already logged in) ───────────────
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Ensure we're on the home screen ─────────────────────────────────
+- tapOn:
+    id: "tab-home"
+    optional: true
+- waitForAnimationToEnd
 
 # ── Test: loads booking page and recognizes authenticated user ─────────
 - runFlow: ../helpers/navigate-to-booking.yaml
@@ -35,7 +47,7 @@ appId: host.exp.Exponent
 # Select "1:1 Coaching Session" — covered by Premium membership
 # Mirrors: page.locator('.service-selection .ant-card').filter({ hasText: '1:1 Coaching' }).click()
 - tapOn:
-    text: "1:1 Coaching"
+    text: ".*1:1 Coaching Session.*"
 - waitForAnimationToEnd
 
 # Handle location selection if shown (multi-location service)
@@ -58,15 +70,16 @@ appId: host.exp.Exponent
     timeout: 15000
 
 # ── Test: selecting a timeslot advances to confirmation (skips customer info) ──
-# Wait for time slots to load
+# Wait for time slots to load (header is uppercase)
 - extendedWaitUntil:
-    visible: "Available Times"
-    timeout: 20000
+    visible: ".*AVAILABLE TIMES.*"
+    timeout: 30000
 
-# Select first available timeslot
+# Select first available timeslot by testID
 - tapOn:
-    text: "\\d{1,2}:\\d{2}.*"
+    id: "time-slot-.*"
     index: 0
+- waitForAnimationToEnd
 
 # Tap Continue
 - tapOn:
@@ -78,7 +91,7 @@ appId: host.exp.Exponent
 # Mirrors: const paymentStep = page.locator('.external-payment')
 #          await expect(paymentStep).toBeVisible()
 - extendedWaitUntil:
-    visible: "Total"
+    visible: ".*Total.*"
     timeout: 15000
 
 # For a member client with coverage, should see membership indicator

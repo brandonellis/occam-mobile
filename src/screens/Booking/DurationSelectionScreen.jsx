@@ -7,6 +7,7 @@ import { bookingStyles as styles } from '../../styles/booking.styles';
 import { formatDuration } from '../../constants/booking.constants';
 import { calculateEffectivePrice, formatCurrency } from '../../helpers/pricing.helper';
 import { SCREENS } from '../../constants/navigation.constants';
+import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import useAuth from '../../hooks/useAuth';
 import { COACH_ROLES } from '../../constants/auth.constants';
 
@@ -47,10 +48,11 @@ const DurationSelectionScreen = ({ route, navigation }) => {
   }, [selectedDuration, bookingData, service, navigation, isCoach, user]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScreenHeader
         title="Select Duration"
         onBack={() => navigation.goBack()}
+        onClose={() => confirmCancelBooking(navigation)}
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>

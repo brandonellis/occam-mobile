@@ -140,6 +140,11 @@ export const getCurrentClientMembership = async (clientId) => {
   return response.data;
 };
 
+export const getMyMembership = async () => {
+  const response = await apiClient.get('/auth/my-membership');
+  return response.data;
+};
+
 export const getAllowedCoachesForService = async (clientId, serviceId) => {
   const response = await apiClient.get(
     `/clients/${clientId}/coach-assignments/allowed/${serviceId}`

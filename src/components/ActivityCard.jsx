@@ -7,6 +7,8 @@ import { formatDateTimeInTz } from '../helpers/timezone.helper';
 import AuthenticatedImage from './AuthenticatedImage';
 import AuthenticatedVideo from './AuthenticatedVideo';
 import { colors } from '../theme';
+import { parseReportPayload } from '../helpers/report.helper';
+import { reportCardStyles } from '../styles/reportSummary.styles';
 
 const getCoachName = (item) => {
   const coach = item?.coach || item?.coaches?.[0] || item?.shared_by;
@@ -47,6 +49,47 @@ const isVideoResource = (item) => {
   const mime = item?.resource_data?.mime_type || '';
   return mime.startsWith('video/');
 };
+
+const ReportSummary = ({ payload, accentColor }) => {
+  const { totalLessons, completedLessons, curriculumPct, scoreEntries } = parseReportPayload(payload);
+  const displayScores = scoreEntries.slice(0, 4);
+
+  if (totalLessons === 0 && displayScores.length === 0) return null;
+
+  return (
+    <View style={reportCardStyles.container}>
+      {totalLessons > 0 && (
+        <View style={reportCardStyles.section}>
+          <View style={reportCardStyles.row}>
+            <MaterialCommunityIcons name="school-outline" size={14} color={accentColor} />
+            <Text style={reportCardStyles.label}>Curriculum</Text>
+            <Text style={reportCardStyles.value}>{completedLessons}/{totalLessons} lessons</Text>
+          </View>
+          <View style={reportCardStyles.progressTrack}>
+            <View style={[reportCardStyles.progressFill, { width: `${Math.round(curriculumPct * 100)}%`, backgroundColor: accentColor }]} />
+          </View>
+        </View>
+      )}
+      {displayScores.length > 0 && (
+        <View style={reportCardStyles.section}>
+          <View style={reportCardStyles.row}>
+            <MaterialCommunityIcons name="chart-line" size={14} color={accentColor} />
+            <Text style={reportCardStyles.label}>Assessment</Text>
+          </View>
+          <View style={reportCardStyles.scoresGrid}>
+            {displayScores.map(([key, val]) => (
+              <View key={key} style={reportCardStyles.scoreChip}>
+                <Text style={reportCardStyles.scoreLabel} numberOfLines={1}>{key}</Text>
+                <Text style={[reportCardStyles.scoreValue, { color: accentColor }]}>{typeof val === 'number' ? val.toFixed(1) : val}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      )}
+    </View>
+  );
+};
+
 
 const ActivityCard = ({ item, onPress, company }) => {
   const typeConfig = ACTIVITY_TYPE_CONFIG[item?.type];
@@ -103,6 +146,11 @@ const ActivityCard = ({ item, onPress, company }) => {
               {item.description}
             </Text>
           </View>
+        ) : null}
+
+        {/* Progress report summary */}
+        {item?.type === 'report' && item?.report_data?.payload ? (
+          <ReportSummary payload={item.report_data.payload} accentColor={accentColor} />
         ) : null}
 
         {/* Service badge */}

@@ -8,6 +8,18 @@ export const bookingsListStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.background,
+  },
+  headerTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+  },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: colors.white,
@@ -68,7 +80,7 @@ export const bookingsListStyles = StyleSheet.create({
   listContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.tabBarClearance,
   },
   bookingCard: {
     backgroundColor: colors.surface,

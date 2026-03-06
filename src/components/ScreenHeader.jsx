@@ -3,7 +3,9 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 
-const ScreenHeader = ({ title, subtitle, onBack, rightAction }) => {
+const ScreenHeader = ({ title, subtitle, onBack, onClose, rightAction }) => {
+  const showClose = onClose && !rightAction;
+
   return (
     <View style={styles.header}>
       {onBack ? (
@@ -22,7 +24,18 @@ const ScreenHeader = ({ title, subtitle, onBack, rightAction }) => {
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
         {subtitle ? <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text> : null}
       </View>
-      {rightAction || <View style={styles.placeholder} />}
+      {rightAction || (showClose ? (
+        <TouchableOpacity
+          onPress={onClose}
+          style={styles.closeButton}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          activeOpacity={0.6}
+        >
+          <MaterialCommunityIcons name="close" size={22} color={colors.textSecondary} />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.placeholder} />
+      ))}
     </View>
   );
 };
@@ -38,6 +51,12 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   backButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButton: {
     width: 44,
     height: 44,
     alignItems: 'center',

@@ -18,6 +18,7 @@ import useEcommerceConfig from '../../hooks/useEcommerceConfig';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import { colors } from '../../theme';
 import { COACH_ROLES } from '../../constants/auth.constants';
+import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import logger from '../../helpers/logger.helper';
 
 const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
@@ -154,9 +155,19 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const isMembershipBooking =
     membershipStatus?.hasActiveMembership && membershipStatus?.hasUsage;
 
-  // Fetch saved payment methods for authenticated clients (Gap 4)
+  // Per-service toggle: service does not require upfront payment
+  const isPaymentNotRequired = service?.payment_required === false;
+
+  // Whether coach needs to collect payment (no membership, payment required, payments enabled)
+  const coachNeedsPayment = isCoach && !isMembershipBooking && !isPaymentNotRequired && paymentsEnabled;
+
+  // Fetch saved payment methods for the booking client
   useEffect(() => {
-    if (isCoach || !clientId) return;
+    if (!clientId) return;
+    // Skip for membership bookings (no payment needed)
+    if (isMembershipBooking) return;
+    // For client flow, always fetch; for coach flow, only when payment is needed
+    if (isCoach && !paymentsEnabled) return;
     let cancelled = false;
     (async () => {
       try {
@@ -179,10 +190,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       }
     })();
     return () => { cancelled = true; };
-  }, [clientId, isCoach]);
-
-  // Per-service toggle: service does not require upfront payment
-  const isPaymentNotRequired = service?.payment_required === false;
+  }, [clientId, isCoach, isMembershipBooking, paymentsEnabled]);
 
   // Build payment summary (matches web's usePaymentSummary)
   const summary = buildPaymentSummary({
@@ -436,8 +444,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     }
     if (isMembershipBooking) {
       handleDirectConfirm();
-    } else if (isCoach) {
-      // Coach flow: create confirmed booking directly (payment settled separately via web dashboard)
+    } else if (isCoach && !paymentsEnabled) {
+      // Coach flow without payments enabled: create confirmed booking directly
+      handleDirectConfirm();
+    } else if (isCoach && isPaymentNotRequired) {
+      // Coach flow with service that doesn't require payment
       handleDirectConfirm();
     } else if (isPaymentNotRequired) {
       handleDirectConfirm();
@@ -456,11 +467,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     if (isMembershipBooking) return true;
     // Service doesn't require payment — allow booking without card
     if (isPaymentNotRequired) return true;
-    // Coach flow: always allow (booking created as confirmed, payment settled separately)
-    if (isCoach) return true;
-    // Client flow: saved card selected — allow if a method is chosen
+    // Coach flow without payments enabled — allow direct booking
+    if (isCoach && !paymentsEnabled) return true;
+    // Saved card selected — allow if a method is chosen (both coach and client)
     if (paymentsEnabled && paymentMode === 'saved') return !!selectedSavedMethodId;
-    // Client flow: one-off payment — require card if payments are enabled
+    // One-off payment — require card if payments are enabled (both coach and client)
     if (paymentsEnabled) return cardComplete;
     // Payments not enabled — allow booking without payment
     return true;
@@ -468,11 +479,14 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Allotment progress bars for membership
   const renderAllotmentSection = () => {
-    if (membershipLoading) {
+    if (membershipLoading || ecommerceLoading) {
       return (
         <View style={styles.allotmentSection}>
-          <Text style={styles.allotmentTitle}>Membership Status</Text>
-          <ActivityIndicator size="small" color={colors.primary} />
+          <Text style={styles.allotmentTitle}>Payment</Text>
+          <Animated.View style={[styles.skeletonBlock, { opacity: skeletonAnim }]}>
+            <View style={styles.skeletonBar} />
+            <View style={[styles.skeletonBar, { width: '60%' }]} />
+          </Animated.View>
         </View>
       );
     }
@@ -489,7 +503,9 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
                 {membershipStatus.isPaused
                   ? `${client?.first_name || 'This client'}'s membership is currently paused.`
                   : `${client?.first_name || 'This client'} doesn't have an active membership.`}
-                {' '}This booking will be created as confirmed.
+                {coachNeedsPayment
+                  ? ' Payment will be collected below.'
+                  : ' This booking will be created as confirmed.'}
               </Text>
             </View>
           </View>
@@ -576,7 +592,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             <View style={isCoach ? styles.coachInfoBanner : styles.allotmentWarningBanner}>
               <Text style={isCoach ? styles.coachInfoBannerText : styles.allotmentNoMembershipText}>
                 {isCoach
-                  ? `This service isn't covered by ${client?.first_name || 'the client'}'s plan, or the allotment has been used. The booking will be created as confirmed.`
+                  ? `This service isn't covered by ${client?.first_name || 'the client'}'s plan, or the allotment has been used.${coachNeedsPayment ? ' Payment will be collected below.' : ' The booking will be created as confirmed.'}`
                   : "This service isn't covered by your plan, or you've reached the allotment limit. Payment will be processed as a one-time booking."}
               </Text>
             </View>
@@ -588,21 +604,25 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     return null;
   };
 
-  // Stripe card input for one-off bookings (client flow only)
+  // Stripe card input for one-off bookings (shown for both client and coach when payment is needed)
   const renderCardSection = () => {
-    if (isCoach || isMembershipBooking || isPaymentNotRequired || membershipLoading) return null;
+    // Already know no payment needed — skip entirely
+    if (isMembershipBooking || isPaymentNotRequired) return null;
 
-    // Show skeleton while ecommerce config is loading
-    if (ecommerceLoading) {
+    // Show skeleton while membership or ecommerce config is loading
+    if (membershipLoading || ecommerceLoading) {
       return (
         <View style={styles.cardSection}>
           <Text style={styles.cardSectionTitle}>Payment Method</Text>
-          <Animated.View style={[styles.cardFieldSkeleton, { opacity: skeletonAnim }]}>
-            <View style={styles.cardFieldSkeletonShimmer} />
+          <Animated.View style={[styles.skeletonBlock, { opacity: skeletonAnim }]}>
+            <View style={[styles.skeletonBar, { height: 44, borderRadius: 8 }]} />
           </Animated.View>
         </View>
       );
     }
+
+    // Coach flow: only show card section when payments are enabled
+    if (isCoach && !paymentsEnabled) return null;
 
     if (!paymentsEnabled) {
       return (
@@ -716,6 +736,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     const successService = createdBookingData?.services?.[0] || service;
     const successCoach = createdBookingData?.coaches?.[0] || coach;
     const successLocation = createdBookingData?.location || location;
+    const successResource = createdBookingData?.resources?.[0] || selectedResource;
     const bookingCode = createdBookingData?.booking_code;
     const clientName = client ? `${client.first_name}` : null;
 
@@ -736,7 +757,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     };
 
     return (
-      <SafeAreaView style={styles.container} edges={['top']}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <ScrollView contentContainerStyle={[styles.scrollContent, styles.successContainer]}>
           {/* Animated checkmark icon */}
           <Animated.View style={[
@@ -789,6 +810,13 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
                 <Text style={styles.successDetailValue}>{successLocation.name}</Text>
               </>
             )}
+            {successResource?.name && (
+              <>
+                <View style={styles.successDetailDivider} />
+                <Text style={styles.successDetailLabel}>RESOURCE</Text>
+                <Text style={styles.successDetailValue}>{successResource.name}</Text>
+              </>
+            )}
             <View style={styles.successDetailDivider} />
             <Text style={styles.successDetailLabel}>DATE & TIME</Text>
             <Text style={styles.successDetailValue}>{formattedDate}</Text>
@@ -824,10 +852,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScreenHeader
         title="Confirm Booking"
         onBack={() => navigation.goBack()}
+        onClose={() => confirmCancelBooking(navigation)}
       />
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: 8 }]}>
@@ -893,6 +922,14 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             </>
           )}
 
+          {selectedResource?.name && (
+            <>
+              <View style={styles.confirmDivider} />
+              <Text style={styles.confirmLabel}>RESOURCE</Text>
+              <Text style={styles.confirmValue}>{selectedResource.name}</Text>
+            </>
+          )}
+
           <View style={styles.confirmDivider} />
           <Text style={styles.confirmLabel}>DATE & TIME</Text>
           <Text style={styles.confirmValue}>{formattedDate}</Text>
@@ -908,7 +945,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         {renderAllotmentSection()}
 
         {/* Membership Booking Banner */}
-        {isMembershipBooking && (
+        {!membershipLoading && !ecommerceLoading && isMembershipBooking && (
           <View style={[styles.confirmSection, { backgroundColor: colors.successLight }]}>
             <Text style={[styles.confirmLabel, { color: colors.success }]}>
               INCLUDED WITH MEMBERSHIP
@@ -922,7 +959,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         )}
 
         {/* No-payment service banner (payment_required === false) */}
-        {!isMembershipBooking && isPaymentNotRequired && (
+        {!membershipLoading && !ecommerceLoading && !isMembershipBooking && isPaymentNotRequired && (
           <View style={[styles.confirmSection, { backgroundColor: colors.successLight }]}>
             <Text style={[styles.confirmLabel, { color: colors.success }]}>
               NO UPFRONT PAYMENT
@@ -939,15 +976,34 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         {renderCardSection()}
 
         {/* Payment Summary */}
-        <View style={styles.confirmSection}>
-          <Text style={styles.confirmLabel}>PAYMENT SUMMARY</Text>
-
-          <View style={[styles.confirmRow, styles.summaryFeesRow]}>
-            <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>{summary.subtotalFormatted}</Text>
+        {(membershipLoading || ecommerceLoading) ? (
+          <View style={styles.confirmSection}>
+            <Text style={styles.confirmLabel}>PAYMENT SUMMARY</Text>
+            <Animated.View style={[styles.skeletonBlock, { opacity: skeletonAnim }]}>
+              <View style={styles.skeletonRow}>
+                <View style={[styles.skeletonBar, { width: '35%' }]} />
+                <View style={[styles.skeletonBar, { width: '15%' }]} />
+              </View>
+              <View style={styles.skeletonRow}>
+                <View style={[styles.skeletonBar, { width: '40%' }]} />
+                <View style={[styles.skeletonBar, { width: '15%' }]} />
+              </View>
+              <View style={[styles.confirmDivider, styles.totalDivider]} />
+              <View style={styles.skeletonRow}>
+                <View style={[styles.skeletonBar, { width: '25%', height: 18 }]} />
+                <View style={[styles.skeletonBar, { width: '20%', height: 18 }]} />
+              </View>
+            </Animated.View>
           </View>
+        ) : (
+          <View style={styles.confirmSection}>
+            <Text style={styles.confirmLabel}>PAYMENT SUMMARY</Text>
 
-          {!isMembershipBooking && !isCoach && (
+            <View style={[styles.confirmRow, styles.summaryFeesRow]}>
+              <Text style={styles.summaryLabel}>Subtotal</Text>
+              <Text style={styles.summaryValue}>{summary.subtotalFormatted}</Text>
+            </View>
+
             <View style={styles.summaryFeesRow}>
               <View style={styles.confirmRow}>
                 <View style={styles.summaryFeesInner}>
@@ -977,15 +1033,15 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
                 </View>
               )}
             </View>
-          )}
 
-          <View style={[styles.confirmDivider, styles.totalDivider]} />
+            <View style={[styles.confirmDivider, styles.totalDivider]} />
 
-          <View style={styles.confirmRow}>
-            <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalPrice}>{summary.totalFormatted}</Text>
+            <View style={styles.confirmRow}>
+              <Text style={styles.totalLabel}>Total</Text>
+              <Text style={styles.totalPrice}>{summary.totalFormatted}</Text>
+            </View>
           </View>
-        </View>
+        )}
       </ScrollView>
 
       <View style={styles.bottomBar}>
@@ -1008,7 +1064,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
               <Text style={styles.continueButtonText}>
                 {isMembershipBooking
                   ? 'Confirm Session'
-                  : isCoach
+                  : isCoach && !coachNeedsPayment
                     ? 'Book Session'
                     : isPaymentNotRequired || !paymentsEnabled
                       ? 'Confirm Booking'

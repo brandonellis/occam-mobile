@@ -8,8 +8,9 @@ import { globalStyles } from '../../styles/global.styles';
 import { formatDuration } from '../../constants/booking.constants';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { getServices, getLocations } from '../../services/bookings.api';
-import { getCurrentClientMembership } from '../../services/accounts.api';
+import { getCurrentClientMembership, getMyMembership } from '../../services/accounts.api';
 import { getNextBookingScreen, getServiceLocations } from '../../helpers/booking.helper';
+import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import { isClassLike } from '../../helpers/normalizers.helper';
 import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
@@ -27,28 +28,38 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
     membershipPlanName: null,
   });
 
-  const clientId = bookingData.client?.id;
-  const clientHasMembership = !!bookingData.client?.membership?.is_active;
+  const { user, activeRole } = useAuth();
+  const isCoach = COACH_ROLES.includes(activeRole);
+
+  // For coach flow, clientId comes from bookingData.client (pre-selected).
+  // For client flow, the logged-in user IS the client — use their ID for
+  // membership checks so members_only services are shown correctly.
+  const clientId = bookingData.client?.id || (!isCoach ? user?.id : null);
+  const clientHasMembership = bookingData.client?.membership?.is_active;
   const locationsRef = useRef([]);
 
   const loadServices = useCallback(async () => {
     try {
       setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
+      // Membership check:
+      //  - Coach flow: use getCurrentClientMembership (staff endpoint) if client has membership
+      //  - Client flow: use getMyMembership (client-accessible endpoint)
+      const membershipPromise = isCoach
+        ? (clientId && clientHasMembership ? getCurrentClientMembership(clientId) : Promise.resolve(null))
+        : (clientId ? getMyMembership() : Promise.resolve(null));
+
       const [servicesRes, locationsRes, membershipRes] = await Promise.allSettled([
         getServices(),
         getLocations(),
-        clientId && clientHasMembership
-          ? getCurrentClientMembership(clientId)
-          : Promise.resolve(null),
+        membershipPromise,
       ]);
 
       let serviceList = servicesRes.status === 'fulfilled' ? (servicesRes.value.data || []) : [];
       const locationList = locationsRes.status === 'fulfilled' ? (locationsRes.value.data || []) : [];
       locationsRef.current = locationList;
 
-      // Feature 2: Filter services by booking_visibility
-      // Determine if client has any active membership for visibility filtering
+      // Determine if client has any active membership (for booking_visibility filtering)
       let hasActiveMembership = false;
       let membershipFiltered = false;
       let membershipPlanName = null;
@@ -59,18 +70,20 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
         const notEnded = !endDate || new Date(endDate) >= new Date();
         hasActiveMembership = (stripeStatus === 'active' || ((stripeStatus === 'canceled' || stripeStatus === 'cancelled') && notEnded)) && !membership.is_paused;
 
-        const planServices = membership.membership_plan?.plan_services || [];
+        // Coach flow: narrow to services covered by the client's membership plan
+        // Client flow: show ALL services (matches web ExternalServiceSelection behavior)
+        if (isCoach && hasActiveMembership) {
+          const planServices = membership.membership_plan?.plan_services || [];
+          const coveredServiceIds = planServices
+            .filter((ps) => ps.remaining_quantity === null || ps.remaining_quantity > 0)
+            .map((ps) => ps.service_id || ps.service?.id)
+            .filter(Boolean);
 
-        // Get service IDs that have remaining uses
-        const coveredServiceIds = planServices
-          .filter((ps) => ps.remaining_quantity === null || ps.remaining_quantity > 0)
-          .map((ps) => ps.service_id || ps.service?.id)
-          .filter(Boolean);
-
-        if (coveredServiceIds.length > 0) {
-          serviceList = serviceList.filter((s) => coveredServiceIds.includes(s.id));
-          membershipFiltered = true;
-          membershipPlanName = membership.membership_plan?.name || 'Membership';
+          if (coveredServiceIds.length > 0) {
+            serviceList = serviceList.filter((s) => coveredServiceIds.includes(s.id));
+            membershipFiltered = true;
+            membershipPlanName = membership.membership_plan?.name || 'Membership';
+          }
         }
       }
 
@@ -101,14 +114,11 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
         error: 'Failed to load services. Please try again.',
       }));
     }
-  }, [clientId, clientHasMembership]);
+  }, [clientId, clientHasMembership, isCoach]);
 
   useEffect(() => {
     loadServices();
   }, [loadServices]);
-
-  const { user, activeRole } = useAuth();
-  const isCoach = COACH_ROLES.includes(activeRole);
 
   const handleSelectService = useCallback(
     (service) => {
@@ -148,6 +158,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
       <ScreenHeader
         title="Select a Service"
         onBack={() => navigation.goBack()}
+        onClose={() => confirmCancelBooking(navigation)}
       />
 
       {state.isLoading ? (

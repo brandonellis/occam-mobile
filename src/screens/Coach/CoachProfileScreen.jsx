@@ -11,7 +11,10 @@ const CoachProfileScreen = () => {
 
   return (
     <SafeAreaView style={globalStyles.container} edges={['top']}>
-      <View style={[globalStyles.screenPadding, { flex: 1, paddingTop: spacing.xl }]}>
+      <View style={globalStyles.screenHeader}>
+        <Text style={globalStyles.screenHeaderTitle}>Profile</Text>
+      </View>
+      <View style={[globalStyles.screenPadding, { flex: 1, paddingBottom: spacing.tabBarClearance }]}>
         <View style={globalStyles.card}>
           <Text style={globalStyles.heading2}>
             {user?.first_name} {user?.last_name}
@@ -24,6 +27,7 @@ const CoachProfileScreen = () => {
         <RoleSwitcher />
 
         <TouchableOpacity
+          testID="sign-out-button"
           style={[
             globalStyles.buttonSecondary,
             { marginTop: spacing.xl, borderColor: colors.error },

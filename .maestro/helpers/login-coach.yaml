@@ -1,7 +1,7 @@
-# Shared login sub-flow — called by other flows via runFlow.
-# Mirrors the auth setup in occam-client/tests/e2e/client.setup.js
+# Shared login sub-flow for COACH accounts.
+# Mirrors the auth setup pattern but uses coach credentials.
 #
-# Requires env vars: CLIENT_EMAIL, CLIENT_PASSWORD, TEST_ORG
+# Requires env vars: COACH_EMAIL, COACH_PASSWORD, TEST_ORG
 #
 # LoginScreen.jsx UI:
 #   - Organization field: placeholder "Search your organization..."
@@ -9,15 +9,13 @@
 #   - Email field: placeholder "Enter your email"
 #   - Password field: placeholder "Enter your password"
 #   - Sign In button
+#   - Coach lands on Schedule tab (not Book tab)
 appId: com.occamgolf.app
 
 ---
 
-# Wait for the login screen to be ready
-# The app should be on the login screen (either fresh launch or logged out)
-- extendedWaitUntil:
-    visible: "Sign In"
-    timeout: 30000
+# Wait for the login screen to load
+- waitForAnimationToEnd
 
 # Step 1: Search and select organization
 - tapOn: "Search your organization..."
@@ -25,12 +23,11 @@ appId: com.occamgolf.app
 - inputText: ${TEST_ORG}
 
 # Wait for search results dropdown to appear (debounced 400ms + API call)
-# Tap the org result by testID (org-result-{tenantId})
-# The accessibilityText is a composite string so text matching is unreliable
+# Extra time needed after clearKeychain fresh start
 - extendedWaitUntil:
     visible:
       id: "org-result-${TEST_ORG}"
-    timeout: 15000
+    timeout: 30000
 - tapOn:
     id: "org-result-${TEST_ORG}"
 - waitForAnimationToEnd
@@ -41,18 +38,18 @@ appId: com.occamgolf.app
 # Step 2: Enter email
 - tapOn: "Enter your email"
 - eraseText: 50
-- inputText: ${CLIENT_EMAIL}
+- inputText: ${COACH_EMAIL}
 
 # Step 3: Enter password
 - tapOn: "Enter your password"
 - eraseText: 50
-- inputText: ${CLIENT_PASSWORD}
+- inputText: ${COACH_PASSWORD}
 
 # Step 4: Sign in
 - tapOn: "Sign In"
 
-# Wait for home screen to load (client sees "Welcome" greeting)
+# Wait for coach home screen to load (coach lands on Dashboard with "Hello, Coach")
 # Needs extra time on cold start: login API + token storage + navigation
 - extendedWaitUntil:
-    visible: "Welcome"
+    visible: ".*Hello.*Coach.*"
     timeout: 150000

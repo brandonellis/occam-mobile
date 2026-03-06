@@ -9,14 +9,15 @@ export const progressStyles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   header: {
-    backgroundColor: colors.white,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    backgroundColor: colors.background,
   },
   headerTitle: {
-    ...typography.h2,
+    ...typography.h3,
     color: colors.textPrimary,
   },
   tabBar: {
@@ -46,7 +47,7 @@ export const progressStyles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.xxxl,
+    paddingBottom: spacing.tabBarClearance,
   },
 
   // Curriculum

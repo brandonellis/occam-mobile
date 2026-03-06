@@ -1,7 +1,7 @@
 # Shared helper: select a service by name.
 # Mirrors the pattern of clicking a service card by text in the web tests.
 # Requires env var: SERVICE_NAME
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 

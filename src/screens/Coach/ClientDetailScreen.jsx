@@ -177,6 +177,14 @@ const SECTIONS = {
 const ClientDetailScreen = ({ route, navigation }) => {
   const { company } = useAuth();
   const { clientId } = route.params;
+
+  const handleGoBack = useCallback(() => {
+    if (navigation.canGoBack()) {
+      navigation.goBack();
+    } else {
+      navigation.navigate(SCREENS.COACH_CLIENTS);
+    }
+  }, [navigation]);
   const [state, dispatch] = useReducer(clientDetailReducer, clientDetailInitialState);
   const {
     client, modules, upcomingBookings, pastBookings, sharedMedia, snapshots,
@@ -399,7 +407,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
   if (isLoading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <ScreenHeader title="Client" onBack={() => navigation.goBack()} />
+        <ScreenHeader title="Client" onBack={handleGoBack} />
         <View style={globalStyles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
@@ -413,7 +421,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader title={fullName} onBack={() => navigation.goBack()} />
+      <ScreenHeader title={fullName} onBack={handleGoBack} />
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -454,7 +462,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
           <TouchableOpacity
             style={styles.actionButton}
             activeOpacity={0.7}
-            onPress={() => navigation.navigate(SCREENS.COACH_TABS, { screen: 'ScheduleTab', params: { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: { client } } } })}
+            onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: { client } } })}
           >
             <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.accent} />
             <Text style={styles.actionButtonText}>Book Session</Text>

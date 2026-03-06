@@ -1,0 +1,21 @@
+# Shared helper: navigate to start a new booking as a coach.
+# Coach taps "New" on the Schedule screen → goes to ClientSelection.
+# Mirrors the coach internal booking flow entry point.
+appId: com.occamgolf.app
+
+---
+
+# Coach should be on the Schedule tab
+- tapOn:
+    id: "tab-schedule"
+- waitForAnimationToEnd
+
+# Tap "New" button on coach schedule screen
+- tapOn:
+    id: "new-booking-button"
+- waitForAnimationToEnd
+
+# Wait for client selection screen to load
+- extendedWaitUntil:
+    visible: "Select a Client"
+    timeout: 15000

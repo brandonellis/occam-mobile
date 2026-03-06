@@ -1,17 +1,15 @@
 # Shared helper: handle coach selection if shown.
 # Selects the first available coach card.
 # Mirrors the web test pattern of selecting Coach Alpha.
-appId: host.exp.Exponent
+appId: com.occamgolf.app
 
 ---
 
+# Tap "Coach Alpha" (the seeded primary coach)
 - runFlow:
     when:
       visible: "Select a Coach"
     commands:
       - tapOn:
-          id: "coach-selection-list"
-          childOf:
-            index: 0
-          optional: true
+          text: ".*Coach Alpha.*"
       - waitForAnimationToEnd

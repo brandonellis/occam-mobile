@@ -11,8 +11,10 @@ Mirrors the Playwright E2E test structure from `occam-client/tests/e2e/`.
 ├── config.yaml                              # Global config + env vars
 ├── README.md                                # This file
 ├── helpers/
-│   ├── login.yaml                           # Auth setup (mirrors client.setup.js)
-│   ├── navigate-to-booking.yaml             # Navigate to service selection
+│   ├── login.yaml                           # Client auth setup (mirrors client.setup.js)
+│   ├── login-coach.yaml                     # Coach auth setup
+│   ├── navigate-to-booking.yaml             # Client: navigate to service selection
+│   ├── navigate-to-new-booking-coach.yaml   # Coach: schedule → new → client selection
 │   ├── select-service.yaml                  # Select a service by name
 │   ├── handle-location-selection.yaml       # Handle location step if shown
 │   ├── handle-coach-selection.yaml          # Handle coach step if shown
@@ -23,7 +25,8 @@ Mirrors the Playwright E2E test structure from `occam-client/tests/e2e/`.
     ├── variable-duration-booking.yaml       # mirrors variable-duration-booking.spec.js
     ├── booking-visibility.yaml              # mirrors booking-visibility.spec.js
     ├── booking-visibility-auth.yaml         # mirrors booking-visibility.auth.spec.js
-    └── online-booking-controls.yaml         # mirrors online-booking-controls.spec.js
+    ├── online-booking-controls.yaml         # mirrors online-booking-controls.spec.js
+    └── booking-flow-coach.yaml              # coach-initiated booking
 ```
 
 ## Prerequisites
@@ -63,6 +66,7 @@ Mirrors the Playwright E2E test structure from `occam-client/tests/e2e/`.
 | `booking-visibility.spec.js` | `external/booking-visibility.yaml` | Non-member can't see `members_only` services |
 | `booking-visibility.auth.spec.js` | `external/booking-visibility-auth.yaml` | Member sees `members_only` + coach assignment filtering |
 | `online-booking-controls.spec.js` | `external/online-booking-controls.yaml` | `online_booking_enabled` filtering, advance booking limits |
+| *(internal coach flow)* | `external/booking-flow-coach.yaml` | Coach: client → service → timeslot → confirm (no payment) |
 
 ### Not yet ported (web-only)
 - `membership-flow.spec.js` — membership purchase (not yet in mobile app)
@@ -96,17 +100,33 @@ maestro test .maestro/external/booking-visibility.yaml \
   -e TEST_ORG=e2e
 ```
 
+### Coach booking flow:
+```bash
+maestro test .maestro/external/booking-flow-coach.yaml \
+  -e COACH_EMAIL=e2e-coach@occam.test \
+  -e COACH_PASSWORD=password \
+  -e TEST_ORG=e2e \
+  -e TEST_CLIENT_NAME="E2E Client"
+```
+
 ### All external flows:
 ```bash
 maestro test .maestro/external/ \
   -e CLIENT_EMAIL=e2e-client@occam.test \
   -e CLIENT_PASSWORD=password \
-  -e TEST_ORG=e2e
+  -e COACH_EMAIL=e2e-coach@occam.test \
+  -e COACH_PASSWORD=password \
+  -e TEST_ORG=e2e \
+  -e TEST_CLIENT_NAME="E2E Client"
 ```
 
 ## Test IDs
 
 The following `testID` props are available for Maestro targeting:
+
+### Client Selection (coach flow)
+- `client-selection-list` — ScrollView containing client cards
+- `client-card-{id}` — Individual client card
 
 ### Service Selection
 - `service-selection-list` — ScrollView containing service cards

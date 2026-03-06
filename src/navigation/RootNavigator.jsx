@@ -9,16 +9,9 @@ import { colors } from '../theme/colors';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import CoachTabNavigator from './CoachTabNavigator';
 import ClientTabNavigator from './ClientTabNavigator';
-import ClientDetailScreen from '../screens/Coach/ClientDetailScreen';
-import ClientSharedMediaScreen from '../screens/Coach/ClientSharedMediaScreen';
-import ClientActivityFeedScreen from '../screens/Coach/ClientActivityFeedScreen';
-import CurriculumEditorScreen from '../screens/Coach/CurriculumEditorScreen';
-import ProgressReportDetailScreen from '../screens/Coach/ProgressReportDetailScreen';
 import VideoRecordingScreen from '../screens/Coach/VideoRecordingScreen';
 import VideoReviewScreen from '../screens/Coach/VideoReviewScreen';
-import VideoAnnotationScreen from '../screens/Coach/VideoAnnotationScreen';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
-import VideoPlayerScreen from '../screens/Shared/VideoPlayerScreen';
 import BookingDetailScreen from '../screens/Client/BookingDetailScreen';
 
 const Stack = createNativeStackNavigator();
@@ -73,38 +66,7 @@ const RootNavigator = () => {
             />
           )}
 
-          {/* Coach detail screens */}
-          <Stack.Screen
-            name={SCREENS.CLIENT_DETAIL}
-            component={ClientDetailScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.CLIENT_SHARED_MEDIA}
-            component={ClientSharedMediaScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.CLIENT_ACTIVITY_FEED}
-            component={ClientActivityFeedScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-
-          {/* Curriculum editor */}
-          <Stack.Screen
-            name={SCREENS.CURRICULUM_EDITOR}
-            component={CurriculumEditorScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-
-          {/* Progress report detail */}
-          <Stack.Screen
-            name={SCREENS.PROGRESS_REPORT_DETAIL}
-            component={ProgressReportDetailScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-
-          {/* Video recording flow */}
+          {/* Video recording flow — accessed from Dashboard quick actions */}
           <Stack.Screen
             name={SCREENS.VIDEO_RECORDING}
             component={VideoRecordingScreen}
@@ -116,26 +78,14 @@ const RootNavigator = () => {
             options={{ animation: 'slide_from_right', gestureEnabled: false }}
           />
 
-          {/* Video annotation */}
-          <Stack.Screen
-            name={SCREENS.VIDEO_ANNOTATION}
-            component={VideoAnnotationScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-
-          {/* Booking detail */}
+          {/* Booking detail — accessed from direct tab screens (Dashboard, Bookings) */}
           <Stack.Screen
             name={SCREENS.BOOKING_DETAIL}
             component={BookingDetailScreen}
             options={{ animation: 'slide_from_right' }}
           />
 
-          {/* Shared screens */}
-          <Stack.Screen
-            name={SCREENS.VIDEO_PLAYER}
-            component={VideoPlayerScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
+          {/* Notifications — accessed from direct tab screens (Dashboard) */}
           <Stack.Screen
             name={SCREENS.NOTIFICATIONS}
             component={NotificationsScreen}

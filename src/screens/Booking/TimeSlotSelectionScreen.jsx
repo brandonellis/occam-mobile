@@ -12,6 +12,7 @@ import { isClassLike } from '../../helpers/normalizers.helper';
 import { buildClassSessionGroups } from '../../helpers/classSession.helper';
 import { colors, spacing } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
+import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
 import { generateDateRangeInTz, getFutureDateKey } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
@@ -405,10 +406,11 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScreenHeader
         title="Select Date & Time"
         onBack={() => navigation.goBack()}
+        onClose={() => confirmCancelBooking(navigation)}
       />
 
       <FlatList
