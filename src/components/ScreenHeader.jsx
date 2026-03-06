@@ -2,6 +2,7 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
+import { typography } from '../theme/typography';
 
 const ScreenHeader = ({ title, subtitle, onBack, onClose, rightAction }) => {
   const showClose = onClose && !rightAction;
@@ -11,7 +12,7 @@ const ScreenHeader = ({ title, subtitle, onBack, onClose, rightAction }) => {
       {onBack ? (
         <TouchableOpacity
           onPress={onBack}
-          style={styles.backButton}
+          style={styles.actionButton}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           activeOpacity={0.6}
         >
@@ -27,7 +28,7 @@ const ScreenHeader = ({ title, subtitle, onBack, onClose, rightAction }) => {
       {rightAction || (showClose ? (
         <TouchableOpacity
           onPress={onClose}
-          style={styles.closeButton}
+          style={styles.actionButton}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           activeOpacity={0.6}
         >
@@ -50,13 +51,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
     minHeight: 48,
   },
-  backButton: {
-    width: 44,
-    height: 44,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeButton: {
+  actionButton: {
     width: 44,
     height: 44,
     alignItems: 'center',
@@ -67,13 +62,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
+    ...typography.h3,
     color: colors.textPrimary,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 12,
+    ...typography.bodySmall,
     color: colors.textTertiary,
     textAlign: 'center',
   },

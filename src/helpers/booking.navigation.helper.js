@@ -17,13 +17,19 @@ export const confirmCancelBooking = (navigation) => {
         text: 'Discard',
         style: 'destructive',
         onPress: () => {
-          // Pop to the root of the current stack navigator
-          navigation.dispatch(
-            CommonActions.reset({
-              index: 0,
-              routes: [{ name: navigation.getState().routes[0].name }],
-            })
-          );
+          const state = navigation.getState();
+          const rootRouteName = state?.routes?.[0]?.name;
+
+          if (rootRouteName) {
+            navigation.dispatch(
+              CommonActions.reset({
+                index: 0,
+                routes: [{ name: rootRouteName }],
+              })
+            );
+          } else {
+            navigation.goBack();
+          }
         },
       },
     ]

@@ -10,6 +10,7 @@ import ClientProgressStack from './ClientProgressStack';
 import ClientProfileScreen from '../screens/Client/ClientProfileScreen';
 import useActivityBadge from '../hooks/useActivityBadge';
 import { setLastSeenTimestamp } from '../helpers/activity.helper';
+import { createTabResetListener } from '../helpers/navigation.helper';
 import { BadgeProvider } from '../context/BadgeContext';
 
 const Tab = createBottomTabNavigator();
@@ -45,20 +46,7 @@ const ClientTabNavigator = () => {
         name="HomeTab"
         component={ClientHomeStack}
         options={{ tabBarLabel: 'Home' }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            const state = navigation.getState();
-            const homeTabRoute = state.routes.find((r) => r.name === 'HomeTab');
-            const isNested = homeTabRoute?.state?.routes?.length > 1;
-
-            if (isNested) {
-              e.preventDefault();
-              navigation.navigate('HomeTab', {
-                screen: SCREENS.CLIENT_HOME,
-              });
-            }
-          },
-        })}
+        listeners={createTabResetListener('HomeTab', SCREENS.CLIENT_HOME)}
       />
       <Tab.Screen
         name={SCREENS.CLIENT_BOOKINGS}
@@ -80,6 +68,7 @@ const ClientTabNavigator = () => {
         name="ProgressTab"
         component={ClientProgressStack}
         options={{ tabBarLabel: 'Progress' }}
+        listeners={createTabResetListener('ProgressTab', SCREENS.CLIENT_PROGRESS)}
       />
       <Tab.Screen
         name={SCREENS.CLIENT_PROFILE}

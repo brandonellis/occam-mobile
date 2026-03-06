@@ -7,6 +7,7 @@ import CoachDashboardScreen from '../screens/Coach/CoachDashboardScreen';
 import CoachScheduleStack from './CoachScheduleStack';
 import CoachClientsStack from './CoachClientsStack';
 import CoachProfileScreen from '../screens/Coach/CoachProfileScreen';
+import { createTabResetListener } from '../helpers/navigation.helper';
 
 const Tab = createBottomTabNavigator();
 
@@ -40,39 +41,13 @@ const CoachTabNavigator = () => {
         name="ScheduleTab"
         component={CoachScheduleStack}
         options={{ tabBarLabel: 'Schedule' }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            const state = navigation.getState();
-            const scheduleTabRoute = state.routes.find((r) => r.name === 'ScheduleTab');
-            const isNested = scheduleTabRoute?.state?.routes?.length > 1;
-
-            if (isNested) {
-              e.preventDefault();
-              navigation.navigate('ScheduleTab', {
-                screen: SCREENS.COACH_SCHEDULE,
-              });
-            }
-          },
-        })}
+        listeners={createTabResetListener('ScheduleTab', SCREENS.COACH_SCHEDULE)}
       />
       <Tab.Screen
         name="ClientsTab"
         component={CoachClientsStack}
         options={{ tabBarLabel: 'Clients' }}
-        listeners={({ navigation }) => ({
-          tabPress: (e) => {
-            const state = navigation.getState();
-            const clientsTabRoute = state.routes.find((r) => r.name === 'ClientsTab');
-            const isNested = clientsTabRoute?.state?.routes?.length > 1;
-
-            if (isNested) {
-              e.preventDefault();
-              navigation.navigate('ClientsTab', {
-                screen: SCREENS.COACH_CLIENTS,
-              });
-            }
-          },
-        })}
+        listeners={createTabResetListener('ClientsTab', SCREENS.COACH_CLIENTS)}
       />
       <Tab.Screen
         name={SCREENS.COACH_PROFILE}
