@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, ActivityIndicator, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -22,6 +22,7 @@ const CoachSelectionScreen = ({ route, navigation }) => {
     isLoading: true,
     error: null,
   });
+  const [rebooking, setRebooking] = React.useState(!!bookingData.rebookCoachId);
 
   const loadCoaches = useCallback(async () => {
     try {
@@ -81,6 +82,21 @@ const CoachSelectionScreen = ({ route, navigation }) => {
     loadCoaches();
   }, [loadCoaches]);
 
+  // Rebook auto-select: if rebookCoachId is present, auto-pick the matching coach
+  const didAutoSelect = useRef(false);
+  useEffect(() => {
+    if (!bookingData.rebookCoachId || state.isLoading || state.error || didAutoSelect.current) return;
+    const matched = state.coaches.find((c) => c.id === bookingData.rebookCoachId);
+    if (!matched) {
+      setRebooking(false);
+      return;
+    }
+    didAutoSelect.current = true;
+    navigation.replace(SCREENS.TIME_SLOT_SELECTION, {
+      bookingData: { ...bookingData, coach: matched },
+    });
+  }, [bookingData, state.isLoading, state.error, state.coaches, navigation]);
+
   const handleSelectCoach = useCallback(
     (coach) => {
       navigation.navigate(SCREENS.TIME_SLOT_SELECTION, {
@@ -92,13 +108,15 @@ const CoachSelectionScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader
-        title="Select a Coach"
-        onBack={() => navigation.goBack()}
-        onClose={() => confirmCancelBooking(navigation)}
-      />
+      {!rebooking && (
+        <ScreenHeader
+          title="Select a Coach"
+          onBack={() => navigation.goBack()}
+          onClose={() => confirmCancelBooking(navigation)}
+        />
+      )}
 
-      {state.isLoading ? (
+      {(state.isLoading || rebooking) ? (
         <View style={globalStyles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>

@@ -234,7 +234,17 @@ const ClientBookingsScreen = ({ navigation }) => {
             <View style={styles.bookingActions}>
               <TouchableOpacity
                 style={styles.rebookButton}
-                onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: {} } })}
+                onPress={() => navigation.navigate('HomeTab', {
+                  screen: SCREENS.SERVICE_SELECTION,
+                  params: {
+                    bookingData: {},
+                    rebookHints: {
+                      serviceId: item.services?.[0]?.id || null,
+                      coachId: coach?.id || null,
+                      locationId: item.location?.id || null,
+                    },
+                  },
+                })}
                 activeOpacity={0.7}
               >
                 <Text style={styles.rebookButtonText}>Book Again</Text>
@@ -252,6 +262,14 @@ const ClientBookingsScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Bookings</Text>
+        <TouchableOpacity
+          style={styles.newBookingButton}
+          onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: {} } })}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons name="plus" size={18} color={colors.accent} />
+          <Text style={styles.newBookingText}>New</Text>
+        </TouchableOpacity>
       </View>
       <View style={styles.tabBar}>
         {[TABS.UPCOMING, TABS.PAST].map((tab) => (

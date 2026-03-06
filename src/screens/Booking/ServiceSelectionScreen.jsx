@@ -19,7 +19,7 @@ import { COACH_ROLES } from '../../constants/auth.constants';
 import logger from '../../helpers/logger.helper';
 
 const ServiceSelectionScreen = ({ route, navigation }) => {
-  const { bookingData = {} } = route.params || {};
+  const { bookingData = {}, rebookHints } = route.params || {};
   const [state, setState] = React.useState({
     services: [],
     isLoading: true,
@@ -37,6 +37,8 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
   const clientId = bookingData.client?.id || (!isCoach ? user?.id : null);
   const clientHasMembership = bookingData.client?.membership?.is_active;
   const locationsRef = useRef([]);
+  const didAutoSelect = useRef(false);
+  const [rebooking, setRebooking] = React.useState(!!rebookHints?.serviceId);
 
   const loadServices = useCallback(async () => {
     try {
@@ -120,6 +122,60 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
     loadServices();
   }, [loadServices]);
 
+  // Rebook auto-select: when services finish loading and rebookHints are present,
+  // find the matching service and fast-forward through the flow.
+  useEffect(() => {
+    if (!rebookHints?.serviceId || state.isLoading || state.error || didAutoSelect.current) return;
+    const matchedService = state.services.find((s) => s.id === rebookHints.serviceId);
+    if (!matchedService) {
+      // Service no longer available — fall through to normal list
+      setRebooking(false);
+      return;
+    }
+
+    didAutoSelect.current = true;
+    const locations = locationsRef.current;
+
+    // Build bookingData with the pre-selected service
+    const updatedData = { ...bookingData, service: matchedService, location: null };
+
+    // Resolve location: prefer the hinted location if it's valid for this service
+    const serviceLocations = getServiceLocations(matchedService, locations);
+    const coachLocationIds = isCoach ? (user?.location_ids || []) : [];
+    const effectiveLocations = coachLocationIds.length > 0
+      ? serviceLocations.filter((loc) => coachLocationIds.includes(loc.id))
+      : serviceLocations;
+
+    if (rebookHints.locationId) {
+      const hintedLocation = effectiveLocations.find((loc) => loc.id === rebookHints.locationId);
+      if (hintedLocation) updatedData.location = hintedLocation;
+    }
+    if (!updatedData.location && effectiveLocations.length === 1) {
+      updatedData.location = effectiveLocations[0];
+    }
+
+    // Inject hinted coach into bookingData so downstream screens can skip coach selection
+    if (rebookHints.coachId) {
+      updatedData.rebookCoachId = rebookHints.coachId;
+    }
+
+    if (updatedData.location) {
+      // Location resolved — replace this screen with the next one
+      const { screen, params } = getNextBookingScreen(updatedData, isCoach, user);
+      navigation.replace(screen, params);
+    } else if (effectiveLocations.length > 1) {
+      // Multiple locations — replace with location picker
+      navigation.replace(SCREENS.LOCATION_SELECTION, {
+        bookingData: updatedData,
+        serviceLocations: effectiveLocations,
+      });
+    } else {
+      // No locations — replace with next screen
+      const { screen, params } = getNextBookingScreen(updatedData, isCoach, user);
+      navigation.replace(screen, params);
+    }
+  }, [rebookHints, state.isLoading, state.error, state.services, bookingData, isCoach, user, navigation]);
+
   const handleSelectService = useCallback(
     (service) => {
       const updatedData = { ...bookingData, service, location: null };
@@ -155,13 +211,15 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader
-        title="Select a Service"
-        onBack={() => navigation.goBack()}
-        onClose={() => confirmCancelBooking(navigation)}
-      />
+      {!rebooking && (
+        <ScreenHeader
+          title="Select a Service"
+          onBack={() => navigation.goBack()}
+          onClose={() => confirmCancelBooking(navigation)}
+        />
+      )}
 
-      {state.isLoading ? (
+      {(state.isLoading || rebooking) ? (
         <View style={globalStyles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>

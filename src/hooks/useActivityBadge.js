@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import useAuth from './useAuth';
 import { getClientActivities } from '../services/activity.api';
-import { getLastSeenTimestamp, countUnreadItems } from '../helpers/activity.helper';
+import { getLastSeenTimestamp, setLastSeenTimestamp, countUnreadItems } from '../helpers/activity.helper';
 
 const POLL_INTERVAL_MS = 60000; // check every 60s
 
@@ -13,12 +13,17 @@ const POLL_INTERVAL_MS = 60000; // check every 60s
 export default function useActivityBadge() {
   const { user, isAuthenticated } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+  const suppressUntilRef = useRef(0);
 
   const checkUnread = useCallback(async () => {
     if (!user?.id || !isAuthenticated) {
       setUnreadCount(0);
       return;
     }
+
+    // Skip this poll if we recently cleared the badge — gives SecureStore
+    // time to flush the new lastSeen timestamp before we re-read it.
+    if (Date.now() < suppressUntilRef.current) return;
 
     try {
       const [lastSeen, response] = await Promise.all([
@@ -49,8 +54,12 @@ export default function useActivityBadge() {
     return () => clearInterval(interval);
   }, [checkUnread]);
 
-  const clearBadge = useCallback(() => {
+  const clearBadge = useCallback(async () => {
     setUnreadCount(0);
+    // Suppress the next poll cycle so the badge doesn't flicker back
+    // while SecureStore writes the new lastSeen timestamp.
+    suppressUntilRef.current = Date.now() + POLL_INTERVAL_MS;
+    await setLastSeenTimestamp();
   }, []);
 
   return { unreadCount, refreshBadge: checkUnread, clearBadge };

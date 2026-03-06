@@ -9,7 +9,6 @@ import ClientActivityFeedScreen from '../screens/Client/ClientActivityFeedScreen
 import ClientProgressStack from './ClientProgressStack';
 import ClientProfileScreen from '../screens/Client/ClientProfileScreen';
 import useActivityBadge from '../hooks/useActivityBadge';
-import { setLastSeenTimestamp } from '../helpers/activity.helper';
 import { createTabResetListener } from '../helpers/navigation.helper';
 import { BadgeProvider } from '../context/BadgeContext';
 
@@ -60,7 +59,6 @@ const ClientTabNavigator = () => {
         listeners={{
           tabPress: () => {
             clearBadge();
-            setLastSeenTimestamp();
           },
         }}
       />
