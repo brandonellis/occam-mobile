@@ -20,6 +20,7 @@ import { colors } from '../../theme';
 import { COACH_ROLES } from '../../constants/auth.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import logger from '../../helpers/logger.helper';
+import PromoCodeInput from '../../components/PromoCodeInput';
 
 const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const { bookingData = {} } = route.params || {};
@@ -44,6 +45,9 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const [savedMethodsLoading, setSavedMethodsLoading] = useState(false);
   const [selectedSavedMethodId, setSelectedSavedMethodId] = useState(null);
   const [paymentMode, setPaymentMode] = useState('card'); // 'card' | 'saved'
+
+  // Promo code state
+  const [appliedPromo, setAppliedPromo] = useState(null);
 
   // Success screen state
   const [showSuccess, setShowSuccess] = useState(false);
@@ -298,6 +302,9 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         service_id: service?.id,
         booking_id: pendingBookingId,
       };
+      if (appliedPromo?.code) {
+        paymentData.promotion_code = appliedPromo.code;
+      }
       const piResponse = await createServicePayment(paymentData);
 
       if (!piResponse.success || !piResponse.client_secret) {
@@ -378,13 +385,17 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
       // PHASE 2: Create payment intent with saved card
       setLoadingMessage('Processing payment...');
-      const piResponse = await createServicePayment({
+      const savedPaymentData = {
         client_id: clientId,
         service_id: service?.id,
         booking_id: pendingBookingId,
         use_saved_payment_method: true,
         payment_method_id: selectedSavedMethodId,
-      });
+      };
+      if (appliedPromo?.code) {
+        savedPaymentData.promotion_code = appliedPromo.code;
+      }
+      const piResponse = await createServicePayment(savedPaymentData);
 
       if (!piResponse?.success || !piResponse?.payment_intent_id) {
         throw new Error(piResponse?.error || piResponse?.message || 'Failed to create payment.');
@@ -972,6 +983,22 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
+        {/* Promo Code Input (shown when payment is required) */}
+        {!membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPaymentNotRequired && paymentsEnabled && (
+          <View style={styles.confirmSection}>
+            <Text style={styles.confirmLabel}>PROMO CODE</Text>
+            <PromoCodeInput
+              serviceId={service?.id}
+              locationId={location?.id}
+              clientId={clientId}
+              servicePrice={service?.price}
+              onApply={(promoData) => setAppliedPromo(promoData)}
+              onRemove={() => setAppliedPromo(null)}
+              disabled={isSubmitting}
+            />
+          </View>
+        )}
+
         {/* Stripe Card Input (client one-off only — coaches create confirmed bookings directly) */}
         {renderCardSection()}
 
@@ -1001,8 +1028,17 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
             <View style={[styles.confirmRow, styles.summaryFeesRow]}>
               <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={styles.summaryValue}>{summary.subtotalFormatted}</Text>
+              <Text style={[styles.summaryValue, appliedPromo && { textDecorationLine: 'line-through', color: colors.textTertiary }]}>
+                {summary.subtotalFormatted}
+              </Text>
             </View>
+
+            {appliedPromo && (
+              <View style={[styles.confirmRow, styles.summaryFeesRow]}>
+                <Text style={[styles.summaryLabel, { color: colors.success }]}>Promo: {appliedPromo.code}</Text>
+                <Text style={[styles.summaryValue, { color: colors.success }]}>-${Number(appliedPromo.discount_amount || 0).toFixed(2)}</Text>
+              </View>
+            )}
 
             <View style={styles.summaryFeesRow}>
               <View style={styles.confirmRow}>
