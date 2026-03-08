@@ -45,6 +45,24 @@ export const getAvailabilityMonthlySummary = async (params) => {
   return response.data;
 };
 
+/**
+ * Fetch generated time slots for a single day from the backend.
+ * Replaces client-side slot generation with a single API call.
+ *
+ * @param {Object} params
+ * @param {number} params.service_id
+ * @param {number} params.location_id
+ * @param {string} params.date - Format: 'YYYY-MM-DD'
+ * @param {number[]} [params.coach_ids]
+ * @param {number[]} [params.resource_ids]
+ * @param {number} [params.duration_minutes]
+ * @returns {Promise<Object>} { data: Array, meta: Object }
+ */
+export const getAvailabilityTimeslots = async (params) => {
+  const response = await apiClient.get('/availability/timeslots', { params });
+  return response.data;
+};
+
 export const getCoachSchedule = async (coachId, params) => {
   const response = await apiClient.get(`/coaches/${coachId}/schedule`, { params });
   return response.data;
