@@ -1,26 +1,13 @@
-import dayjs, { getEffectiveTimezone } from '../utils/dayjs';
-import { getCoachSchedule, getBookingsCompact, getAvailabilityTimeslots } from './bookings.api';
-import { processAvailabilityData, generateTimeSlots } from '../utils/timeSlotGenerator';
-import { filterSlotsByClosures } from '../helpers/closure.helper';
+import { getEffectiveTimezone } from '../utils/dayjs';
+import { getAvailabilityTimeslots } from './bookings.api';
 import { formatTimeInTz } from '../helpers/timezone.helper';
 import logger from '../helpers/logger.helper';
 
 /**
  * Mobile Availability Service
  *
- * Backend-first: calls /availability/timeslots endpoint, falls back to
- * client-side generation if the backend call fails.
- *
- * Flow (backend-first):
- * 1. Call GET /availability/timeslots with service, location, date, coaches, resources
- * 2. Transform backend response to frontend slot shape
- * 3. Return slots
- *
- * Flow (fallback):
- * 1. Fetch coach schedule + resource bookings
- * 2. processAvailabilityData() + generateTimeSlots()
- * 3. filterSlotsByClosures()
- * 4. Return slots
+ * All time slot generation is handled by the backend via /availability/timeslots.
+ * This service transforms the backend response into the frontend slot shape.
  */
 
 /**
@@ -71,66 +58,6 @@ const transformBackendSlots = (backendSlots, selectedDate, company, resourcePool
 };
 
 /**
- * Client-side slot generation (legacy fallback).
- * Used when the backend timeslots endpoint is unavailable.
- */
-const getTimeSlotsClientSide = async ({
-  service, coach, selectedResource, location, selectedDate, company, resourcePool, durationMinutes
-}) => {
-  // IMPORTANT: Do NOT use .startOf('day') / .endOf('day') on tz-aware dayjs objects
-  // in Hermes — it strips the timezone and reinterprets local digits as UTC.
-  const tz = getEffectiveTimezone(company);
-  const dateStr = selectedDate.format('YYYY-MM-DD');
-  const dayStart = dayjs.tz(`${dateStr} 00:00`, 'YYYY-MM-DD HH:mm', tz);
-  const dayEnd = dayjs.tz(`${dateStr} 23:59`, 'YYYY-MM-DD HH:mm', tz);
-
-  const dateRange = {
-    start: dayStart.utc().format(),
-    end: dayEnd.utc().format()
-  };
-
-  let coachData = null;
-  if (coach?.id) {
-    coachData = await getCoachSchedule(coach.id, dateRange);
-  }
-
-  let resourceBookings = [];
-  if (service.requires_resource) {
-    const commonParams = {
-      start_date: selectedDate.format('YYYY-MM-DD'),
-      end_date: selectedDate.format('YYYY-MM-DD'),
-      location_id: location.id
-    };
-
-    if (selectedResource?.id) {
-      const resp = await getBookingsCompact({ ...commonParams, resource_ids: [selectedResource.id] });
-      resourceBookings = resp?.data || [];
-    } else if (Array.isArray(resourcePool) && resourcePool.length > 0) {
-      const uniqueIds = Array.from(new Set(resourcePool.map(r => r.id || r.resource_id).filter(Boolean)));
-      if (uniqueIds.length > 0) {
-        const resp = await getBookingsCompact({ ...commonParams, resource_ids: uniqueIds });
-        resourceBookings = resp?.data || [];
-      }
-    }
-  }
-
-  const { availability, bookings } = processAvailabilityData(
-    service, coach, selectedResource, location, selectedDate, coachData, resourceBookings, company, resourcePool
-  );
-
-  let timeSlots;
-  try {
-    timeSlots = generateTimeSlots(availability, bookings, selectedDate, service, company, selectedResource, resourcePool, durationMinutes);
-  } catch (error) {
-    logger.warn('generateTimeSlots failed:', error.message);
-    timeSlots = [];
-  }
-
-  timeSlots = filterSlotsByClosures(timeSlots, { service, selectedResource, resourcePool, company });
-  return timeSlots;
-};
-
-/**
  * Fetch and process availability data for a booking
  *
  * @param {Object} params - Availability parameters
@@ -167,7 +94,6 @@ export const getAvailableTimeSlots = async ({
       }
     }
 
-    // Backend-first: single API call replaces 2-3 calls + client-side processing
     const backendResult = await getAvailabilityTimeslots({
       service_id: service.id,
       location_id: location.id,
@@ -189,19 +115,7 @@ export const getAvailableTimeSlots = async ({
     if (error?.code === 'ERR_CANCELED' || error?.name === 'CanceledError' || error?.name === 'AbortError') {
       return [];
     }
-
-    // Fallback to client-side generation if backend endpoint fails
-    logger.warn('[Timeslots] Backend endpoint failed, falling back to client-side generation:', error?.message);
-    try {
-      return await getTimeSlotsClientSide({
-        service, coach, selectedResource, location, selectedDate, company, resourcePool, durationMinutes
-      });
-    } catch (fallbackError) {
-      if (fallbackError?.code === 'ERR_CANCELED' || fallbackError?.name === 'CanceledError' || fallbackError?.name === 'AbortError') {
-        return [];
-      }
-      logger.error('Availability service error (fallback also failed):', fallbackError);
-      throw fallbackError;
-    }
+    logger.error('[Timeslots] Backend endpoint failed:', error?.message);
+    throw error;
   }
 };
