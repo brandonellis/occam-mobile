@@ -525,12 +525,29 @@ export const bookingStyles = StyleSheet.create({
     borderColor: colors.warning,
     borderWidth: 1,
   },
+  classSlotWaitlist: {
+    borderColor: colors.info,
+    borderWidth: 1,
+    backgroundColor: 'rgba(24, 144, 255, 0.06)',
+  },
+  classSlotAttending: {
+    borderColor: colors.success,
+    borderWidth: 1,
+    backgroundColor: 'rgba(82, 196, 26, 0.06)',
+    opacity: 0.7,
+  },
   classSlotSubtext: {
     fontSize: 10,
     marginTop: 2,
   },
   classSlotFullText: {
     color: colors.warning,
+  },
+  classSlotWaitlistText: {
+    color: colors.info,
+  },
+  classSlotAttendingText: {
+    color: colors.success,
   },
   classSlotAvailableText: {
     color: colors.textSecondary,

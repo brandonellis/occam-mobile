@@ -94,8 +94,10 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
         serviceList = serviceList.filter((s) => s.booking_visibility !== 'members_only');
       }
 
-      // Hide services with online booking disabled (staff can still book internally)
-      serviceList = serviceList.filter((s) => s.online_booking_enabled !== false);
+      // Hide services with online booking disabled (coaches/staff can still book internally)
+      if (!isCoach) {
+        serviceList = serviceList.filter((s) => s.online_booking_enabled !== false);
+      }
 
       // Filter to only bookable services (must require coach, resource, or be class-like)
       // Matches web's ServiceSelection.jsx — services without any of these produce zero time slots

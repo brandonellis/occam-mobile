@@ -1,23 +1,23 @@
 import React, { useEffect, useCallback, useState, useMemo, useRef } from 'react';
-import { View, ScrollView, TouchableOpacity, FlatList, Animated } from 'react-native';
+import { View, ScrollView, TouchableOpacity, FlatList, Animated, Alert } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 
 import { getAvailableTimeSlots } from '../../services/availability.service';
-import { getAvailabilityMonthlySummary, getResources, getAvailableClassSessionsByCoach } from '../../services/bookings.api';
+import { getAvailabilityMonthlySummary, getResources, getAvailableClassSessionsByCoach, joinClassSessionWaitlist, leaveClassSessionWaitlist } from '../../services/bookings.api';
 import { filterResourcesNotFullyBlocked } from '../../helpers/closure.helper';
 import { isClassLike } from '../../helpers/normalizers.helper';
 import { buildClassSessionGroups } from '../../helpers/classSession.helper';
 import { colors, spacing } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
+import { COACH_ROLES } from '../../constants/auth.constants';
 import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
 import { generateDateRangeInTz, getFutureDateKey } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 import logger from '../../helpers/logger.helper';
-
 
 const AVAILABILITY_COLORS = {
   available: colors.success,
@@ -44,7 +44,8 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const { bookingData = {} } = route.params || {};
   const { service, coach, location } = bookingData;
 
-  const { company, user } = useAuth();
+  const { company, user, activeRole } = useAuth();
+  const isCoach = COACH_ROLES.includes(activeRole);
   const isClassService = useMemo(() => isClassLike(service), [service]);
 
   const [selectedDate, setSelectedDate] = useState(null);
@@ -58,6 +59,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const [classSlots, setClassSlots] = useState([]);
   const [classGroups, setClassGroups] = useState([]);
   const [classLoading, setClassLoading] = useState(false);
+  const [waitlistLoading, setWaitlistLoading] = useState(null);
 
   // Track whether slots have already been fetched for the current date
   const hasFetchedSlots = useRef(false);
@@ -318,6 +320,33 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     setSelectedSlot(slot);
   }, []);
 
+  const handleWaitlistAction = useCallback(async (slot) => {
+    if (!slot?.class_session_id || waitlistLoading) return;
+    const sessionId = slot.class_session_id;
+    const clientId = isCoach ? bookingData?.client?.id : user?.id;
+
+    setWaitlistLoading(sessionId);
+    try {
+      if (slot.on_waitlist) {
+        await leaveClassSessionWaitlist(sessionId, isCoach ? clientId : undefined);
+      } else {
+        await joinClassSessionWaitlist(sessionId, isCoach ? clientId : undefined);
+      }
+      // Refresh class sessions to get updated waitlist state
+      if (selectedDate) {
+        await loadClassSessions(selectedDate);
+      }
+      // Clear stale selection — slot data changed after waitlist action
+      setSelectedSlot(null);
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || 'Waitlist action failed.';
+      logger.warn('Waitlist action failed:', msg);
+      Alert.alert('Waitlist', msg);
+    } finally {
+      setWaitlistLoading(null);
+    }
+  }, [waitlistLoading, isCoach, bookingData?.client?.id, user?.id, selectedDate, loadClassSessions]);
+
   const handleContinue = useCallback(() => {
     if (!selectedSlot) return;
 
@@ -450,7 +479,44 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
                     const isSelected = selectedSlot?.class_session_id === slot.class_session_id;
                     const isFull = slot.is_full;
                     const isPast = slot.is_past;
-                    const isDisabled = isPast;
+                    const isAttending = slot.already_attending;
+                    const isOnWaitlist = slot.on_waitlist;
+                    const waitlistCount = slot.waitlist_count ?? 0;
+                    const waitlistAvailable = isFull && !isOnWaitlist && waitlistCount < 10;
+                    const isWaitlistBusy = waitlistLoading === slot.class_session_id;
+
+                    // Disable: past, already attending, or fully capped (no waitlist space)
+                    const isDisabled = isPast || isAttending || (isFull && !waitlistAvailable && !isOnWaitlist);
+
+                    // Compute a single status label (mutually exclusive)
+                    let statusLabel = null;
+                    let statusStyle = null;
+                    if (isAttending && !isPast) {
+                      statusLabel = 'Booked';
+                      statusStyle = styles.classSlotAttendingText;
+                    } else if (isOnWaitlist && !isPast) {
+                      statusLabel = isWaitlistBusy ? 'Leaving...' : 'On Waitlist';
+                      statusStyle = styles.classSlotWaitlistText;
+                    } else if (isFull && !isPast && waitlistAvailable) {
+                      statusLabel = isWaitlistBusy ? 'Joining...' : 'Join Waitlist';
+                      statusStyle = styles.classSlotFullText;
+                    } else if (isFull && !isPast) {
+                      statusLabel = 'Full';
+                      statusStyle = styles.classSlotFullText;
+                    } else if (slot.available != null && !isPast) {
+                      statusLabel = `${slot.available} spot${slot.available !== 1 ? 's' : ''}`;
+                      statusStyle = styles.classSlotAvailableText;
+                    }
+
+                    const handleSlotPress = () => {
+                      if (isDisabled) return;
+                      if (isFull || isOnWaitlist) {
+                        handleWaitlistAction(slot);
+                        return;
+                      }
+                      handleSelectSlot(slot);
+                    };
+
                     return (
                       <TouchableOpacity
                         key={`${slot.class_session_id}-${index}`}
@@ -458,11 +524,13 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
                           styles.timeSlot,
                           isSelected && styles.timeSlotSelected,
                           isDisabled && styles.classSlotDisabled,
-                          isFull && !isDisabled && styles.classSlotFull,
+                          isFull && !isDisabled && !isOnWaitlist && styles.classSlotFull,
+                          isOnWaitlist && !isDisabled && styles.classSlotWaitlist,
+                          isAttending && styles.classSlotAttending,
                         ]}
-                        onPress={() => !isDisabled && handleSelectSlot(slot)}
+                        onPress={handleSlotPress}
                         activeOpacity={isDisabled ? 1 : 0.7}
-                        disabled={isDisabled}
+                        disabled={isDisabled || isWaitlistBusy}
                         testID={`class-slot-${slot.class_session_id}`}
                       >
                         <Text
@@ -473,14 +541,9 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
                         >
                           {slot.display_time}
                         </Text>
-                        {isFull && !isPast && (
-                          <Text style={[styles.classSlotSubtext, styles.classSlotFullText]}>
-                            Full
-                          </Text>
-                        )}
-                        {slot.available != null && !isFull && !isPast && (
-                          <Text style={[styles.classSlotSubtext, styles.classSlotAvailableText]}>
-                            {slot.available} spot{slot.available !== 1 ? 's' : ''}
+                        {statusLabel && (
+                          <Text style={[styles.classSlotSubtext, statusStyle]}>
+                            {statusLabel}
                           </Text>
                         )}
                       </TouchableOpacity>

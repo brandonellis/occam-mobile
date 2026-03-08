@@ -82,3 +82,26 @@ export const getAvailableClassSessionsByCoach = async (params, options = {}) => 
   });
   return response.data;
 };
+
+/**
+ * Join the waitlist for a full class session.
+ * @param {number} classSessionId
+ * @param {number} [clientId] - Optional client ID (for coach flow)
+ */
+export const joinClassSessionWaitlist = async (classSessionId, clientId) => {
+  const payload = clientId ? { client_id: clientId } : {};
+  const response = await apiClient.post(`/class-sessions/${classSessionId}/waitlist`, payload);
+  return response.data;
+};
+
+/**
+ * Leave the waitlist for a class session.
+ * @param {number} classSessionId
+ * @param {number} [clientId] - Optional client ID (for coach flow)
+ */
+export const leaveClassSessionWaitlist = async (classSessionId, clientId) => {
+  const response = await apiClient.delete(`/class-sessions/${classSessionId}/waitlist`, {
+    data: clientId ? { client_id: clientId } : {},
+  });
+  return response.data;
+};
