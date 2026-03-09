@@ -8,7 +8,7 @@ const ActivityEmptyState = ({ filterActive, message }) => (
   <View style={styles.emptyContainer}>
     <View style={styles.emptyIconContainer}>
       <MaterialCommunityIcons
-        name={filterActive ? 'filter-outline' : 'pulse-outline'}
+        name={filterActive ? 'filter-outline' : 'timeline-clock-outline'}
         size={36}
         color={colors.accent}
       />

@@ -13,4 +13,5 @@ export const STORAGE_KEYS = {
   TENANT_ID: 'occam_tenant_id',
   ACTIVE_ROLE: 'occam_active_role',
   COMPANY_DATA: 'occam_company_data',
+  LAST_ORG: 'occam_last_org',
 };

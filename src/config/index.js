@@ -27,7 +27,7 @@ const ENV = {
 };
 
 const getEnvVars = () => {
-  const env = process.env.APP_ENV || 'development';
+  const env = process.env.EXPO_PUBLIC_APP_ENV || 'development';
   return ENV[env] || ENV.development;
 };
 

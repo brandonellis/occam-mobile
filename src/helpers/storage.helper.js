@@ -82,6 +82,18 @@ export const removeCompanyData = async () => {
   await SecureStore.deleteItemAsync(STORAGE_KEYS.COMPANY_DATA);
 };
 
+export const setLastOrg = async (org) => {
+  await SecureStore.setItemAsync(
+    STORAGE_KEYS.LAST_ORG,
+    JSON.stringify(org)
+  );
+};
+
+export const getLastOrg = async () => {
+  const data = await SecureStore.getItemAsync(STORAGE_KEYS.LAST_ORG);
+  return data ? JSON.parse(data) : null;
+};
+
 export const clearAllStorage = async () => {
   cachedToken = undefined;
   cachedTenantId = undefined;

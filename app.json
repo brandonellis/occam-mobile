@@ -16,6 +16,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.occamgolf.app",
+      "appStoreCompanyName": "Occam Software Inc.",
       "infoPlist": {
         "NSCameraUsageDescription": "Occam Golf needs camera access to record coaching videos.",
         "NSMicrophoneUsageDescription": "Occam Golf needs microphone access to record audio with coaching videos.",
