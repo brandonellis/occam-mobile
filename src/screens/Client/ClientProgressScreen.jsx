@@ -47,6 +47,7 @@ const ResourceCard = ({ resource, navigation }) => {
       navigation.navigate(SCREENS.VIDEO_PLAYER, {
         videoUrl: mediaUrl,
         videoTitle: resource.filename || 'Video',
+        uploadId: resource.upload_id,
       });
     }
   };

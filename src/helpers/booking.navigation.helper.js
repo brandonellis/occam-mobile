@@ -1,5 +1,4 @@
 import { Alert } from 'react-native';
-import { CommonActions } from '@react-navigation/native';
 
 /**
  * Shows a confirmation dialog and navigates back to the tab root,
@@ -17,19 +16,7 @@ export const confirmCancelBooking = (navigation) => {
         text: 'Discard',
         style: 'destructive',
         onPress: () => {
-          const state = navigation.getState();
-          const rootRouteName = state?.routes?.[0]?.name;
-
-          if (rootRouteName) {
-            navigation.dispatch(
-              CommonActions.reset({
-                index: 0,
-                routes: [{ name: rootRouteName }],
-              })
-            );
-          } else {
-            navigation.goBack();
-          }
+          navigation.popToTop();
         },
       },
     ]

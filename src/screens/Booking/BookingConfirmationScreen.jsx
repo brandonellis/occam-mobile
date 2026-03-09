@@ -35,6 +35,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   // Membership state
   const [membershipStatus, setMembershipStatus] = useState(null);
   const [membershipLoading, setMembershipLoading] = useState(false);
+  const [membershipRefreshKey, setMembershipRefreshKey] = useState(0);
 
   // Stripe card state
   const [cardComplete, setCardComplete] = useState(false);
@@ -154,10 +155,18 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       }
     })();
     return () => { cancelled = true; };
-  }, [clientId, service?.id]);
+  }, [clientId, service?.id, membershipRefreshKey]);
 
   const isMembershipBooking =
     membershipStatus?.hasActiveMembership && membershipStatus?.hasUsage;
+
+  // Resolve member price from plan-service pivot (if set)
+  const memberPriceCents = useMemo(() => {
+    if (!membershipStatus?.hasActiveMembership || !service?.id) return null;
+    const planServices = membershipStatus.planServices || [];
+    const serviceUsage = planServices.find(ps => ps.service_id === service.id);
+    return serviceUsage?.member_price ?? null;
+  }, [membershipStatus, service?.id]);
 
   // Per-service toggle: service does not require upfront payment
   const isPaymentNotRequired = service?.payment_required === false;
@@ -202,6 +211,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     durationMinutes: bookingData.duration_minutes || null,
     platformFeeRate,
     isMembershipBooking: !!isMembershipBooking,
+    memberPriceCents,
   });
 
   const formattedDate = timeSlot?.start_time
@@ -268,6 +278,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       const result = await createBooking(payload);
       const booking = result?.data || result;
       setCreatedBookingData(booking);
+      // Refresh membership data so allotment display reflects the consumed usage
+      setMembershipRefreshKey(prev => prev + 1);
       setShowSuccess(true);
     } catch (error) {
       Alert.alert('Booking Failed', extractErrorMessage(error));

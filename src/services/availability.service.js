@@ -23,13 +23,14 @@ const transformBackendSlots = (backendSlots, selectedDate, company, resourcePool
     ? resourcePool.map(r => (r.id || r.resource_id)).filter(Boolean).map(id => id.toString())
     : [];
 
+  const tz = getEffectiveTimezone(company);
+
   return (backendSlots || []).map(slot => {
     // Hermes-safe display formatting via Intl.DateTimeFormat
     const displayTime = formatTimeInTz(slot.start_time, company);
 
     // Build a short ID from the UTC start_time — extract HHmm in company TZ
     // Use Intl-based parts extraction for Hermes safety
-    const tz = getEffectiveTimezone(company);
     const startDate = new Date(slot.start_time);
     const hourStr = String(startDate.toLocaleString('en-US', { hour: '2-digit', hour12: false, timeZone: tz })).padStart(2, '0');
     const minStr = String(startDate.toLocaleString('en-US', { minute: '2-digit', timeZone: tz })).padStart(2, '0');

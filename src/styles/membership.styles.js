@@ -309,4 +309,204 @@ export const membershipStyles = StyleSheet.create({
     marginLeft: 8,
     color: colors.textSecondary,
   },
+
+  // ─── Active Membership Detail Card ──────────────────────────────────────────
+  detailCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.xl,
+    ...shadows.md,
+  },
+  detailCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  detailPlanIdentity: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.md,
+  },
+  detailPlanIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.accentSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  detailPlanInfo: {
+    flex: 1,
+  },
+  detailPlanName: {
+    ...typography.h3,
+    color: colors.textPrimary,
+  },
+  detailPlanBilling: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: 2,
+    fontSize: 13,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    gap: 5,
+    marginLeft: spacing.sm,
+  },
+  statusDot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+  },
+  statusBadgeText: {
+    ...typography.labelSmall,
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  detailDivider: {
+    height: 1,
+    backgroundColor: colors.borderLight,
+    marginVertical: spacing.lg,
+  },
+  detailMetaRow: {
+    flexDirection: 'row',
+    gap: spacing.xl,
+  },
+  detailMetaItem: {
+    flex: 1,
+  },
+  detailMetaLabel: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  detailMetaValue: {
+    ...typography.label,
+    color: colors.textPrimary,
+    fontSize: 14,
+  },
+  pauseBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.infoLight,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginTop: spacing.lg,
+  },
+  pauseBannerText: {
+    ...typography.body,
+    color: colors.info,
+    fontSize: 13,
+    flex: 1,
+  },
+  upgradeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    marginTop: spacing.lg,
+    minHeight: 48,
+  },
+  upgradeButtonText: {
+    ...typography.button,
+    color: colors.accent,
+  },
+
+  // ─── Section Title ──────────────────────────────────────────────────────────
+  sectionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginTop: spacing.xl,
+    marginBottom: spacing.md,
+  },
+  sectionTitleText: {
+    ...typography.label,
+    color: colors.textPrimary,
+    fontSize: 15,
+  },
+
+  // ─── Service Usage Cards ────────────────────────────────────────────────────
+  serviceCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+    ...shadows.sm,
+  },
+  serviceCardName: {
+    ...typography.label,
+    color: colors.textPrimary,
+    fontSize: 15,
+    marginBottom: spacing.md,
+  },
+  serviceUnlimited: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  serviceUnlimitedText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    fontSize: 14,
+  },
+  serviceUsageBold: {
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  serviceUsageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    marginBottom: spacing.md,
+  },
+  serviceUsageStat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  serviceUsageBig: {
+    ...typography.h2,
+    color: colors.textPrimary,
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  serviceUsageLabel: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    marginTop: 2,
+  },
+  serviceUsageDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.borderLight,
+  },
+  serviceProgressBar: {
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.borderLight,
+  },
+  serviceResetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.md,
+  },
+  serviceResetText: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+    fontSize: 12,
+  },
 });

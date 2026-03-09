@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { spacing } from '../theme/spacing';
+import { spacing, borderRadius, shadows } from '../theme/spacing';
 
 export const videoPlayerStyles = StyleSheet.create({
   container: {
@@ -74,5 +74,125 @@ export const videoPlayerStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+
+  // Video container (fixed height when annotations are shown)
+  videoContainer: {
+    backgroundColor: colors.black,
+    position: 'relative',
+  },
+
+  // Drawing overlay for annotations
+  drawingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
+
+  // Controls row when annotations are present
+  annotationControlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+    gap: spacing.sm,
+  },
+  annotationControlButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  annotationsBadge: {
+    ...typography.label,
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+
+  // Annotations list
+  annotationsListContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  annotationsList: {
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xxxl,
+  },
+  annotationItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+    gap: spacing.sm,
+    ...shadows.sm,
+  },
+  annotationItemActive: {
+    borderWidth: 1.5,
+    borderColor: colors.accent,
+  },
+  annotationTimestamp: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.accent + '15',
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    borderRadius: borderRadius.sm,
+  },
+  annotationTimeText: {
+    ...typography.label,
+    color: colors.accent,
+    fontSize: 12,
+    fontWeight: '600',
+    fontVariant: ['tabular-nums'],
+  },
+  annotationContent: {
+    flex: 1,
+  },
+  annotationComment: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  drawingPreview: {
+    marginTop: 4,
+    width: 60,
+    height: 34,
+    borderRadius: 4,
+    backgroundColor: colors.charcoal || '#2A2D34',
+    overflow: 'hidden',
+  },
+  annotationAuthor: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+    fontSize: 11,
+    marginTop: 4,
+  },
+
+  // Annotations loading & empty
+  annotationsLoadingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background,
+    paddingVertical: spacing.xl,
+  },
+  annotationsEmptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xl,
+    gap: spacing.sm,
+    backgroundColor: colors.background,
+  },
+  annotationsEmptyText: {
+    ...typography.body,
+    color: colors.textTertiary,
+    fontSize: 13,
   },
 });

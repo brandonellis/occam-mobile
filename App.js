@@ -5,6 +5,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PaperProvider } from 'react-native-paper';
 import AuthProvider from './src/providers/AuthProvider';
 import StripeConnectProvider from './src/providers/StripeConnectProvider';
+import NotificationBadgeProvider from './src/providers/NotificationBadgeProvider';
 import RootNavigator from './src/navigation/RootNavigator';
 import { navigationRef } from './src/helpers/navigation.helper';
 import ErrorBoundary from './src/components/ErrorBoundary';
@@ -30,8 +31,10 @@ export default function App() {
           <AuthProvider>
             <StripeConnectProvider>
               <NavigationContainer ref={navigationRef} theme={navigationTheme}>
-                <StatusBar style="dark" />
-                <RootNavigator />
+                <NotificationBadgeProvider>
+                  <StatusBar style="dark" />
+                  <RootNavigator />
+                </NotificationBadgeProvider>
               </NavigationContainer>
             </StripeConnectProvider>
           </AuthProvider>

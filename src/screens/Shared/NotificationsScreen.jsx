@@ -21,6 +21,7 @@ import { getTimeAgo } from '../../helpers/date.helper';
 import { notificationsStyles as styles } from '../../styles/notifications.styles';
 import { ListSkeleton } from '../../components/SkeletonLoader';
 import { colors } from '../../theme';
+import useUnreadNotifications from '../../hooks/useUnreadNotifications';
 import logger from '../../helpers/logger.helper';
 
 const ICON_MAP = {
@@ -37,6 +38,7 @@ const NotificationsScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const { refresh: refreshBadge } = useUnreadNotifications();
 
   const loadNotifications = useCallback(async (showRefresh = false) => {
     try {
@@ -68,6 +70,7 @@ const NotificationsScreen = ({ navigation }) => {
             n.id === notification.id ? { ...n, read_at: new Date().toISOString() } : n
           )
         );
+        refreshBadge({ force: true });
       } catch (err) {
         logger.warn('Failed to mark notification as read:', err.message);
       }
@@ -78,7 +81,7 @@ const NotificationsScreen = ({ navigation }) => {
     if (data?.booking_id) {
       navigation.navigate(SCREENS.BOOKING_DETAIL, { bookingId: data.booking_id });
     }
-  }, [navigation]);
+  }, [navigation, refreshBadge]);
 
   const handleMarkAllRead = useCallback(async () => {
     try {
@@ -86,10 +89,11 @@ const NotificationsScreen = ({ navigation }) => {
       setNotifications((prev) =>
         prev.map((n) => ({ ...n, read_at: n.read_at || new Date().toISOString() }))
       );
+      refreshBadge({ force: true });
     } catch (err) {
       logger.warn('Failed to mark all notifications as read:', err.message);
     }
-  }, []);
+  }, [refreshBadge]);
 
   const hasUnread = notifications.some((n) => !n.read_at);
 

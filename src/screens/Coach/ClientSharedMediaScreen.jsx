@@ -49,6 +49,7 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
       navigation.navigate(SCREENS.VIDEO_PLAYER, {
         videoUrl: mediaUrl,
         videoTitle: item.filename || 'Video',
+        uploadId: item.upload_id,
       });
     }
   };

@@ -69,6 +69,7 @@ export const calculatePlatformFee = (subtotal, feeRate = 0) => {
  * @param {number|null} params.durationMinutes - Selected duration (for variable services)
  * @param {number} params.platformFeeRate    - Decimal rate (e.g. 0.04 for 4%)
  * @param {boolean} params.isMembershipBooking - Whether membership covers this booking
+ * @param {number|null} [params.memberPriceCents] - Member price in cents (overrides service.price)
  * @param {Object} [params.currencyOpts]     - { locale, currency }
  * @returns {Object} Payment summary
  */
@@ -77,9 +78,19 @@ export const buildPaymentSummary = ({
   durationMinutes = null,
   platformFeeRate = 0,
   isMembershipBooking = false,
+  memberPriceCents = null,
   currencyOpts = {},
 }) => {
-  const subtotal = calculateEffectivePrice(service, durationMinutes);
+  let subtotal;
+  if (memberPriceCents !== null && !isMembershipBooking) {
+    subtotal = memberPriceCents / 100;
+    if (service?.is_variable_duration && durationMinutes) {
+      const baseDuration = (service.duration_minutes != null && service.duration_minutes > 0) ? service.duration_minutes : 60;
+      subtotal = Math.round((durationMinutes / baseDuration) * subtotal * 100) / 100;
+    }
+  } else {
+    subtotal = calculateEffectivePrice(service, durationMinutes);
+  }
   const platformFee = isMembershipBooking
     ? 0
     : calculatePlatformFee(subtotal, platformFeeRate);
