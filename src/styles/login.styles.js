@@ -45,11 +45,13 @@ export const loginStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 14,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 18,
     ...typography.body,
+    lineHeight: undefined,
+    textAlignVertical: 'center',
     color: colors.textInverse,
-    minHeight: 48,
+    minHeight: 56,
   },
   inputFocused: {
     borderColor: colors.accent,
@@ -61,10 +63,10 @@ export const loginStyles = StyleSheet.create({
   loginButton: {
     backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
-    paddingVertical: 14,
+    paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 52,
+    minHeight: 56,
     marginTop: spacing.sm,
   },
   loginButtonDisabled: {
@@ -78,7 +80,7 @@ export const loginStyles = StyleSheet.create({
   },
   forgotPassword: {
     alignItems: 'center',
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.lg,
   },
   forgotPasswordText: {
     ...typography.body,
@@ -171,12 +173,12 @@ export const loginStyles = StyleSheet.create({
   googleButton: {
     backgroundColor: colors.white,
     borderRadius: borderRadius.md,
-    paddingVertical: 13,
+    paddingVertical: 18,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
     gap: 10,
-    minHeight: 52,
+    minHeight: 56,
   },
   googleButtonDisabled: {
     opacity: 0.4,
@@ -211,5 +213,12 @@ export const loginStyles = StyleSheet.create({
     color: colors.errorSoft,
     textAlign: 'center',
     fontSize: 14,
+  },
+  forgotPasswordDescription: {
+    ...typography.body,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    marginBottom: 16,
+    lineHeight: 20,
   },
 });

@@ -10,7 +10,6 @@ import {
   ActivityIndicator,
   Image,
   StatusBar,
-  Linking,
   Alert,
 } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -28,8 +27,9 @@ try {
   // Native module not available — Google Sign-In will be disabled
 }
 import useAuth from '../../hooks/useAuth';
-import { googleSignInNative } from '../../services/auth.api';
+import { googleSignInNative, forgotPassword } from '../../services/auth.api';
 import { searchTenants } from '../../services/tenants.api';
+import { getLastOrg, setLastOrg } from '../../helpers/storage.helper';
 import { loginStyles as styles } from '../../styles/login.styles';
 import { colors } from '../../theme';
 import config from '../../config';
@@ -51,6 +51,22 @@ const LoginScreen = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const searchTimer = useRef(null);
+
+  // Load last selected organization on mount
+  useEffect(() => {
+    const loadLastOrg = async () => {
+      try {
+        const saved = await getLastOrg();
+        if (saved) {
+          setSelectedOrg(saved);
+          setOrgQuery(saved.name || saved.domain || saved.id);
+        }
+      } catch (e) {
+        // Ignore storage errors
+      }
+    };
+    loadLastOrg();
+  }, []);
 
   // Debounced search
   useEffect(() => {
@@ -86,6 +102,7 @@ const LoginScreen = () => {
     setOrgQuery(org.name || org.domain || org.id);
     setShowResults(false);
     setOrgResults([]);
+    setLastOrg(org).catch(() => {});
   }, []);
 
   const handleClearOrg = useCallback(() => {
@@ -174,17 +191,46 @@ const LoginScreen = () => {
     [error, clearError]
   );
 
+  // Forgot password state
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+
   const handleForgotPassword = useCallback(() => {
     if (!selectedOrg) {
-      Alert.alert('Organization Required', 'Please select your organization first so we can direct you to the correct password reset page.');
+      Alert.alert('Organization Required', 'Please select your organization first.');
       return;
     }
-    const domain = selectedOrg.domain || `${selectedOrg.id}.occam.golf`;
-    const resetUrl = `https://${domain}/forgot-password`;
-    Linking.openURL(resetUrl).catch(() => {
-      Alert.alert('Unable to Open', 'Could not open the password reset page. Please visit your organization\'s website directly.');
-    });
-  }, [selectedOrg]);
+    setResetEmail(email);
+    setShowForgotPassword(true);
+    if (error) clearError();
+  }, [selectedOrg, email, error, clearError]);
+
+  const handleSendResetLink = useCallback(async () => {
+    if (!resetEmail.trim()) {
+      Alert.alert('Email Required', 'Please enter your email address.');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      await forgotPassword(resetEmail.trim());
+      Alert.alert(
+        'Check Your Email',
+        'If an account exists with that email, a password reset link has been sent.',
+        [{ text: 'OK', onPress: () => setShowForgotPassword(false) }]
+      );
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Failed to send reset email. Please try again.';
+      Alert.alert('Error', msg);
+    } finally {
+      setResetLoading(false);
+    }
+  }, [resetEmail]);
+
+  const handleBackToLogin = useCallback(() => {
+    setShowForgotPassword(false);
+    if (error) clearError();
+  }, [error, clearError]);
 
   const isFormValid = email.trim() && password.trim() && selectedOrg;
 
@@ -278,99 +324,149 @@ const LoginScreen = () => {
               )}
             </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'email' && styles.inputFocused,
-                ]}
-                placeholder="Enter your email"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                value={email}
-                onChangeText={handleFieldChange(setEmail)}
-                onFocus={() => setFocusedField('email')}
-                onBlur={() => setFocusedField(null)}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="email-address"
-                textContentType="emailAddress"
-              />
-            </View>
+            {showForgotPassword ? (
+              <>
+                <Text style={styles.forgotPasswordDescription}>
+                  Enter your email address and we'll send you a link to reset your password.
+                </Text>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={[
-                  styles.input,
-                  focusedField === 'password' && styles.inputFocused,
-                ]}
-                placeholder="Enter your password"
-                placeholderTextColor="rgba(255,255,255,0.3)"
-                value={password}
-                onChangeText={handleFieldChange(setPassword)}
-                onFocus={() => setFocusedField('password')}
-                onBlur={() => setFocusedField(null)}
-                secureTextEntry
-                textContentType="password"
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.loginButton,
-                (!isFormValid || isLoading) && styles.loginButtonDisabled,
-              ]}
-              onPress={handleLogin}
-              disabled={!isFormValid || isLoading}
-              activeOpacity={0.8}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={colors.textInverse} />
-              ) : (
-                <Text style={styles.loginButtonText}>Sign In</Text>
-              )}
-            </TouchableOpacity>
-
-            {/* Divider */}
-            <View style={styles.dividerRow}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            {/* Google Sign-In */}
-            <TouchableOpacity
-              style={[
-                styles.googleButton,
-                (!selectedOrg || googleLoading) && styles.googleButtonDisabled,
-              ]}
-              onPress={handleGoogleSignIn}
-              disabled={!selectedOrg || googleLoading}
-              activeOpacity={0.8}
-            >
-              {googleLoading ? (
-                <ActivityIndicator size="small" color={colors.textPrimary} />
-              ) : (
-                <>
-                  <Image
-                    source={googleIcon}
-                    style={styles.googleIcon}
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      focusedField === 'resetEmail' && styles.inputFocused,
+                    ]}
+                    placeholder="Enter your email"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    value={resetEmail}
+                    onChangeText={setResetEmail}
+                    onFocus={() => setFocusedField('resetEmail')}
+                    onBlur={() => setFocusedField(null)}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    textContentType="emailAddress"
                   />
-                  <Text style={styles.googleButtonText}>Continue with Google</Text>
-                </>
-              )}
-            </TouchableOpacity>
+                </View>
 
-            {!selectedOrg && (
-              <Text style={styles.googleHint}>
-                Select your organization first to sign in with Google
-              </Text>
+                <TouchableOpacity
+                  style={[
+                    styles.loginButton,
+                    (!resetEmail.trim() || resetLoading) && styles.loginButtonDisabled,
+                  ]}
+                  onPress={handleSendResetLink}
+                  disabled={!resetEmail.trim() || resetLoading}
+                  activeOpacity={0.8}
+                >
+                  {resetLoading ? (
+                    <ActivityIndicator color={colors.textInverse} />
+                  ) : (
+                    <Text style={styles.loginButtonText}>Send Reset Link</Text>
+                  )}
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.6} onPress={handleBackToLogin}>
+                  <Text style={styles.forgotPasswordText}>Back to Sign In</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Email</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      focusedField === 'email' && styles.inputFocused,
+                    ]}
+                    placeholder="Enter your email"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    value={email}
+                    onChangeText={handleFieldChange(setEmail)}
+                    onFocus={() => setFocusedField('email')}
+                    onBlur={() => setFocusedField(null)}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    keyboardType="email-address"
+                    textContentType="emailAddress"
+                  />
+                </View>
+
+                <View style={styles.fieldGroup}>
+                  <Text style={styles.label}>Password</Text>
+                  <TextInput
+                    style={[
+                      styles.input,
+                      focusedField === 'password' && styles.inputFocused,
+                    ]}
+                    placeholder="Enter your password"
+                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    value={password}
+                    onChangeText={handleFieldChange(setPassword)}
+                    onFocus={() => setFocusedField('password')}
+                    onBlur={() => setFocusedField(null)}
+                    secureTextEntry
+                    textContentType="password"
+                  />
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.loginButton,
+                    (!isFormValid || isLoading) && styles.loginButtonDisabled,
+                  ]}
+                  onPress={handleLogin}
+                  disabled={!isFormValid || isLoading}
+                  activeOpacity={0.8}
+                >
+                  {isLoading ? (
+                    <ActivityIndicator color={colors.textInverse} />
+                  ) : (
+                    <Text style={styles.loginButtonText}>Sign In</Text>
+                  )}
+                </TouchableOpacity>
+
+                {/* Divider */}
+                <View style={styles.dividerRow}>
+                  <View style={styles.dividerLine} />
+                  <Text style={styles.dividerText}>or</Text>
+                  <View style={styles.dividerLine} />
+                </View>
+
+                {/* Google Sign-In */}
+                <TouchableOpacity
+                  style={[
+                    styles.googleButton,
+                    (!selectedOrg || googleLoading) && styles.googleButtonDisabled,
+                  ]}
+                  onPress={handleGoogleSignIn}
+                  disabled={!selectedOrg || googleLoading}
+                  activeOpacity={0.8}
+                >
+                  {googleLoading ? (
+                    <ActivityIndicator size="small" color={colors.textPrimary} />
+                  ) : (
+                    <>
+                      <Image
+                        source={googleIcon}
+                        style={styles.googleIcon}
+                      />
+                      <Text style={styles.googleButtonText}>Continue with Google</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                {!selectedOrg && (
+                  <Text style={styles.googleHint}>
+                    Select your organization first to sign in with Google
+                  </Text>
+                )}
+
+                <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.6} onPress={handleForgotPassword}>
+                  <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                </TouchableOpacity>
+              </>
             )}
-
-            <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.6} onPress={handleForgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
