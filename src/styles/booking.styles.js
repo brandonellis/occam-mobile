@@ -78,6 +78,23 @@ export const bookingStyles = StyleSheet.create({
     color: colors.accent,
     fontSize: 16,
   },
+  servicePriceGroup: {
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 2,
+  },
+  servicePriceOriginal: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+    fontSize: 13,
+    textDecorationLine: 'line-through',
+  },
+  servicePriceIncluded: {
+    ...typography.label,
+    color: colors.success,
+    fontSize: 14,
+    fontWeight: '600',
+  },
   serviceDuration: {
     ...typography.bodySmall,
     color: colors.textTertiary,

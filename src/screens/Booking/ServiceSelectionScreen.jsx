@@ -9,6 +9,7 @@ import { formatDuration } from '../../constants/booking.constants';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { getServices, getLocations } from '../../services/bookings.api';
 import { getCurrentClientMembership, getMyMembership } from '../../services/accounts.api';
+import { isMembershipActive, buildMembershipAllotments } from '../../helpers/membership.helper';
 import { resolveLocationAndRoute } from '../../helpers/booking.helper';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import { isClassLike } from '../../helpers/normalizers.helper';
@@ -26,6 +27,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
     error: null,
     membershipFiltered: false,
     membershipPlanName: null,
+    membershipAllotments: null,
   });
 
   const { user, activeRole } = useAuth();
@@ -65,12 +67,15 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
       let hasActiveMembership = false;
       let membershipFiltered = false;
       let membershipPlanName = null;
+      let membershipAllotments = null;
       if (membershipRes.status === 'fulfilled' && membershipRes.value?.data) {
         const membership = membershipRes.value.data;
-        const stripeStatus = (membership.stripe_status || '').toLowerCase();
-        const endDate = membership.end_date || membership.ends_at || null;
-        const notEnded = !endDate || new Date(endDate) >= new Date();
-        hasActiveMembership = (stripeStatus === 'active' || ((stripeStatus === 'canceled' || stripeStatus === 'cancelled') && notEnded)) && !membership.is_paused;
+        hasActiveMembership = isMembershipActive(membership);
+
+        // Build per-service allotment map for pricing display (both flows)
+        if (hasActiveMembership) {
+          membershipAllotments = buildMembershipAllotments(membership);
+        }
 
         // Coach flow: narrow to services covered by the client's membership plan
         // Client flow: show ALL services (matches web ExternalServiceSelection behavior)
@@ -109,6 +114,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
         error: null,
         membershipFiltered,
         membershipPlanName,
+        membershipAllotments,
       });
     } catch (err) {
       logger.warn('Failed to load services:', err.message);
@@ -220,33 +226,47 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
               </Text>
             </View>
           )}
-          {state.services.map((service) => (
-            <TouchableRipple
-              key={service.id}
-              style={styles.serviceCard}
-              onPress={() => handleSelectService(service)}
-              borderless
-              testID={`service-card-${service.id}`}
-            >
-              <View>
-                <Text style={styles.serviceName}>{service.name}</Text>
-                {service.description && (
-                  <Text style={styles.serviceDescription} numberOfLines={2}>
-                    {service.description}
-                  </Text>
-                )}
-                <View style={styles.serviceFooter}>
-                  <Text style={styles.servicePrice}>
-                    {service.is_variable_duration ? 'From ' : ''}
-                    {formatCurrency(parseFloat(service.price) || 0)}
-                  </Text>
-                  <Text style={styles.serviceDuration}>
-                    {formatDuration(service.duration_minutes)}
-                  </Text>
+          {state.services.map((service) => {
+            const allotment = state.membershipAllotments?.[service.id];
+            const hasRemainingAllotment = allotment && (allotment.remaining === null || allotment.remaining > 0);
+            return (
+              <TouchableRipple
+                key={service.id}
+                style={styles.serviceCard}
+                onPress={() => handleSelectService(service)}
+                borderless
+                testID={`service-card-${service.id}`}
+              >
+                <View>
+                  <Text style={styles.serviceName}>{service.name}</Text>
+                  {service.description && (
+                    <Text style={styles.serviceDescription} numberOfLines={2}>
+                      {service.description}
+                    </Text>
+                  )}
+                  <View style={styles.serviceFooter}>
+                    {hasRemainingAllotment ? (
+                      <View style={styles.servicePriceGroup}>
+                        <Text style={styles.servicePriceOriginal}>
+                          {service.is_variable_duration ? 'From ' : ''}
+                          {formatCurrency(parseFloat(service.price) || 0)}
+                        </Text>
+                        <Text style={styles.servicePriceIncluded}>Included</Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.servicePrice}>
+                        {service.is_variable_duration ? 'From ' : ''}
+                        {formatCurrency(parseFloat(service.price) || 0)}
+                      </Text>
+                    )}
+                    <Text style={styles.serviceDuration}>
+                      {formatDuration(service.duration_minutes)}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-            </TouchableRipple>
-          ))}
+              </TouchableRipple>
+            );
+          })}
         </ScrollView>
       )}
     </SafeAreaView>
