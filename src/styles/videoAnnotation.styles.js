@@ -32,6 +32,31 @@ export const videoAnnotationStyles = StyleSheet.create({
     height: '100%',
   },
 
+  videoContainerDrawing: {
+    borderWidth: 2,
+    borderColor: colors.accent,
+  },
+  drawingModeLabel: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.accent,
+    paddingVertical: 3,
+    paddingHorizontal: spacing.sm,
+    borderRadius: borderRadius.sm,
+    zIndex: 10,
+  },
+  drawingModeLabelText: {
+    ...typography.labelSmall,
+    color: colors.textInverse,
+    fontSize: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
   // Scrubber / seek bar
   scrubberContainer: {
     flexDirection: 'row',
@@ -74,13 +99,15 @@ export const videoAnnotationStyles = StyleSheet.create({
   },
   scrubberThumb: {
     position: 'absolute',
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: colors.accent,
-    marginLeft: -8,
-    top: 14,
-    ...shadows.sm,
+    borderWidth: 2,
+    borderColor: colors.white,
+    marginLeft: -10,
+    top: 12,
+    ...shadows.md,
   },
   scrubberMarker: {
     position: 'absolute',
@@ -127,9 +154,11 @@ export const videoAnnotationStyles = StyleSheet.create({
   captureButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    minHeight: 36,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: borderRadius.sm,
     backgroundColor: colors.accent + '15',
   },
@@ -164,6 +193,9 @@ export const videoAnnotationStyles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'transparent',
   },
+  colorSwatchWhite: {
+    borderColor: colors.gray300,
+  },
   colorSwatchActive: {
     borderColor: colors.textPrimary,
     transform: [{ scale: 1.15 }],
@@ -180,7 +212,9 @@ export const videoAnnotationStyles = StyleSheet.create({
   commentInput: {
     ...typography.body,
     color: colors.textPrimary,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.gray50,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -259,12 +293,17 @@ export const videoAnnotationStyles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  deleteButton: {
+    padding: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   drawingPreview: {
     marginTop: 4,
     width: 60,
     height: 34,
     borderRadius: 4,
-    backgroundColor: colors.charcoal || '#2A2D34',
+    backgroundColor: colors.gray800,
     overflow: 'hidden',
   },
   annotationAuthor: {

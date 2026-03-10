@@ -165,7 +165,7 @@ export const videoPlayerStyles = StyleSheet.create({
     width: 60,
     height: 34,
     borderRadius: 4,
-    backgroundColor: colors.charcoal || '#2A2D34',
+    backgroundColor: colors.gray800,
     overflow: 'hidden',
   },
   annotationAuthor: {

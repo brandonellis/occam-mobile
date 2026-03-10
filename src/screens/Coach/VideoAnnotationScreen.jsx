@@ -35,7 +35,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const DRAW_COLORS = [
   colors.destructive,
   colors.warning,
-  colors.peachGlow,
+  colors.aqua,
   colors.success,
   colors.info,
   colors.white,
@@ -292,13 +292,32 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
     if (isPlaying) {
       player.pause();
     } else {
-      setCapturedTimestamp(null);
-      setIsDrawing(false);
-      setPaths([]);
-      setCurrentPath('');
+      const hasUnsavedWork = capturedTimestamp !== null || paths.length > 0 || comment.trim().length > 0;
+      if (hasUnsavedWork) {
+        Alert.alert(
+          'Discard Annotation?',
+          'Playing the video will discard your current annotation work.',
+          [
+            { text: 'Keep Editing', style: 'cancel' },
+            {
+              text: 'Discard & Play',
+              style: 'destructive',
+              onPress: () => {
+                setCapturedTimestamp(null);
+                setIsDrawing(false);
+                setPaths([]);
+                setCurrentPath('');
+                setComment('');
+                player.play();
+              },
+            },
+          ]
+        );
+        return;
+      }
       player.play();
     }
-  }, [player, isPlaying]);
+  }, [player, isPlaying, capturedTimestamp, paths, comment]);
 
   const handleFrameStep = useCallback((direction) => {
     if (!player) return;
@@ -358,9 +377,10 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
         </View>
         <TouchableOpacity
           onPress={() => handleDeleteAnnotation(item.id)}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+          style={styles.deleteButton}
         >
-          <MaterialCommunityIcons name="trash-can-outline" size={16} color={colors.error} />
+          <MaterialCommunityIcons name="trash-can-outline" size={18} color={colors.error} />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -378,7 +398,13 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {/* Video player + drawing overlay */}
-        <View style={[styles.videoContainer, { height: VIDEO_HEIGHT }]}>
+        <View style={[styles.videoContainer, { height: VIDEO_HEIGHT }, isDrawing && styles.videoContainerDrawing]}>
+          {isDrawing && (
+            <View style={styles.drawingModeLabel} pointerEvents="none">
+              <MaterialCommunityIcons name="draw" size={12} color={colors.textInverse} />
+              <Text style={styles.drawingModeLabelText}>Draw Mode</Text>
+            </View>
+          )}
           <VideoView
             player={player}
             style={styles.video}
@@ -548,6 +574,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
                 style={[
                   styles.colorSwatch,
                   { backgroundColor: c },
+                  c === colors.white && styles.colorSwatchWhite,
                   drawColor === c && styles.colorSwatchActive,
                 ]}
                 onPress={() => setDrawColor(c)}
