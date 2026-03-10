@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Image, View, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getToken, getTenantId } from '../helpers/storage.helper';
+import { resolveMediaUrl } from '../helpers/media.helper';
 import { colors } from '../theme';
 
 /**
@@ -13,9 +14,12 @@ import { colors } from '../theme';
 const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon = 'image-outline', placeholderSize = 32 }) => {
   const [source, setSource] = useState(null);
   const [failed, setFailed] = useState(false);
+  const [resolvedUri, setResolvedUri] = useState(null);
+  const retriedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
+    retriedRef.current = false;
 
     const buildSource = async () => {
       if (!uri) {
@@ -25,6 +29,7 @@ const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon 
 
       try {
         const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
+        const resolved = resolveMediaUrl(uri);
         const headers = {};
 
         if (token) {
@@ -35,12 +40,15 @@ const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon 
         }
 
         if (mounted) {
-          setSource({ uri, headers });
+          setResolvedUri(resolved);
+          setSource({ uri: resolved, headers });
           setFailed(false);
         }
       } catch {
+        const resolved = resolveMediaUrl(uri);
         if (mounted) {
-          setSource({ uri });
+          setResolvedUri(resolved);
+          setSource({ uri: resolved });
           setFailed(false);
         }
       }
@@ -71,7 +79,14 @@ const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon 
       source={source}
       style={style}
       resizeMode={resizeMode}
-      onError={() => setFailed(true)}
+      onError={() => {
+        if (source?.headers && resolvedUri && !retriedRef.current) {
+          retriedRef.current = true;
+          setSource({ uri: resolvedUri });
+          return;
+        }
+        setFailed(true);
+      }}
     />
   );
 };

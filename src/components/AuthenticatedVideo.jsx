@@ -4,6 +4,7 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEvent } from 'expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getToken, getTenantId } from '../helpers/storage.helper';
+import { resolveMediaUrl } from '../helpers/media.helper';
 import { colors } from '../theme';
 
 /**
@@ -34,7 +35,8 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
   // Build video source with auth headers
   const videoSource = useMemo(() => {
     if (!uri || !headers) return null;
-    return { uri, headers };
+    const resolved = resolveMediaUrl(uri);
+    return { uri: resolved, headers };
   }, [uri, headers]);
 
   const player = useVideoPlayer(videoSource, (p) => {
