@@ -402,11 +402,14 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
                     activeOpacity={0.8}
                     onPress={() => {
                       onClose();
+                      const isGroup = resourceData.source === 'group';
                       setTimeout(() => {
                         navigation.navigate(SCREENS.VIDEO_PLAYER, {
                           videoUrl: resourceData.url,
                           videoTitle: resourceData.filename || 'Video',
                           uploadId: resourceData.upload_id || undefined,
+                          targetType: isGroup ? 'group' : 'client',
+                          targetId: isGroup ? resourceData.group?.id : resourceData.client_id,
                         });
                       }, 300);
                     }}

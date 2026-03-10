@@ -35,7 +35,7 @@ const getDocumentIcon = (mime) => {
   return 'file-document-outline';
 };
 
-const ResourceCard = ({ resource, navigation }) => {
+const ResourceCard = ({ resource, navigation, clientId }) => {
   const mime = resource.mime_type || '';
   const isVideo = mime.startsWith('video/');
   const isImage = mime.startsWith('image/');
@@ -44,10 +44,13 @@ const ResourceCard = ({ resource, navigation }) => {
 
   const handleVideoPress = () => {
     if (mediaUrl) {
+      const isGroup = resource.source === 'group';
       navigation.navigate(SCREENS.VIDEO_PLAYER, {
         videoUrl: mediaUrl,
         videoTitle: resource.filename || 'Video',
         uploadId: resource.upload_id,
+        targetType: isGroup ? 'group' : 'client',
+        targetId: isGroup ? resource.group?.id : clientId,
       });
     }
   };
@@ -380,7 +383,7 @@ const ClientProgressScreen = () => {
     // If all resources are personal (no groups), render flat like before
     if (!hasGroups) {
       return personalResources.map((resource) => (
-        <ResourceCard key={resource.id} resource={resource} navigation={navigation} />
+        <ResourceCard key={resource.id} resource={resource} navigation={navigation} clientId={clientId} />
       ));
     }
 
@@ -408,7 +411,7 @@ const ClientProgressScreen = () => {
               />
             </TouchableOpacity>
             {!personalCollapsed && personalResources.map((resource) => (
-              <ResourceCard key={resource.id} resource={resource} navigation={navigation} />
+              <ResourceCard key={resource.id} resource={resource} navigation={navigation} clientId={clientId} />
             ))}
           </>
         )}
@@ -436,7 +439,7 @@ const ClientProgressScreen = () => {
                 />
               </TouchableOpacity>
               {!isCollapsed && group.items.map((resource) => (
-                <ResourceCard key={resource.id} resource={resource} navigation={navigation} />
+                <ResourceCard key={resource.id} resource={resource} navigation={navigation} clientId={clientId} />
               ))}
             </React.Fragment>
           );
