@@ -1,6 +1,7 @@
 import React from 'react';
 import { Avatar as PaperAvatar } from 'react-native-paper';
 import { colors } from '../theme/colors';
+import { resolveMediaUrl } from '../helpers/media.helper';
 
 const Avatar = ({ uri, name, size = 40 }) => {
   const initials = name
@@ -12,10 +13,12 @@ const Avatar = ({ uri, name, size = 40 }) => {
         .slice(0, 2)
     : '?';
 
-  if (uri) {
+  const resolvedUri = resolveMediaUrl(uri);
+
+  if (resolvedUri) {
     return (
       <PaperAvatar.Image
-        source={{ uri }}
+        source={{ uri: resolvedUri }}
         size={size}
         style={{ backgroundColor: colors.border }}
       />

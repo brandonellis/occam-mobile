@@ -610,4 +610,21 @@ export const activityFeedStyles = StyleSheet.create({
   composerSendDisabled: {
     opacity: 0.4,
   },
+  videoFullscreenBadge: {
+    position: 'absolute',
+    bottom: 12,
+    right: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  videoFullscreenBadgeText: {
+    color: colors.white,
+    fontSize: 12,
+    marginLeft: 4,
+    fontWeight: '600',
+  },
 });

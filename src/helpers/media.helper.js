@@ -15,6 +15,22 @@ import config from '../config';
  * @param {string|null|undefined} url
  * @returns {string|null}
  */
+/**
+ * Extract the primary image URL from a service's media array.
+ * Matches the web client's getServiceImageUrl() in serviceHelpers.js.
+ *
+ * @param {Object} service - Service object with optional media array
+ * @returns {string|null}
+ */
+export const getServiceImageUrl = (service) => {
+  if (!service?.media || !Array.isArray(service.media) || service.media.length === 0) {
+    return null;
+  }
+  const primary = service.media[0];
+  if (!primary) return null;
+  return primary.url || primary.file_url || primary.file_path || null;
+};
+
 export const resolveMediaUrl = (url) => {
   if (!url) return null;
 

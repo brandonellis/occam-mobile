@@ -48,8 +48,8 @@ export const bookingStyles = StyleSheet.create({
   serviceCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
     marginBottom: spacing.md,
+    overflow: 'hidden',
     ...shadows.sm,
     borderWidth: 1.5,
     borderColor: 'transparent',
@@ -57,6 +57,22 @@ export const bookingStyles = StyleSheet.create({
   serviceCardSelected: {
     borderColor: colors.accent,
     backgroundColor: colors.white,
+  },
+  serviceCardRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  serviceCardImage: {
+    width: 80,
+    height: 80,
+    borderRadius: borderRadius.md,
+    marginLeft: spacing.lg,
+    marginVertical: spacing.lg,
+    backgroundColor: colors.borderLight,
+  },
+  serviceCardContent: {
+    flex: 1,
+    padding: spacing.lg,
   },
   serviceName: {
     ...typography.h3,

@@ -417,9 +417,9 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
                       style={{ width: '100%', height: 240 }}
                       borderRadius={12}
                     />
-                    <View style={{ position: 'absolute', bottom: 12, right: 12, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5 }}>
+                    <View style={styles.videoFullscreenBadge}>
                       <MaterialCommunityIcons name="fullscreen" size={16} color={colors.white} />
-                      <Text style={{ color: colors.white, fontSize: 12, marginLeft: 4, fontWeight: '600' }}>Full Screen</Text>
+                      <Text style={styles.videoFullscreenBadgeText}>Full Screen</Text>
                     </View>
                   </TouchableOpacity>
                 ) : (

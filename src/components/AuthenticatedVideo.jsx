@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getToken, getTenantId } from '../helpers/storage.helper';
 import { resolveMediaUrl } from '../helpers/media.helper';
 import { colors } from '../theme';
+import { authenticatedVideoStyles as vidStyles } from '../styles/authenticatedVideo.styles';
 
 /**
  * Video player component that passes Authorization and X-Tenant headers.
@@ -92,7 +93,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
 
   if (failed || !uri) {
     return (
-      <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.gray100, borderRadius }]}>
+      <View style={[style, vidStyles.failedContainer, { borderRadius }]}>
         <MaterialCommunityIcons name="video-off-outline" size={32} color={colors.gray400} />
       </View>
     );
@@ -100,7 +101,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
 
   if (!headers) {
     return (
-      <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.gray100, borderRadius }]}>
+      <View style={[style, vidStyles.loadingContainer, { borderRadius }]}>
         <ActivityIndicator size="small" color={colors.accent} />
       </View>
     );
@@ -114,7 +115,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
       <VideoView
         ref={videoViewRef}
         player={player}
-        style={{ width: '100%', height: '100%' }}
+        style={vidStyles.videoView}
         contentFit="cover"
         nativeControls
       />
@@ -122,24 +123,10 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
         <TouchableOpacity
           activeOpacity={0.9}
           onPress={handlePlayPause}
-          style={{
-            ...absoluteFill,
-            alignItems: 'center',
-            justifyContent: 'center',
-            backgroundColor: 'rgba(0,0,0,0.25)',
-          }}
+          style={vidStyles.playOverlay}
         >
-          <View
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 28,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
-            <MaterialCommunityIcons name="play" size={28} color={colors.white} style={{ marginLeft: 3 }} />
+          <View style={vidStyles.playButton}>
+            <MaterialCommunityIcons name="play" size={28} color={colors.white} style={vidStyles.playIcon} />
           </View>
         </TouchableOpacity>
       ) : null}
@@ -147,37 +134,19 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={handleFullscreen}
-          style={{
-            position: 'absolute',
-            bottom: 8,
-            right: 8,
-            width: 36,
-            height: 36,
-            borderRadius: 18,
-            backgroundColor: 'rgba(0,0,0,0.5)',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          style={vidStyles.fullscreenButton}
           hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
           <MaterialCommunityIcons name="fullscreen" size={20} color={colors.white} />
         </TouchableOpacity>
       )}
       {isLoading ? (
-        <View style={{ ...absoluteFill, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+        <View style={vidStyles.loadingOverlay}>
           <ActivityIndicator size="large" color={colors.white} />
         </View>
       ) : null}
     </View>
   );
-};
-
-const absoluteFill = {
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  bottom: 0,
 };
 
 export default React.memo(AuthenticatedVideo);

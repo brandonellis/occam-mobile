@@ -13,6 +13,8 @@ import { isMembershipActive, buildMembershipAllotments } from '../../helpers/mem
 import { resolveLocationAndRoute } from '../../helpers/booking.helper';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import { isClassLike } from '../../helpers/normalizers.helper';
+import AuthenticatedImage from '../../components/AuthenticatedImage';
+import { getServiceImageUrl } from '../../helpers/media.helper';
 import useAuth from '../../hooks/useAuth';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
@@ -229,6 +231,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
           {state.services.map((service) => {
             const allotment = state.membershipAllotments?.[service.id];
             const hasRemainingAllotment = allotment && (allotment.remaining === null || allotment.remaining > 0);
+            const imageUrl = getServiceImageUrl(service);
             return (
               <TouchableRipple
                 key={service.id}
@@ -237,31 +240,40 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
                 borderless
                 testID={`service-card-${service.id}`}
               >
-                <View>
-                  <Text style={styles.serviceName}>{service.name}</Text>
-                  {service.description && (
-                    <Text style={styles.serviceDescription} numberOfLines={2}>
-                      {service.description}
-                    </Text>
+                <View style={imageUrl ? styles.serviceCardRow : null}>
+                  {imageUrl && (
+                    <AuthenticatedImage
+                      uri={imageUrl}
+                      style={styles.serviceCardImage}
+                      resizeMode="cover"
+                    />
                   )}
-                  <View style={styles.serviceFooter}>
-                    {hasRemainingAllotment ? (
-                      <View style={styles.servicePriceGroup}>
-                        <Text style={styles.servicePriceOriginal}>
+                  <View style={styles.serviceCardContent}>
+                    <Text style={styles.serviceName}>{service.name}</Text>
+                    {service.description && (
+                      <Text style={styles.serviceDescription} numberOfLines={2}>
+                        {service.description}
+                      </Text>
+                    )}
+                    <View style={styles.serviceFooter}>
+                      {hasRemainingAllotment ? (
+                        <View style={styles.servicePriceGroup}>
+                          <Text style={styles.servicePriceOriginal}>
+                            {service.is_variable_duration ? 'From ' : ''}
+                            {formatCurrency(parseFloat(service.price) || 0)}
+                          </Text>
+                          <Text style={styles.servicePriceIncluded}>Included</Text>
+                        </View>
+                      ) : (
+                        <Text style={styles.servicePrice}>
                           {service.is_variable_duration ? 'From ' : ''}
                           {formatCurrency(parseFloat(service.price) || 0)}
                         </Text>
-                        <Text style={styles.servicePriceIncluded}>Included</Text>
-                      </View>
-                    ) : (
-                      <Text style={styles.servicePrice}>
-                        {service.is_variable_duration ? 'From ' : ''}
-                        {formatCurrency(parseFloat(service.price) || 0)}
+                      )}
+                      <Text style={styles.serviceDuration}>
+                        {formatDuration(service.duration_minutes)}
                       </Text>
-                    )}
-                    <Text style={styles.serviceDuration}>
-                      {formatDuration(service.duration_minutes)}
-                    </Text>
+                    </View>
                   </View>
                 </View>
               </TouchableRipple>
