@@ -43,27 +43,29 @@ const DRAW_COLORS = [
 
 const FRAME_STEP_SECONDS = 0.1;
 
-const VideoAnnotationScreen = ({ route, navigation }) => {
-  const { uploadId, videoUrl, videoTitle, targetType, targetId } = route.params;
-  const [videoSource, setVideoSource] = useState(null);
+/**
+ * Build a VideoSourceObject with auth headers.
+ */
+const buildAnnotationVideoSource = (url, token, tenantId) => {
+  const resolved = resolveMediaUrl(url);
+  if (!resolved) return null;
 
-  // Fetch auth credentials and build source with headers
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
-      if (cancelled) return;
-      const resolved = resolveMediaUrl(videoUrl);
-      const headers = {};
-      if (token) headers.Authorization = `Bearer ${token}`;
-      if (tenantId) headers['X-Tenant'] = tenantId;
-      setVideoSource(resolved ? { uri: resolved, headers } : null);
-    })();
-    return () => { cancelled = true; };
-  }, [videoUrl]);
+  const isSignedUrl = resolved.includes('storage.googleapis.com');
+  if (isSignedUrl) return { uri: resolved };
 
-  const player = useVideoPlayer(videoSource, (p) => {
-    if (!videoSource) return;
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (tenantId) headers['X-Tenant'] = tenantId;
+
+  return Object.keys(headers).length > 0 ? { uri: resolved, headers } : { uri: resolved };
+};
+
+/**
+ * Inner component that owns the video player. Only mounts once the
+ * video source is ready so useVideoPlayer never receives null.
+ */
+const VideoAnnotationContent = ({ initialSource, uploadId, videoUrl, videoTitle, targetType, targetId, navigation }) => {
+  const player = useVideoPlayer(initialSource, (p) => {
     p.loop = false;
   });
 
@@ -389,7 +391,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <>
       <ScreenHeader
         title={videoTitle || 'Video Annotation'}
         onBack={() => navigation.goBack()}
@@ -646,6 +648,47 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
           />
         )}
       </KeyboardAvoidingView>
+    </>
+  );
+};
+
+/**
+ * Wrapper screen that loads auth credentials asynchronously, then mounts
+ * VideoAnnotationContent once the source is ready. This ensures useVideoPlayer
+ * never receives null, avoiding the native player replace race condition.
+ */
+const VideoAnnotationScreen = ({ route, navigation }) => {
+  const { uploadId, videoUrl, videoTitle, targetType, targetId } = route.params;
+  const [videoSource, setVideoSource] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
+      if (!cancelled) {
+        setVideoSource(buildAnnotationVideoSource(videoUrl, token, tenantId));
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [videoUrl]);
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      {videoSource ? (
+        <VideoAnnotationContent
+          initialSource={videoSource}
+          uploadId={uploadId}
+          videoUrl={videoUrl}
+          videoTitle={videoTitle}
+          targetType={targetType}
+          targetId={targetId}
+          navigation={navigation}
+        />
+      ) : (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      )}
     </SafeAreaView>
   );
 };
