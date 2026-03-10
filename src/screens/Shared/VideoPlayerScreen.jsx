@@ -15,30 +15,12 @@ import Svg, { Path } from 'react-native-svg';
 import { videoPlayerStyles as styles } from '../../styles/videoPlayer.styles';
 import { colors } from '../../theme';
 import { getToken, getTenantId } from '../../helpers/storage.helper';
-import { resolveMediaUrl } from '../../helpers/media.helper';
+import { resolveMediaUrl, buildVideoSource } from '../../helpers/media.helper';
 import { getAnnotations } from '../../services/annotations.api';
 import logger from '../../helpers/logger.helper';
 import { formatVideoTimestamp, VIDEO_HEIGHT } from '../../helpers/video.helper';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-
-/**
- * Build a VideoSourceObject with auth headers so expo-video can access
- * the authenticated streaming endpoint (/api/v1/uploads/{id}/file).
- */
-const buildVideoSource = (url, token, tenantId) => {
-  const resolved = resolveMediaUrl(url);
-  if (!resolved) return null;
-
-  const isSignedUrl = resolved.includes('storage.googleapis.com');
-  if (isSignedUrl) return { uri: resolved };
-
-  const headers = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (tenantId) headers['X-Tenant'] = tenantId;
-
-  return Object.keys(headers).length > 0 ? { uri: resolved, headers } : { uri: resolved };
-};
 
 /**
  * Inner component that owns the expo-video player. Only mounts once
@@ -114,7 +96,7 @@ const VideoPlayerContent = ({
               .catch((e) => {
                 logger.warn('[VideoPlayer] replaceAsync failed:', e?.message);
                 setPlayerStatus('error');
-                setErrorMsg(error?.message || 'Failed to load video');
+                setErrorMsg(e?.message || 'Failed to load video');
               });
             return;
           }
