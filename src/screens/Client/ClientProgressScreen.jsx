@@ -47,7 +47,7 @@ const ResourceCard = ({ resource, navigation, clientId }) => {
       const isGroup = resource.source === 'group';
       navigation.navigate(SCREENS.VIDEO_PLAYER, {
         videoUrl: resource.url,
-        videoTitle: resource.filename || 'Video',
+        videoTitle: resource.title || resource.filename || 'Video',
         uploadId: resource.upload_id,
         targetType: isGroup ? 'group' : 'client',
         targetId: isGroup ? resource.group?.id : clientId,
@@ -100,7 +100,7 @@ const ResourceCard = ({ resource, navigation, clientId }) => {
 
       <View style={styles.resourceInfo}>
         <Text style={styles.resourceName}>
-          {resource.filename || 'Resource'}
+          {resource.title || resource.filename || 'Resource'}
         </Text>
         {resource.notes && (
           <Text style={styles.resourceNotes} numberOfLines={2}>

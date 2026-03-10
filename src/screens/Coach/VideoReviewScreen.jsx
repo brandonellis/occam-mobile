@@ -41,20 +41,25 @@ const VideoReviewScreen = ({ route, navigation }) => {
   const handleUpload = useCallback(async () => {
     if (isUploading) return;
 
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      Alert.alert('Title Required', 'Please enter a title for this video before uploading.');
+      return;
+    }
+
     setIsUploading(true);
     setUploadProgress(0);
 
     try {
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = title.trim()
-        ? `${title.trim().replace(/\s+/g, '_')}.mp4`
-        : `coaching_video_${timestamp}.mp4`;
+      const filename = `${trimmedTitle.replace(/\s+/g, '_')}_${timestamp}.mp4`;
 
       const uploadResult = await uploadFile(videoUri, {
         uploadableType: 'media_library',
         isLibrary: true,
         filename,
         mimeType: 'video/mp4',
+        title: trimmedTitle,
         onProgress: setUploadProgress,
       });
 
@@ -182,7 +187,7 @@ const VideoReviewScreen = ({ route, navigation }) => {
 
           {/* Title input */}
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Title (optional)</Text>
+            <Text style={styles.label}>Title</Text>
             <TextInput
               style={styles.input}
               placeholder="e.g. Swing Analysis — John"

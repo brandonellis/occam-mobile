@@ -8,6 +8,7 @@ import apiClient from './apiClient';
  * @param {boolean} options.isLibrary - Store as library item
  * @param {string} [options.filename] - Override filename
  * @param {string} [options.mimeType] - Override MIME type
+ * @param {string} [options.title] - Display title for the upload
  * @param {function} [options.onProgress] - Upload progress callback (0-1)
  * @returns {Promise<object>} Upload record
  */
@@ -17,6 +18,7 @@ export const uploadFile = async (fileUri, options = {}) => {
     isLibrary = true,
     filename = 'recording.mp4',
     mimeType = 'video/mp4',
+    title,
     onProgress,
   } = options;
 
@@ -28,6 +30,7 @@ export const uploadFile = async (fileUri, options = {}) => {
   });
   formData.append('uploadable_type', uploadableType);
   formData.append('is_library', isLibrary ? '1' : '0');
+  if (title) formData.append('title', title);
 
   const response = await apiClient.post('/uploads', formData, {
     headers: {

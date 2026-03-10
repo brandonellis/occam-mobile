@@ -83,6 +83,32 @@ export const mediaPickerStyles = StyleSheet.create({
     backgroundColor: colors.borderLight,
   },
 
+  // Upload title prompt
+  uploadTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  uploadTitleInput: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    ...typography.body,
+    color: colors.textPrimary,
+    minHeight: 40,
+  },
+  uploadTitleCancel: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    fontSize: 13,
+  },
+  uploadTitleConfirm: {
+    ...typography.bodySmall,
+    color: colors.white,
+    fontSize: 13,
+  },
+
   // Notes
   notesRow: {
     paddingHorizontal: spacing.lg,

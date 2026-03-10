@@ -54,6 +54,8 @@ const MediaPickerModal = ({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [snackMessage, setSnackMessage] = useState('');
+  const [pendingAsset, setPendingAsset] = useState(null);
+  const [uploadTitle, setUploadTitle] = useState('');
 
   const loadUploads = useCallback(async () => {
     setIsLoading(true);
@@ -100,18 +102,37 @@ const MediaPickerModal = ({
 
       const asset = result.assets[0];
       const converted = await convertHeicToJpeg(asset);
+      setPendingAsset(converted);
+      setUploadTitle('');
+    } catch (err) {
+      logger.warn('File pick failed:', err.message);
+      Alert.alert('Error', err.message || 'Could not select file.');
+    }
+  }, []);
 
-      setIsUploading(true);
-      setUploadProgress(0);
+  const handleConfirmUpload = useCallback(async () => {
+    const trimmedTitle = uploadTitle.trim();
+    if (!trimmedTitle) {
+      Alert.alert('Title Required', 'Please enter a title for this upload.');
+      return;
+    }
+    if (!pendingAsset) return;
 
-      await uploadFile(converted.uri, {
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      await uploadFile(pendingAsset.uri, {
         uploadableType: 'media_library',
         isLibrary: true,
-        filename: converted.fileName,
-        mimeType: converted.mimeType,
+        filename: pendingAsset.fileName,
+        mimeType: pendingAsset.mimeType,
+        title: trimmedTitle,
         onProgress: (progress) => setUploadProgress(progress),
       });
 
+      setPendingAsset(null);
+      setUploadTitle('');
       setSnackMessage('Upload complete');
       loadUploads();
     } catch (err) {
@@ -121,7 +142,12 @@ const MediaPickerModal = ({
       setIsUploading(false);
       setUploadProgress(0);
     }
-  }, [loadUploads]);
+  }, [pendingAsset, uploadTitle, loadUploads]);
+
+  const handleCancelUpload = useCallback(() => {
+    setPendingAsset(null);
+    setUploadTitle('');
+  }, []);
 
   const isAlreadyShared = (uploadId) => alreadySharedIds.includes(uploadId);
 
@@ -173,7 +199,7 @@ const MediaPickerModal = ({
           )}
         </View>
         <Text variant="bodySmall" style={styles.mediaName} numberOfLines={1}>
-          {item.original_filename || item.filename || 'Untitled'}
+          {item.title || item.original_filename || item.filename || 'Untitled'}
         </Text>
       </TouchableOpacity>
     );
@@ -230,6 +256,42 @@ const MediaPickerModal = ({
             <MaterialCommunityIcons name="cloud-upload-outline" size={22} color={colors.white} />
           </TouchableOpacity>
         </View>
+
+        {/* Upload title prompt */}
+        {pendingAsset && !isUploading && (
+          <View style={styles.uploadTitleRow}>
+            <TextInput
+              mode="outlined"
+              placeholder="Title for this upload..."
+              value={uploadTitle}
+              onChangeText={setUploadTitle}
+              maxLength={255}
+              dense
+              style={styles.uploadTitleInput}
+              outlineColor={colors.border}
+              activeOutlineColor={colors.accent}
+              autoFocus
+            />
+            <Button
+              mode="text"
+              onPress={handleCancelUpload}
+              compact
+              labelStyle={styles.uploadTitleCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              mode="contained"
+              onPress={handleConfirmUpload}
+              compact
+              disabled={!uploadTitle.trim()}
+              buttonColor={colors.accent}
+              labelStyle={styles.uploadTitleConfirm}
+            >
+              Upload
+            </Button>
+          </View>
+        )}
 
         {/* Upload progress */}
         {isUploading && (

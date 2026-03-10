@@ -48,7 +48,7 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
     if (item.url) {
       navigation.navigate(SCREENS.VIDEO_PLAYER, {
         videoUrl: item.url,
-        videoTitle: item.filename || 'Video',
+        videoTitle: item.title || item.filename || 'Video',
         uploadId: item.upload_id,
         targetType: 'client',
         targetId: clientId,
@@ -102,7 +102,7 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
       <View style={styles.sharedMediaInfoRow}>
         <View style={styles.sharedMediaInfo}>
           <Text style={styles.sharedItemName} numberOfLines={1}>
-            {item.filename || 'Resource'}
+            {item.title || item.filename || 'Resource'}
           </Text>
           {item.notes && (
             <Text style={styles.sharedItemNotes} numberOfLines={1}>
@@ -128,7 +128,7 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
                   navigation.navigate(SCREENS.VIDEO_ANNOTATION, {
                     uploadId: item.upload_id,
                     videoUrl: item.url,
-                    videoTitle: item.filename || 'Video',
+                    videoTitle: item.title || item.filename || 'Video',
                     targetType: 'client',
                     targetId: clientId,
                   })

@@ -406,7 +406,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
                       setTimeout(() => {
                         navigation.navigate(SCREENS.VIDEO_PLAYER, {
                           videoUrl: resourceData.url,
-                          videoTitle: resourceData.filename || 'Video',
+                          videoTitle: resourceData.title || resourceData.filename || 'Video',
                           uploadId: resourceData.upload_id || undefined,
                           targetType: isGroup ? 'group' : 'client',
                           targetId: isGroup ? resourceData.group?.id : resourceData.client_id,
@@ -432,7 +432,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
                   >
                     <MaterialCommunityIcons name="file-document-outline" size={24} color={colors.accent} />
                     <View style={{ marginLeft: spacing.md, flex: 1 }}>
-                      <Text style={styles.cardTitle}>{resourceData.filename || 'File'}</Text>
+                      <Text style={styles.cardTitle}>{resourceData.title || resourceData.filename || 'File'}</Text>
                       <Text style={styles.cardMeta}>Tap to open</Text>
                     </View>
                   </TouchableOpacity>
