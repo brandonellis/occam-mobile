@@ -1,7 +1,6 @@
 import React, { useEffect, useCallback } from 'react';
 import { View, ActivityIndicator, StatusBar, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { requestMicrophonePermissionsAsync } from 'expo-camera';
 import { SCREENS } from '../../constants/navigation.constants';
 import { videoRecordingStyles as styles } from '../../styles/videoRecording.styles';
 import { colors } from '../../theme';
@@ -20,25 +19,10 @@ const VideoRecordingScreen = ({ navigation }) => {
         return;
       }
 
-      const micPermission = await requestMicrophonePermissionsAsync();
-      if (micPermission.status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Please allow microphone access to record audio with coaching videos.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
-        return;
-      }
-
-      // Small delay after permission grant before launching camera — on iOS production
-      // builds the native camera can be unavailable immediately after fresh permission grant.
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+        mediaTypes: ['videos'],
         videoMaxDuration: 300,
-        videoQuality: ImagePicker.UIImagePickerControllerQualityType.High,
-        allowsEditing: false,
+        videoQuality: 0,
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
