@@ -19,16 +19,6 @@ const VideoRecordingScreen = ({ navigation }) => {
         return;
       }
 
-      const microphonePermission = await ImagePicker.requestMicrophonePermissionsAsync();
-      if (microphonePermission.status !== 'granted') {
-        Alert.alert(
-          'Permission Required',
-          'Please allow microphone access to record audio with coaching videos.',
-          [{ text: 'OK', onPress: () => navigation.goBack() }]
-        );
-        return;
-      }
-
       // Small delay after permission grant before launching camera — on iOS production
       // builds the native camera can be unavailable immediately after fresh permission grant.
       await new Promise((resolve) => setTimeout(resolve, 300));
