@@ -99,7 +99,16 @@ const MediaPickerModal = ({
 
       const asset = result.assets[0];
       const fileName = asset.fileName || asset.uri.split('/').pop() || 'upload';
-      const mimeType = asset.mimeType || (asset.type === 'video' ? 'video/mp4' : 'image/jpeg');
+      const ext = fileName.split('.').pop()?.toLowerCase();
+      const mimeType = asset.mimeType || (() => {
+        if (asset.type === 'video') return 'video/mp4';
+        if (ext === 'heic') return 'image/heic';
+        if (ext === 'heif') return 'image/heif';
+        if (ext === 'png') return 'image/png';
+        if (ext === 'gif') return 'image/gif';
+        if (ext === 'webp') return 'image/webp';
+        return 'image/jpeg';
+      })();
 
       setIsUploading(true);
       setUploadProgress(0);

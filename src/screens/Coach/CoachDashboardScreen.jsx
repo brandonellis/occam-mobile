@@ -145,7 +145,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                   testID="new-booking-quick-action"
                   style={styles.quickActionButton}
                   activeOpacity={0.7}
-                  onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.CLIENT_SELECTION, params: { bookingData: {} } })}
+                  onPress={() => navigation.navigate(SCREENS.CLIENT_SELECTION, { bookingData: {} })}
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: colors.accentLight }]}>
                     <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.accent} />

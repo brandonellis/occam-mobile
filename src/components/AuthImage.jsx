@@ -13,12 +13,14 @@ import { resolveMediaUrl } from '../helpers/media.helper';
  */
 const AuthImage = ({ uri, source, style, ...rest }) => {
   const [authSource, setAuthSource] = useState(null);
+  const [resolvedUri, setResolvedUri] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     const rawUri = uri || source?.uri;
     if (!rawUri) {
       setAuthSource(null);
+      setResolvedUri(null);
       return;
     }
 
@@ -27,6 +29,7 @@ const AuthImage = ({ uri, source, style, ...rest }) => {
       if (cancelled) return;
 
       const resolved = resolveMediaUrl(rawUri);
+      setResolvedUri(resolved);
       const headers = {};
       if (token) headers.Authorization = `Bearer ${token}`;
       if (tenantId) headers['X-Tenant'] = tenantId;
@@ -39,7 +42,22 @@ const AuthImage = ({ uri, source, style, ...rest }) => {
 
   if (!authSource) return null;
 
-  return <Image source={authSource} style={style} {...rest} />;
+  return (
+    <Image
+      source={authSource}
+      style={style}
+      onError={(event) => {
+        if (authSource?.headers && resolvedUri) {
+          setAuthSource({ uri: resolvedUri });
+        }
+
+        if (rest.onError) {
+          rest.onError(event);
+        }
+      }}
+      {...rest}
+    />
+  );
 };
 
 export default AuthImage;
