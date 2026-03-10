@@ -32,8 +32,8 @@ export const videoAnnotationStyles = StyleSheet.create({
     height: '100%',
   },
 
-  // Controls
-  controlsRow: {
+  // Scrubber / seek bar
+  scrubberContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.md,
@@ -43,6 +43,66 @@ export const videoAnnotationStyles = StyleSheet.create({
     borderBottomColor: colors.borderLight,
     gap: spacing.sm,
   },
+  scrubberTime: {
+    ...typography.label,
+    color: colors.textSecondary,
+    fontSize: 11,
+    fontVariant: ['tabular-nums'],
+    minWidth: 32,
+    textAlign: 'center',
+  },
+  scrubberTrack: {
+    flex: 1,
+    height: 44,
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  scrubberTrackBg: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.gray200,
+  },
+  scrubberTrackFill: {
+    position: 'absolute',
+    left: 0,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.accent,
+  },
+  scrubberThumb: {
+    position: 'absolute',
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.accent,
+    marginLeft: -8,
+    top: 14,
+    ...shadows.sm,
+  },
+  scrubberMarker: {
+    position: 'absolute',
+    width: 3,
+    height: 10,
+    borderRadius: 1.5,
+    backgroundColor: colors.warning,
+    marginLeft: -1.5,
+    top: 17,
+  },
+
+  // Controls
+  controlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+    gap: spacing.xs,
+  },
   controlButton: {
     width: 44,
     height: 44,
@@ -51,18 +111,18 @@ export const videoAnnotationStyles = StyleSheet.create({
     borderRadius: 22,
     backgroundColor: colors.surface,
   },
-  timeDisplay: {
-    ...typography.label,
-    color: colors.textPrimary,
-    fontSize: 13,
-    fontVariant: ['tabular-nums'],
-    minWidth: 40,
+  frameStepButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 22,
   },
   controlActions: {
     flex: 1,
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   captureButton: {
     flexDirection: 'row',
@@ -78,6 +138,12 @@ export const videoAnnotationStyles = StyleSheet.create({
     color: colors.accent,
     fontSize: 12,
     fontWeight: '600',
+  },
+  captureButtonDisabled: {
+    opacity: 0.5,
+  },
+  captureButtonDone: {
+    backgroundColor: colors.success + '15',
   },
 
   // Color picker

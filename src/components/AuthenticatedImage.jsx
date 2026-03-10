@@ -28,20 +28,24 @@ const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon 
       }
 
       try {
-        const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
         const resolved = resolveMediaUrl(uri);
-        const headers = {};
 
-        if (token) {
-          headers.Authorization = `Bearer ${token}`;
-        }
-        if (tenantId) {
-          headers['X-Tenant'] = tenantId;
+        // GCS signed URLs already contain auth in the query string.
+        // Sending extra Authorization / X-Tenant headers causes GCS to
+        // reject the request (403), so skip headers for external URLs.
+        const isSignedUrl = resolved && resolved.includes('storage.googleapis.com');
+
+        let headers;
+        if (!isSignedUrl) {
+          const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
+          headers = {};
+          if (token) headers.Authorization = `Bearer ${token}`;
+          if (tenantId) headers['X-Tenant'] = tenantId;
         }
 
         if (mounted) {
           setResolvedUri(resolved);
-          setSource({ uri: resolved, headers });
+          setSource(headers ? { uri: resolved, headers } : { uri: resolved });
           setFailed(false);
         }
       } catch {

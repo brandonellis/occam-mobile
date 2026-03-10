@@ -18,15 +18,9 @@ import { getToken, getTenantId } from '../../helpers/storage.helper';
 import { resolveMediaUrl } from '../../helpers/media.helper';
 import { getAnnotations } from '../../services/annotations.api';
 import logger from '../../helpers/logger.helper';
+import { formatVideoTimestamp, VIDEO_HEIGHT } from '../../helpers/video.helper';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const VIDEO_HEIGHT = (SCREEN_WIDTH * 9) / 16;
-
-const formatTimestamp = (seconds) => {
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-};
 
 /**
  * Build a VideoSourceObject with auth headers so expo-video can access
@@ -56,6 +50,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
   const [annotations, setAnnotations] = useState([]);
   const [annotationsLoading, setAnnotationsLoading] = useState(false);
   const [activeAnnotation, setActiveAnnotation] = useState(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const hasAnnotations = uploadId && annotations.length > 0;
 
   // Fetch auth credentials and build the source object
@@ -195,7 +190,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
         <View style={styles.annotationTimestamp}>
           <MaterialCommunityIcons name="clock-outline" size={14} color={colors.accent} />
           <Text style={styles.annotationTimeText}>
-            {formatTimestamp(item.timestamp)}
+            {formatVideoTimestamp(item.timestamp)}
           </Text>
         </View>
         <View style={styles.annotationContent}>
@@ -284,7 +279,10 @@ const VideoPlayerScreen = ({ route, navigation }) => {
               player={player}
               style={styles.video}
               contentFit="contain"
-              nativeControls={!hasAnnotations}
+              allowsFullscreen
+              nativeControls={!hasAnnotations || isFullscreen}
+              onFullscreenEnter={() => setIsFullscreen(true)}
+              onFullscreenExit={() => setIsFullscreen(false)}
             />
             {activeDrawing && (
               <View style={styles.drawingOverlay} pointerEvents="none">
@@ -332,7 +330,15 @@ const VideoPlayerScreen = ({ route, navigation }) => {
           )}
           <TouchableOpacity
             onPress={() => {
-              try { videoViewRef.current?.enterFullscreen(); } catch {}
+              try {
+                if (isFullscreen) {
+                  videoViewRef.current?.exitFullscreen();
+                } else {
+                  videoViewRef.current?.enterFullscreen();
+                }
+              } catch (e) {
+                logger.warn('[VideoPlayer] Fullscreen toggle failed:', e?.message);
+              }
             }}
             style={hasAnnotations ? styles.annotationControlButton : styles.controlButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

@@ -24,11 +24,20 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
     let mounted = true;
     (async () => {
       try {
-        const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
-        const h = {};
-        if (token) h.Authorization = `Bearer ${token}`;
-        if (tenantId) h['X-Tenant'] = tenantId;
-        if (mounted) setHeaders(h);
+        const resolved = resolveMediaUrl(uri);
+        // GCS signed URLs already contain auth in the query string.
+        // Sending extra Authorization headers causes GCS to reject (403).
+        const isSignedUrl = resolved && resolved.includes('storage.googleapis.com');
+
+        if (isSignedUrl) {
+          if (mounted) setHeaders({});
+        } else {
+          const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
+          const h = {};
+          if (token) h.Authorization = `Bearer ${token}`;
+          if (tenantId) h['X-Tenant'] = tenantId;
+          if (mounted) setHeaders(h);
+        }
       } catch {
         if (mounted) setHeaders({});
       }
@@ -36,11 +45,13 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
     return () => { mounted = false; };
   }, [uri]);
 
-  // Build video source with auth headers
+  // Build video source with auth headers (empty for GCS signed URLs)
   const videoSource = useMemo(() => {
     if (!uri || !headers) return null;
     const resolved = resolveMediaUrl(uri);
-    return { uri: resolved, headers };
+    return Object.keys(headers).length > 0
+      ? { uri: resolved, headers }
+      : { uri: resolved };
   }, [uri, headers]);
 
   const player = useVideoPlayer(videoSource, (p) => {
@@ -118,6 +129,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
         style={vidStyles.videoView}
         contentFit="cover"
         nativeControls
+        allowsFullscreen
       />
       {showPlayOverlay ? (
         <TouchableOpacity
