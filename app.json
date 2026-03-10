@@ -86,7 +86,13 @@
           "savePhotosPermission": "Occam Golf needs permission to save recorded videos to your library."
         }
       ],
-      "expo-video",
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": true,
+          "supportsPictureInPicture": false
+        }
+      ],
       [
         "@stripe/stripe-react-native",
         {
