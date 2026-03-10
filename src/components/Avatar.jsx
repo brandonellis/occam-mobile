@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { Avatar as PaperAvatar } from 'react-native-paper';
 import { colors } from '../theme/colors';
 import { resolveMediaUrl } from '../helpers/media.helper';
@@ -34,6 +35,12 @@ const Avatar = ({ uri, name, size = 40 }) => {
       color={colors.textInverse}
     />
   );
+};
+
+Avatar.propTypes = {
+  uri: PropTypes.string,
+  name: PropTypes.string,
+  size: PropTypes.number,
 };
 
 export default Avatar;

@@ -1,21 +1,6 @@
 import config from '../config';
 
 /**
- * Rewrite a media URL so it is reachable from the device.
- *
- * In development the backend generates URLs using APP_URL which contains
- * hostnames like "occam.localhost" or "golfshark.occam.localhost" that the
- * device/emulator cannot resolve.  This helper swaps the hostname (and port)
- * with the baseDomain from the mobile config (e.g. "10.0.0.159") so that
- * the device can actually fetch the resource.
- *
- * In production the URLs already point to public GCS buckets so they pass
- * through unchanged.
- *
- * @param {string|null|undefined} url
- * @returns {string|null}
- */
-/**
  * Extract the primary image URL from a service's media array.
  * Matches the web client's getServiceImageUrl() in serviceHelpers.js.
  *
@@ -31,6 +16,20 @@ export const getServiceImageUrl = (service) => {
   return primary.url || primary.file_url || primary.file_path || null;
 };
 
+/**
+ * Rewrite a media URL so it is reachable from the device.
+ *
+ * In development the backend generates URLs using APP_URL which contains
+ * hostnames like "occam.localhost" or "golfshark.occam.localhost" that the
+ * device/emulator cannot resolve.  This helper swaps the hostname (and port)
+ * with the baseDomain from the mobile config (e.g. "10.0.0.159") so that
+ * the device can actually fetch the resource.
+ *
+ * In production the URLs are GCS signed URLs so they pass through unchanged.
+ *
+ * @param {string|null|undefined} url
+ * @returns {string|null}
+ */
 export const resolveMediaUrl = (url) => {
   if (!url) return null;
 
