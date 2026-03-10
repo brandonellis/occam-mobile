@@ -26,7 +26,7 @@ import { videoAnnotationStyles as styles } from '../../styles/videoAnnotation.st
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
 import { getToken, getTenantId } from '../../helpers/storage.helper';
-import { resolveMediaUrl } from '../../helpers/media.helper';
+import { buildVideoSource } from '../../helpers/media.helper';
 import { formatVideoTimestamp, VIDEO_HEIGHT } from '../../helpers/video.helper';
 import logger from '../../helpers/logger.helper';
 
@@ -42,23 +42,6 @@ const DRAW_COLORS = [
 ];
 
 const FRAME_STEP_SECONDS = 0.1;
-
-/**
- * Build a VideoSourceObject with auth headers.
- */
-const buildAnnotationVideoSource = (url, token, tenantId) => {
-  const resolved = resolveMediaUrl(url);
-  if (!resolved) return null;
-
-  const isSignedUrl = resolved.includes('storage.googleapis.com');
-  if (isSignedUrl) return { uri: resolved };
-
-  const headers = {};
-  if (token) headers.Authorization = `Bearer ${token}`;
-  if (tenantId) headers['X-Tenant'] = tenantId;
-
-  return Object.keys(headers).length > 0 ? { uri: resolved, headers } : { uri: resolved };
-};
 
 /**
  * Inner component that owns the video player. Only mounts once the
@@ -666,7 +649,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
     (async () => {
       const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
       if (!cancelled) {
-        setVideoSource(buildAnnotationVideoSource(videoUrl, token, tenantId));
+        setVideoSource(buildVideoSource(videoUrl, token, tenantId));
       }
     })();
     return () => { cancelled = true; };
@@ -685,7 +668,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
           navigation={navigation}
         />
       ) : (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={globalStyles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.primary} />
         </View>
       )}

@@ -4,8 +4,9 @@ import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEvent } from 'expo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getToken, getTenantId } from '../helpers/storage.helper';
-import { resolveMediaUrl } from '../helpers/media.helper';
+import { resolveMediaUrl, buildVideoSource, isSignedGcsUrl } from '../helpers/media.helper';
 import { colors } from '../theme';
+import logger from '../helpers/logger.helper';
 import { authenticatedVideoStyles as vidStyles } from '../styles/authenticatedVideo.styles';
 
 /**
@@ -36,7 +37,8 @@ const VideoPlayerView = ({ source, uri, style, borderRadius }) => {
       if (resolved && player) {
         const noAuthSource = { uri: resolved };
         sourceRef.current = noAuthSource;
-        player.replaceAsync(noAuthSource).catch(() => {
+        player.replaceAsync(noAuthSource).catch((e) => {
+          logger.warn('[AuthenticatedVideo] replaceAsync retry failed:', e?.message);
           retryingRef.current = false;
           setFailed(true);
         });
@@ -136,24 +138,15 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
     (async () => {
       try {
         const resolved = resolveMediaUrl(uri);
-        const isSignedUrl = resolved && resolved.includes('storage.googleapis.com');
-
-        if (isSignedUrl) {
+        if (isSignedGcsUrl(resolved)) {
           if (mounted) setVideoSource({ uri: resolved });
         } else {
           const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
-          const headers = {};
-          if (token) headers.Authorization = `Bearer ${token}`;
-          if (tenantId) headers['X-Tenant'] = tenantId;
-          if (mounted) {
-            setVideoSource(
-              Object.keys(headers).length > 0
-                ? { uri: resolved, headers }
-                : { uri: resolved }
-            );
-          }
+          const source = buildVideoSource(uri, token, tenantId);
+          if (mounted && source) setVideoSource(source);
         }
-      } catch {
+      } catch (e) {
+        logger.warn('[AuthenticatedVideo] Failed to build source:', e?.message);
         // Fall back to uri-only source so the player at least attempts playback
         const resolved = resolveMediaUrl(uri);
         if (mounted && resolved) setVideoSource({ uri: resolved });

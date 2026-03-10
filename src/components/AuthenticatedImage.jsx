@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { Image, View, ActivityIndicator } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getToken, getTenantId } from '../helpers/storage.helper';
-import { resolveMediaUrl } from '../helpers/media.helper';
+import { resolveMediaUrl, isSignedGcsUrl } from '../helpers/media.helper';
 import { colors } from '../theme';
 
 /**
@@ -33,7 +33,7 @@ const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon 
         // GCS signed URLs already contain auth in the query string.
         // Sending extra Authorization / X-Tenant headers causes GCS to
         // reject the request (403), so skip headers for external URLs.
-        const isSignedUrl = resolved && resolved.includes('storage.googleapis.com');
+        const isSignedUrl = isSignedGcsUrl(resolved);
 
         let headers;
         if (!isSignedUrl) {

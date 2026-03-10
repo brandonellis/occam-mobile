@@ -56,3 +56,39 @@ export const resolveMediaUrl = (url) => {
 
   return url;
 };
+
+/**
+ * Check whether a resolved URL points to a GCS signed URL.
+ * Signed URLs already carry auth in the query string, so we must NOT
+ * send additional Authorization / X-Tenant headers (GCS rejects them with 403).
+ *
+ * @param {string|null|undefined} url
+ * @returns {boolean}
+ */
+export const isSignedGcsUrl = (url) =>
+  typeof url === 'string' && url.includes('storage.googleapis.com');
+
+/**
+ * Build a video source object suitable for expo-video's useVideoPlayer.
+ *
+ * - Resolves the URL for the current environment (dev rewrite).
+ * - Skips auth headers for GCS signed URLs (they reject extra headers).
+ * - Returns `{ uri, headers? }` or `null` if the URL can't be resolved.
+ *
+ * @param {string} url       - Raw video URL from the API.
+ * @param {string|null} token    - Bearer token.
+ * @param {string|null} tenantId - Tenant identifier for X-Tenant header.
+ * @returns {{ uri: string, headers?: Record<string, string> } | null}
+ */
+export const buildVideoSource = (url, token, tenantId) => {
+  const resolved = resolveMediaUrl(url);
+  if (!resolved) return null;
+
+  if (isSignedGcsUrl(resolved)) return { uri: resolved };
+
+  const headers = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (tenantId) headers['X-Tenant'] = tenantId;
+
+  return Object.keys(headers).length > 0 ? { uri: resolved, headers } : { uri: resolved };
+};
