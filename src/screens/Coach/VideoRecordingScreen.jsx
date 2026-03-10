@@ -29,8 +29,12 @@ const VideoRecordingScreen = ({ navigation }) => {
         return;
       }
 
+      // Small delay after permission grant before launching camera — on iOS production
+      // builds the native camera can be unavailable immediately after fresh permission grant.
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       const result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ['videos'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Videos,
         videoMaxDuration: 300,
         videoQuality: ImagePicker.UIImagePickerControllerQualityType.High,
         allowsEditing: false,
@@ -45,9 +49,10 @@ const VideoRecordingScreen = ({ navigation }) => {
       }
     } catch (err) {
       logger.warn('Camera launch failed:', err);
+      const detail = err?.message || err?.code || JSON.stringify(err) || 'Unknown error';
       Alert.alert(
         'Camera Unavailable',
-        'We could not open the camera. Please try again.',
+        `Could not open the camera.\n\n${detail}`,
         [{ text: 'OK', onPress: () => navigation.goBack() }]
       );
     }

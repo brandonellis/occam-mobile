@@ -72,6 +72,14 @@
       ],
       "expo-secure-store",
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "Occam Golf needs photo library access to upload media.",
+          "cameraPermission": "Occam Golf needs camera access to record coaching videos.",
+          "microphonePermission": "Occam Golf needs microphone access to record audio with coaching videos."
+        }
+      ],
+      [
         "expo-media-library",
         {
           "photosPermission": "Occam Golf needs photo library access to save and upload media.",
