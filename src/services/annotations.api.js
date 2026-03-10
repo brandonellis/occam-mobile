@@ -1,7 +1,11 @@
 import apiClient from './apiClient';
 
-export const getAnnotations = async (uploadId) => {
-  const response = await apiClient.get(`/uploads/${uploadId}/annotations`);
+export const getAnnotations = async (uploadId, { targetType, targetId } = {}) => {
+  const params = {};
+  if (targetType) params.target_type = targetType;
+  if (targetId) params.target_id = targetId;
+
+  const response = await apiClient.get(`/uploads/${uploadId}/annotations`, { params });
   return response.data;
 };
 

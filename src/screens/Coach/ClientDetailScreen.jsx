@@ -52,7 +52,7 @@ const getDocIcon = (mime) => {
   return 'file-document-outline';
 };
 
-const SharedMediaCard = ({ item, navigation, onUnshare }) => {
+const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
   const mime = item.mime_type || '';
   const isVideo = mime.startsWith('video/');
   const isImage = mime.startsWith('image/');
@@ -65,6 +65,8 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
         videoUrl: mediaUrl,
         videoTitle: item.filename || 'Video',
         uploadId: item.upload_id,
+        targetType: 'client',
+        targetId: clientId,
       });
     }
   };
@@ -142,6 +144,8 @@ const SharedMediaCard = ({ item, navigation, onUnshare }) => {
                     uploadId: item.upload_id,
                     videoUrl: mediaUrl,
                     videoTitle: item.filename || 'Video',
+                    targetType: 'client',
+                    targetId: clientId,
                   })
                 }
                 style={{ margin: 0 }}
@@ -681,6 +685,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
                     item={item}
                     navigation={navigation}
                     onUnshare={handleUnshare}
+                    clientId={clientId}
                   />
                 ))}
                 {sharedMedia.length > 2 && (

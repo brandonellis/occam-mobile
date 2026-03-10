@@ -44,7 +44,7 @@ const DRAW_COLORS = [
 const FRAME_STEP_SECONDS = 0.1;
 
 const VideoAnnotationScreen = ({ route, navigation }) => {
-  const { uploadId, videoUrl, videoTitle } = route.params;
+  const { uploadId, videoUrl, videoTitle, targetType, targetId } = route.params;
   const [videoSource, setVideoSource] = useState(null);
 
   // Fetch auth credentials and build source with headers
@@ -124,7 +124,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
   const loadAnnotations = useCallback(async () => {
     try {
       setIsLoading(true);
-      const res = await getAnnotations(uploadId);
+      const res = await getAnnotations(uploadId, { targetType, targetId });
       setAnnotations(res.data || []);
     } catch (err) {
       logger.warn('[VideoAnnotation] Failed to load annotations:', err?.message);
@@ -132,7 +132,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [uploadId]);
+  }, [uploadId, targetType, targetId]);
 
   useEffect(() => {
     loadAnnotations();
@@ -230,6 +230,8 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
         timestamp: capturedTimestamp ?? currentTime,
         comment: comment.trim() || null,
         drawing_data: paths.length > 0 ? { paths, viewWidth: SCREEN_WIDTH, viewHeight: VIDEO_HEIGHT } : null,
+        target_type: targetType || null,
+        target_id: targetId || null,
       };
 
       await createAnnotation(uploadId, payload);

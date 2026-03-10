@@ -38,7 +38,7 @@ const buildVideoSource = (url, token, tenantId) => {
 };
 
 const VideoPlayerScreen = ({ route, navigation }) => {
-  const { videoUrl, videoTitle, uploadId } = route.params;
+  const { videoUrl, videoTitle, uploadId, targetType, targetId } = route.params;
   const [videoSource, setVideoSource] = useState(null);
   const [playerStatus, setPlayerStatus] = useState('idle');
   const [isPlaying, setIsPlaying] = useState(false);
@@ -74,7 +74,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
     (async () => {
       setAnnotationsLoading(true);
       try {
-        const res = await getAnnotations(uploadId);
+        const res = await getAnnotations(uploadId, { targetType, targetId });
         if (!cancelled) setAnnotations(res.data || []);
       } catch (err) {
         logger.warn('[VideoPlayer] Failed to load annotations:', err?.message);
@@ -84,7 +84,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
       }
     })();
     return () => { cancelled = true; };
-  }, [uploadId]);
+  }, [uploadId, targetType, targetId]);
 
   // Only initialise the player once we have the source with auth headers
   const player = useVideoPlayer(videoSource, (p) => {
