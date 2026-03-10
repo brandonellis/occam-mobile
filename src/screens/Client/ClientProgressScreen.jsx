@@ -43,10 +43,10 @@ const ResourceCard = ({ resource, navigation, clientId }) => {
   const thumbUrl = resolveMediaUrl(resource.thumbnail_url);
 
   const handleVideoPress = () => {
-    if (mediaUrl) {
+    if (resource.url) {
       const isGroup = resource.source === 'group';
       navigation.navigate(SCREENS.VIDEO_PLAYER, {
-        videoUrl: mediaUrl,
+        videoUrl: resource.url,
         videoTitle: resource.filename || 'Video',
         uploadId: resource.upload_id,
         targetType: isGroup ? 'group' : 'client',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -30,21 +30,36 @@ const buildVideoSource = (url, token, tenantId) => {
   const resolved = resolveMediaUrl(url);
   if (!resolved) return null;
 
+  const isSignedUrl = resolved.includes('storage.googleapis.com');
+  if (isSignedUrl) return { uri: resolved };
+
   const headers = {};
   if (token) headers.Authorization = `Bearer ${token}`;
   if (tenantId) headers['X-Tenant'] = tenantId;
 
-  return { uri: resolved, headers };
+  return Object.keys(headers).length > 0 ? { uri: resolved, headers } : { uri: resolved };
 };
 
-const VideoPlayerScreen = ({ route, navigation }) => {
-  const { videoUrl, videoTitle, uploadId, targetType, targetId } = route.params;
-  const [videoSource, setVideoSource] = useState(null);
+/**
+ * Inner component that owns the expo-video player. Only mounts once
+ * videoSource is non-null so useVideoPlayer never receives null — this
+ * avoids the null→source replace race that causes "Operation Stopped".
+ */
+const VideoPlayerContent = ({
+  initialSource,
+  videoUrl,
+  videoTitle,
+  uploadId,
+  targetType,
+  targetId,
+  navigation,
+}) => {
   const [playerStatus, setPlayerStatus] = useState('idle');
   const [isPlaying, setIsPlaying] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
-  const retriedWithoutHeaders = React.useRef(false);
-  const videoViewRef = React.useRef(null);
+  const retriedWithoutHeaders = useRef(false);
+  const videoViewRef = useRef(null);
+  const sourceRef = useRef(initialSource);
 
   // Annotation state (read-only, only loaded when uploadId is provided)
   const [annotations, setAnnotations] = useState([]);
@@ -52,20 +67,6 @@ const VideoPlayerScreen = ({ route, navigation }) => {
   const [activeAnnotation, setActiveAnnotation] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const hasAnnotations = uploadId && annotations.length > 0;
-
-  // Fetch auth credentials and build the source object
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
-      if (!cancelled) {
-        const source = buildVideoSource(videoUrl, token, tenantId);
-        logger.log('[VideoPlayer] source:', source?.uri);
-        setVideoSource(source);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [videoUrl]);
 
   // Fetch annotations when uploadId is provided
   useEffect(() => {
@@ -86,9 +87,8 @@ const VideoPlayerScreen = ({ route, navigation }) => {
     return () => { cancelled = true; };
   }, [uploadId, targetType, targetId]);
 
-  // Only initialise the player once we have the source with auth headers
-  const player = useVideoPlayer(videoSource, (p) => {
-    if (!videoSource) return;
+  // Create the player with a guaranteed non-null source
+  const player = useVideoPlayer(initialSource, (p) => {
     p.loop = false;
     p.play();
   });
@@ -101,22 +101,21 @@ const VideoPlayerScreen = ({ route, navigation }) => {
       if (status === 'error') {
         // If first attempt with auth headers failed, retry without headers
         // (handles public GCS URLs that may reject custom Authorization headers)
-        if (!retriedWithoutHeaders.current && videoSource?.headers) {
+        if (!retriedWithoutHeaders.current && sourceRef.current?.headers) {
           retriedWithoutHeaders.current = true;
           const resolved = resolveMediaUrl(videoUrl);
           if (resolved) {
             logger.log('[VideoPlayer] retrying without auth headers:', resolved);
             setPlayerStatus('loading');
             const noAuthSource = { uri: resolved };
-            setVideoSource(noAuthSource);
-            try {
-              player.replace(noAuthSource);
-              player.play();
-            } catch (e) {
-              logger.warn('[VideoPlayer] replace failed:', e?.message);
-              setPlayerStatus('error');
-              setErrorMsg(error?.message || 'Failed to load video');
-            }
+            sourceRef.current = noAuthSource;
+            player.replaceAsync(noAuthSource)
+              .then(() => { player.play(); })
+              .catch((e) => {
+                logger.warn('[VideoPlayer] replaceAsync failed:', e?.message);
+                setPlayerStatus('error');
+                setErrorMsg(error?.message || 'Failed to load video');
+              });
             return;
           }
         }
@@ -135,7 +134,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
       statusSub?.remove();
       playingSub?.remove();
     };
-  }, [player]);
+  }, [player, videoUrl]);
 
   const handlePlayPause = useCallback(() => {
     if (!player) return;
@@ -155,12 +154,13 @@ const VideoPlayerScreen = ({ route, navigation }) => {
     const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
     const source = buildVideoSource(videoUrl, token, tenantId);
     if (source) {
-      setVideoSource(source);
+      sourceRef.current = source;
       try {
         await player.replaceAsync(source);
         player.play();
       } catch (e) {
         logger.warn('[VideoPlayer] retry replaceAsync failed:', e?.message);
+        setPlayerStatus('error');
         setErrorMsg(e?.message || 'Failed to load video');
       }
     }
@@ -226,27 +226,13 @@ const VideoPlayerScreen = ({ route, navigation }) => {
     );
   }, [activeAnnotation, handleSeekToAnnotation]);
 
-  // Show loading while fetching auth credentials
-  if (!videoSource) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <StatusBar barStyle="light-content" />
-        <View style={styles.videoWrapper}>
-          <ActivityIndicator size="large" color={colors.textInverse} />
-        </View>
-      </SafeAreaView>
-    );
-  }
-
   // Drawing overlay for the active annotation
   const activeDrawing = activeAnnotation?.drawing_data?.paths?.length > 0
     ? activeAnnotation.drawing_data
     : null;
 
   return (
-    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-      <StatusBar barStyle="light-content" />
-
+    <>
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -372,6 +358,50 @@ const VideoPlayerScreen = ({ route, navigation }) => {
             <Text style={styles.annotationsEmptyText}>No annotations on this video</Text>
           </View>
         )
+      )}
+    </>
+  );
+};
+
+/**
+ * Wrapper screen that loads auth credentials asynchronously, then mounts
+ * VideoPlayerContent once the source is ready. This ensures useVideoPlayer
+ * never receives null, avoiding the native player replace race condition.
+ */
+const VideoPlayerScreen = ({ route, navigation }) => {
+  const { videoUrl, videoTitle, uploadId, targetType, targetId } = route.params;
+  const [videoSource, setVideoSource] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
+      if (!cancelled) {
+        const source = buildVideoSource(videoUrl, token, tenantId);
+        logger.log('[VideoPlayer] source:', source?.uri);
+        setVideoSource(source);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [videoUrl]);
+
+  return (
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+      <StatusBar barStyle="light-content" />
+      {videoSource ? (
+        <VideoPlayerContent
+          initialSource={videoSource}
+          videoUrl={videoUrl}
+          videoTitle={videoTitle}
+          uploadId={uploadId}
+          targetType={targetType}
+          targetId={targetId}
+          navigation={navigation}
+        />
+      ) : (
+        <View style={styles.videoWrapper}>
+          <ActivityIndicator size="large" color={colors.textInverse} />
+        </View>
       )}
     </SafeAreaView>
   );

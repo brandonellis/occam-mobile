@@ -45,9 +45,9 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
   const thumbUrl = resolveMediaUrl(item.thumbnail_url);
 
   const handleVideoPress = () => {
-    if (mediaUrl) {
+    if (item.url) {
       navigation.navigate(SCREENS.VIDEO_PLAYER, {
-        videoUrl: mediaUrl,
+        videoUrl: item.url,
         videoTitle: item.filename || 'Video',
         uploadId: item.upload_id,
         targetType: 'client',
@@ -127,7 +127,7 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
                 onPress={() =>
                   navigation.navigate(SCREENS.VIDEO_ANNOTATION, {
                     uploadId: item.upload_id,
-                    videoUrl: mediaUrl,
+                    videoUrl: item.url,
                     videoTitle: item.filename || 'Video',
                     targetType: 'client',
                     targetId: clientId,
