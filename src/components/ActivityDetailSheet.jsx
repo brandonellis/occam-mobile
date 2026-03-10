@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigation } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -23,6 +24,7 @@ import { colors } from '../theme';
 import { spacing } from '../theme/spacing';
 import { parseReportPayload } from '../helpers/report.helper';
 import { reportDetailStyles } from '../styles/reportSummary.styles';
+import { SCREENS } from '../constants/navigation.constants';
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return '';
@@ -224,6 +226,7 @@ const ReportDetailSection = ({ reportData, accentColor, title }) => {
 
 const ActivityDetailSheet = ({ item, visible, onClose }) => {
   const { user } = useAuth();
+  const navigation = useNavigation();
   const [notes, setNotes] = useState([]);
   const [loadingNotes, setLoadingNotes] = useState(false);
   const [commentText, setCommentText] = useState('');
@@ -395,12 +398,30 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
                     resizeMode="cover"
                   />
                 ) : resourceData.mime_type?.startsWith('video/') ? (
-                  <AuthenticatedVideo
-                    uri={resourceData.url}
-                    posterUri={resourceData.thumbnail_url || undefined}
-                    style={{ width: '100%', height: 240 }}
-                    borderRadius={12}
-                  />
+                  <TouchableOpacity
+                    activeOpacity={0.8}
+                    onPress={() => {
+                      onClose();
+                      setTimeout(() => {
+                        navigation.navigate(SCREENS.VIDEO_PLAYER, {
+                          videoUrl: resourceData.url,
+                          videoTitle: resourceData.filename || 'Video',
+                          uploadId: resourceData.upload_id || undefined,
+                        });
+                      }, 300);
+                    }}
+                  >
+                    <AuthenticatedVideo
+                      uri={resourceData.url}
+                      posterUri={resourceData.thumbnail_url || undefined}
+                      style={{ width: '100%', height: 240 }}
+                      borderRadius={12}
+                    />
+                    <View style={{ position: 'absolute', bottom: 12, right: 12, flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 16, paddingHorizontal: 10, paddingVertical: 5 }}>
+                      <MaterialCommunityIcons name="fullscreen" size={16} color={colors.white} />
+                      <Text style={{ color: colors.white, fontSize: 12, marginLeft: 4, fontWeight: '600' }}>Full Screen</Text>
+                    </View>
+                  </TouchableOpacity>
                 ) : (
                   <TouchableOpacity
                     style={{ backgroundColor: colors.gray100, borderRadius: 12, padding: spacing.lg, flexDirection: 'row', alignItems: 'center' }}

@@ -16,6 +16,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
   const [headers, setHeaders] = useState(null);
   const [failed, setFailed] = useState(false);
   const retriedRef = useRef(false);
+  const videoViewRef = useRef(null);
 
   useEffect(() => {
     let mounted = true;
@@ -76,6 +77,14 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
     }
   }, [isPlaying, player]);
 
+  const handleFullscreen = useCallback(() => {
+    try {
+      videoViewRef.current?.enterFullscreen();
+    } catch {
+      // Ignore if fullscreen not supported
+    }
+  }, []);
+
   if (failed || !uri) {
     return (
       <View style={[style, { alignItems: 'center', justifyContent: 'center', backgroundColor: colors.gray100, borderRadius }]}>
@@ -98,6 +107,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
   return (
     <View style={[style, { borderRadius, overflow: 'hidden' }]}>
       <VideoView
+        ref={videoViewRef}
         player={player}
         style={{ width: '100%', height: '100%' }}
         contentFit="cover"
@@ -128,6 +138,26 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
           </View>
         </TouchableOpacity>
       ) : null}
+      {!isLoading && (
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={handleFullscreen}
+          style={{
+            position: 'absolute',
+            bottom: 8,
+            right: 8,
+            width: 36,
+            height: 36,
+            borderRadius: 18,
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <MaterialCommunityIcons name="fullscreen" size={20} color={colors.white} />
+        </TouchableOpacity>
+      )}
       {isLoading ? (
         <View style={{ ...absoluteFill, alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
           <ActivityIndicator size="large" color={colors.white} />

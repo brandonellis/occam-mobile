@@ -50,6 +50,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const retriedWithoutHeaders = React.useRef(false);
+  const videoViewRef = React.useRef(null);
 
   // Annotation state (read-only, only loaded when uploadId is provided)
   const [annotations, setAnnotations] = useState([]);
@@ -275,6 +276,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
         ) : (
           <>
             <VideoView
+              ref={videoViewRef}
               player={player}
               style={styles.video}
               contentFit="contain"
@@ -324,6 +326,19 @@ const VideoPlayerScreen = ({ route, navigation }) => {
               {annotations.length} annotation{annotations.length !== 1 ? 's' : ''}
             </Text>
           )}
+          <TouchableOpacity
+            onPress={() => {
+              try { videoViewRef.current?.enterFullscreen(); } catch {}
+            }}
+            style={hasAnnotations ? styles.annotationControlButton : styles.controlButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <MaterialCommunityIcons
+              name="fullscreen"
+              size={hasAnnotations ? 28 : 36}
+              color={hasAnnotations ? colors.textPrimary : colors.textInverse}
+            />
+          </TouchableOpacity>
         </View>
       )}
 
