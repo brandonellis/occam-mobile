@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEvent } from 'expo';
@@ -15,6 +15,7 @@ import { colors } from '../theme';
 const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
   const [headers, setHeaders] = useState(null);
   const [failed, setFailed] = useState(false);
+  const retriedRef = useRef(false);
 
   useEffect(() => {
     let mounted = true;
@@ -46,10 +47,22 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
   const { isPlaying } = useEvent(player, 'playingChange', { isPlaying: player.playing });
   const { status } = useEvent(player, 'statusChange', { status: player.status });
 
-  // Track error status
+  // Track error status — retry without headers once for public GCS URLs
   useEffect(() => {
+    if (status === 'error' && !retriedRef.current && videoSource?.headers) {
+      retriedRef.current = true;
+      const resolved = resolveMediaUrl(uri);
+      if (resolved && player) {
+        try {
+          player.replace({ uri: resolved });
+        } catch {
+          setFailed(true);
+        }
+        return;
+      }
+    }
     if (status === 'error') setFailed(true);
-  }, [status]);
+  }, [status, videoSource, uri, player]);
 
   const handlePlayPause = useCallback(() => {
     try {

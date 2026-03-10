@@ -49,6 +49,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
   const [playerStatus, setPlayerStatus] = useState('idle');
   const [isPlaying, setIsPlaying] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
+  const retriedWithoutHeaders = React.useRef(false);
 
   // Annotation state (read-only, only loaded when uploadId is provided)
   const [annotations, setAnnotations] = useState([]);
@@ -103,6 +104,25 @@ const VideoPlayerScreen = ({ route, navigation }) => {
       logger.log('[VideoPlayer] status:', status, error?.message || '');
       setPlayerStatus(status);
       if (status === 'error') {
+        // If first attempt with auth headers failed, retry without headers
+        // (handles public GCS URLs that may reject custom Authorization headers)
+        if (!retriedWithoutHeaders.current && videoSource?.headers) {
+          retriedWithoutHeaders.current = true;
+          const resolved = resolveMediaUrl(videoUrl);
+          if (resolved) {
+            logger.log('[VideoPlayer] retrying without auth headers:', resolved);
+            const noAuthSource = { uri: resolved };
+            setVideoSource(noAuthSource);
+            try {
+              player.replace(noAuthSource);
+              player.play();
+            } catch (e) {
+              logger.warn('[VideoPlayer] replace failed:', e?.message);
+              setErrorMsg(error?.message || 'Failed to load video');
+            }
+            return;
+          }
+        }
         setErrorMsg(error?.message || 'Failed to load video');
       }
     });
@@ -131,11 +151,18 @@ const VideoPlayerScreen = ({ route, navigation }) => {
     if (!player) return;
     setErrorMsg(null);
     setPlayerStatus('loading');
+    retriedWithoutHeaders.current = false;
     const [token, tenantId] = await Promise.all([getToken(), getTenantId()]);
     const source = buildVideoSource(videoUrl, token, tenantId);
     if (source) {
-      await player.replaceAsync(source);
-      player.play();
+      setVideoSource(source);
+      try {
+        await player.replaceAsync(source);
+        player.play();
+      } catch (e) {
+        logger.warn('[VideoPlayer] retry replaceAsync failed:', e?.message);
+        setErrorMsg(e?.message || 'Failed to load video');
+      }
     }
   }, [player, videoUrl]);
 
