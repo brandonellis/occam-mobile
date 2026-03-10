@@ -249,7 +249,7 @@ const VideoAnnotationScreen = ({ route, navigation }) => {
     } finally {
       setIsSaving(false);
     }
-  }, [uploadId, capturedTimestamp, currentTime, comment, paths, loadAnnotations]);
+  }, [uploadId, capturedTimestamp, currentTime, comment, paths, loadAnnotations, targetType, targetId]);
 
   const handleDeleteAnnotation = useCallback((annotationId) => {
     Alert.alert('Delete Annotation', 'Remove this annotation?', [
