@@ -21,6 +21,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { getUploads, uploadFile } from '../services/uploads.api';
+import { convertHeicToJpeg } from '../helpers/image.helper';
 import { mediaPickerStyles as styles } from '../styles/mediaPicker.styles';
 import { colors } from '../theme';
 import AuthImage from './AuthImage';
@@ -98,26 +99,16 @@ const MediaPickerModal = ({
       if (result.canceled || !result.assets?.length) return;
 
       const asset = result.assets[0];
-      const fileName = asset.fileName || asset.uri.split('/').pop() || 'upload';
-      const ext = fileName.split('.').pop()?.toLowerCase();
-      const mimeType = asset.mimeType || (() => {
-        if (asset.type === 'video') return 'video/mp4';
-        if (ext === 'heic') return 'image/heic';
-        if (ext === 'heif') return 'image/heif';
-        if (ext === 'png') return 'image/png';
-        if (ext === 'gif') return 'image/gif';
-        if (ext === 'webp') return 'image/webp';
-        return 'image/jpeg';
-      })();
+      const converted = await convertHeicToJpeg(asset);
 
       setIsUploading(true);
       setUploadProgress(0);
 
-      await uploadFile(asset.uri, {
+      await uploadFile(converted.uri, {
         uploadableType: 'media_library',
         isLibrary: true,
-        filename: fileName,
-        mimeType,
+        filename: converted.fileName,
+        mimeType: converted.mimeType,
         onProgress: (progress) => setUploadProgress(progress),
       });
 
