@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Image } from 'react-native';
 import { getToken, getTenantId } from '../helpers/storage.helper';
 import { resolveMediaUrl } from '../helpers/media.helper';
@@ -14,9 +14,11 @@ import { resolveMediaUrl } from '../helpers/media.helper';
 const AuthImage = ({ uri, source, style, ...rest }) => {
   const [authSource, setAuthSource] = useState(null);
   const [resolvedUri, setResolvedUri] = useState(null);
+  const retriedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
+    retriedRef.current = false;
     const rawUri = uri || source?.uri;
     if (!rawUri) {
       setAuthSource(null);
@@ -47,7 +49,8 @@ const AuthImage = ({ uri, source, style, ...rest }) => {
       source={authSource}
       style={style}
       onError={(event) => {
-        if (authSource?.headers && resolvedUri) {
+        if (authSource?.headers && resolvedUri && !retriedRef.current) {
+          retriedRef.current = true;
           setAuthSource({ uri: resolvedUri });
         }
 
