@@ -1,6 +1,7 @@
 import React, { useEffect, useCallback } from 'react';
 import { View, ActivityIndicator, StatusBar, Alert } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { requestMicrophonePermissionsAsync } from 'expo-camera';
 import { SCREENS } from '../../constants/navigation.constants';
 import { videoRecordingStyles as styles } from '../../styles/videoRecording.styles';
 import { colors } from '../../theme';
@@ -14,6 +15,16 @@ const VideoRecordingScreen = ({ navigation }) => {
         Alert.alert(
           'Permission Required',
           'Please allow camera access to record coaching videos.',
+          [{ text: 'OK', onPress: () => navigation.goBack() }]
+        );
+        return;
+      }
+
+      const micPermission = await requestMicrophonePermissionsAsync();
+      if (micPermission.status !== 'granted') {
+        Alert.alert(
+          'Permission Required',
+          'Please allow microphone access to record audio with coaching videos.',
           [{ text: 'OK', onPress: () => navigation.goBack() }]
         );
         return;
