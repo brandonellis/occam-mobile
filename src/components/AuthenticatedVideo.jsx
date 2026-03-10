@@ -16,6 +16,7 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
   const [headers, setHeaders] = useState(null);
   const [failed, setFailed] = useState(false);
   const retriedRef = useRef(false);
+  const retryingRef = useRef(false);
   const videoViewRef = useRef(null);
 
   useEffect(() => {
@@ -52,17 +53,21 @@ const AuthenticatedVideo = ({ uri, posterUri, style, borderRadius = 12 }) => {
   useEffect(() => {
     if (status === 'error' && !retriedRef.current && videoSource?.headers) {
       retriedRef.current = true;
+      retryingRef.current = true;
       const resolved = resolveMediaUrl(uri);
       if (resolved && player) {
         try {
           player.replace({ uri: resolved });
         } catch {
+          retryingRef.current = false;
           setFailed(true);
         }
         return;
       }
+      retryingRef.current = false;
     }
-    if (status === 'error') setFailed(true);
+    if (status === 'error' && !retryingRef.current) setFailed(true);
+    if (status !== 'error' && retryingRef.current) retryingRef.current = false;
   }, [status, videoSource, uri, player]);
 
   const handlePlayPause = useCallback(() => {

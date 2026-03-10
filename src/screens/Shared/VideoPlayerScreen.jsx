@@ -103,7 +103,6 @@ const VideoPlayerScreen = ({ route, navigation }) => {
 
     const statusSub = player.addListener('statusChange', ({ status, error }) => {
       logger.log('[VideoPlayer] status:', status, error?.message || '');
-      setPlayerStatus(status);
       if (status === 'error') {
         // If first attempt with auth headers failed, retry without headers
         // (handles public GCS URLs that may reject custom Authorization headers)
@@ -112,6 +111,7 @@ const VideoPlayerScreen = ({ route, navigation }) => {
           const resolved = resolveMediaUrl(videoUrl);
           if (resolved) {
             logger.log('[VideoPlayer] retrying without auth headers:', resolved);
+            setPlayerStatus('loading');
             const noAuthSource = { uri: resolved };
             setVideoSource(noAuthSource);
             try {
@@ -119,12 +119,16 @@ const VideoPlayerScreen = ({ route, navigation }) => {
               player.play();
             } catch (e) {
               logger.warn('[VideoPlayer] replace failed:', e?.message);
+              setPlayerStatus('error');
               setErrorMsg(error?.message || 'Failed to load video');
             }
             return;
           }
         }
+        setPlayerStatus('error');
         setErrorMsg(error?.message || 'Failed to load video');
+      } else {
+        setPlayerStatus(status);
       }
     });
 
