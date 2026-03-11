@@ -98,6 +98,9 @@ export const adminScheduleStyles = StyleSheet.create({
   dateDayNumberSelected: {
     color: colors.textInverse,
   },
+  filterScroll: {
+    flexGrow: 0,
+  },
   filterRow: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
