@@ -145,7 +145,13 @@ const ClientSelectionScreen = ({ route, navigation }) => {
 
       handleContinueToServices(createdClient);
     } catch (err) {
-      logger.warn('Failed to create client:', err?.message || err);
+      logger.warn('Failed to create client:', {
+        message: err?.message,
+        status: err?.response?.status,
+        statusText: err?.response?.statusText,
+        data: err?.response?.data,
+        code: err?.code,
+      });
       const validationErrors = err?.response?.data?.errors;
       const firstError = validationErrors
         ? Object.values(validationErrors).flat().find(Boolean)
