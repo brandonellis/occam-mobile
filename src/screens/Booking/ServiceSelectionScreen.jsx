@@ -3,6 +3,7 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, ActivityIndicator, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { formatDuration } from '../../constants/booking.constants';
@@ -200,9 +201,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
       )}
 
       {(state.isLoading || rebooking) ? (
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ListSkeleton count={5} />
       ) : state.error ? (
         <View style={globalStyles.errorContainer}>
           <Text style={globalStyles.errorText}>{state.error}</Text>

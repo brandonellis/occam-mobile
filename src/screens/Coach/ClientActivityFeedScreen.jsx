@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
 } from 'react-native';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -368,7 +369,7 @@ const ClientActivityFeedScreen = ({ route, navigation }) => {
       {/* Content */}
       {state.loading && !state.refreshing ? (
         <View style={styles.listContent}>
-          <ActivityIndicator size="large" color={colors.accent} style={{ marginTop: 48 }} />
+          <ListSkeleton count={5} />
         </View>
       ) : state.error && state.activities.length === 0 ? (
         <View style={styles.emptyContainer}>

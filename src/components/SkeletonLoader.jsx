@@ -136,4 +136,45 @@ export const ListSkeleton = ({ count = 4 }) => (
   </View>
 );
 
+/**
+ * Schedule skeleton — used for AdminScheduleScreen and CoachScheduleScreen.
+ * Mimics: summary card + 4 timeline rows.
+ */
+export const ScheduleSkeleton = () => (
+  <View style={styles.scheduleContainer}>
+    <SkeletonBlock style={styles.summaryCardSkeleton} />
+    {[1, 2, 3, 4].map((i) => (
+      <View key={i} style={styles.timelineRowSkeleton}>
+        <View style={styles.timeLabelSkeleton}>
+          <SkeletonBlock style={styles.timeLabelLine} />
+        </View>
+        <View style={styles.sessionCardSkeleton}>
+          <SkeletonBlock style={styles.serviceLine} />
+          <SkeletonBlock style={styles.coachLine} />
+          <SkeletonBlock style={styles.locationLine} />
+        </View>
+      </View>
+    ))}
+  </View>
+);
+
+/**
+ * Detail screen skeleton — used for BookingDetailScreen, ClientDetailScreen.
+ * Mimics: header block + detail rows.
+ */
+export const DetailSkeleton = () => (
+  <View style={styles.listContainer}>
+    <SkeletonBlock style={styles.detailHeader} />
+    {[1, 2, 3, 4, 5].map((i) => (
+      <View key={i} style={styles.detailRow}>
+        <SkeletonBlock style={styles.detailIcon} />
+        <View style={styles.listContent}>
+          <SkeletonBlock style={styles.listPrimaryLine} />
+          <SkeletonBlock style={styles.listSecondaryLine} />
+        </View>
+      </View>
+    ))}
+  </View>
+);
+
 export default SkeletonBlock;

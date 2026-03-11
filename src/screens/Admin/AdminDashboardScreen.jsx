@@ -14,7 +14,6 @@ import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { formatDateKeyLong, formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
 import { getBookings } from '../../services/bookings.api';
-import { getClients } from '../../services/accounts.api';
 import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
 import { adminDashboardStyles as styles } from '../../styles/adminDashboard.styles';
 import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
@@ -62,7 +61,6 @@ const AdminDashboardScreen = ({ navigation }) => {
   const { user, company } = useAuth();
   const firstName = user?.first_name || user?.name?.split(' ')[0] || 'Admin';
   const [bookings, setBookings] = useState([]);
-  const [clientCount, setClientCount] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
@@ -78,9 +76,8 @@ const AdminDashboardScreen = ({ navigation }) => {
         setIsLoading(true);
       }
 
-      const [bookingsRes, clientsRes] = await Promise.allSettled([
+      const [bookingsRes] = await Promise.allSettled([
         getBookings({ start_date: todayKey, end_date: todayKey, per_page: 200, status: 'all' }),
-        getClients({ per_page: 1 }),
       ]);
 
       setError(null);
@@ -93,12 +90,6 @@ const AdminDashboardScreen = ({ navigation }) => {
         setBookings([]);
       }
 
-      if (clientsRes.status === 'fulfilled') {
-        const meta = clientsRes.value?.meta || clientsRes.value;
-        setClientCount(meta?.total ?? clientsRes.value?.data?.length ?? null);
-      } else {
-        setClientCount(null);
-      }
     } catch (err) {
       logger.warn('Failed to load admin dashboard:', err?.message || err);
       setError('Unable to load the admin dashboard. Pull down to retry.');
@@ -187,9 +178,6 @@ const AdminDashboardScreen = ({ navigation }) => {
                     <Text style={styles.heroBadgeText}>Admin Operations</Text>
                   </View>
                   <Text style={styles.heroTitle}>Hello, {firstName}</Text>
-                  <Text style={styles.heroSubtitle}>
-                    Run the day from one place with fast scanning, fast booking actions, and a cleaner operational view.
-                  </Text>
                 </View>
                 <TouchableOpacity
                   style={styles.heroBellButton}
@@ -227,27 +215,9 @@ const AdminDashboardScreen = ({ navigation }) => {
               </View>
             </View>
 
-            <View style={styles.statsRow}>
-              <View style={styles.statCard}>
-                <Text style={styles.statEyebrow}>Coverage</Text>
-                <Text style={styles.statValue}>{bookings.length}</Text>
-                <Text style={styles.statLabel}>Bookings scheduled across the selected operating day.</Text>
-              </View>
-              <View style={styles.statCard}>
-                <Text style={styles.statEyebrow}>Clients</Text>
-                <Text style={styles.statValue}>{clientCount != null ? clientCount : '—'}</Text>
-                <Text style={styles.statLabel}>Total clients available for search, booking, and follow-up.</Text>
-              </View>
-            </View>
-
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderCopy}>
-                  <Text style={styles.sectionTitle}>Quick Actions</Text>
-                  <Text style={styles.sectionHint}>
-                    Keep the most common admin and coach-side actions one tap away.
-                  </Text>
-                </View>
+                <Text style={styles.sectionTitle}>Quick Actions</Text>
               </View>
               <View style={styles.actionGrid}>
                 {QUICK_ACTIONS.map((action) => (
@@ -261,7 +231,6 @@ const AdminDashboardScreen = ({ navigation }) => {
                       <MaterialCommunityIcons name={action.icon} size={20} color={action.color} />
                     </View>
                     <Text style={styles.actionTitle}>{action.title}</Text>
-                    <Text style={styles.actionSubtitle}>{action.subtitle}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -269,12 +238,7 @@ const AdminDashboardScreen = ({ navigation }) => {
 
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <View style={styles.sectionHeaderCopy}>
-                  <Text style={styles.sectionTitle}>Today's Schedule</Text>
-                  <Text style={styles.sectionHint}>
-                    {remainingTodayCount} remaining booking{remainingTodayCount === 1 ? '' : 's'} today. Tap into the day view for the full operational timeline.
-                  </Text>
-                </View>
+                <Text style={styles.sectionTitle}>{remainingTodayCount} Upcoming</Text>
                 <TouchableRipple
                   onPress={() => navigation.navigate('ScheduleTab', { screen: SCREENS.ADMIN_SCHEDULE })}
                   borderless

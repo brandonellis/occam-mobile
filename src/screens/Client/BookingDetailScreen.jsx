@@ -3,7 +3,6 @@ import {
   View,
   Text,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
   Alert,
 } from 'react-native';
@@ -18,6 +17,7 @@ import { bookingDetailStyles as styles } from '../../styles/bookingDetail.styles
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
 import ScreenHeader from '../../components/ScreenHeader';
+import { DetailSkeleton } from '../../components/SkeletonLoader';
 import logger from '../../helpers/logger.helper';
 
 const BookingDetailScreen = ({ navigation, route }) => {
@@ -81,9 +81,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScreenHeader title="Booking Details" onBack={() => navigation.goBack()} />
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <DetailSkeleton />
       </SafeAreaView>
     );
   }

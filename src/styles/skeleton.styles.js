@@ -165,4 +165,58 @@ export const skeletonStyles = StyleSheet.create({
     borderRadius: borderRadius.xs,
     marginTop: spacing.sm,
   },
+
+  // Schedule skeleton
+  scheduleContainer: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.tabBarClearance,
+  },
+  summaryCardSkeleton: {
+    height: 72,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+  },
+  timelineRowSkeleton: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+    minHeight: 80,
+  },
+  timeLabelSkeleton: {
+    width: 56,
+    paddingTop: spacing.xs,
+    alignItems: 'flex-end',
+  },
+  timeLabelLine: {
+    width: 40,
+    height: 12,
+    borderRadius: borderRadius.xs,
+  },
+  sessionCardSkeleton: {
+    flex: 1,
+    marginLeft: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: BONE_COLOR,
+  },
+
+  // Detail skeleton
+  detailHeader: {
+    height: 100,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.lg,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  detailIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: spacing.md,
+  },
 });

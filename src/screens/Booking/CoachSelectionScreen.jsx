@@ -4,6 +4,7 @@ import { Text, ActivityIndicator, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { getCoaches } from '../../services/bookings.api';
@@ -119,9 +120,7 @@ const CoachSelectionScreen = ({ route, navigation }) => {
       )}
 
       {(state.isLoading || rebooking) ? (
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ListSkeleton count={4} />
       ) : state.error ? (
         <View style={globalStyles.errorContainer}>
           <Text style={globalStyles.errorText}>{state.error}</Text>

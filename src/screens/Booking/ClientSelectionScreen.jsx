@@ -1,8 +1,9 @@
 import React, { useEffect, useCallback, useState, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
-import { Text, Searchbar, ActivityIndicator, TouchableRipple } from 'react-native-paper';
+import { Text, Searchbar, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 import Avatar from '../../components/Avatar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
@@ -72,9 +73,7 @@ const ClientSelectionScreen = ({ route, navigation }) => {
       />
 
       {isLoading ? (
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ListSkeleton count={5} />
       ) : error ? (
         <View style={globalStyles.errorContainer}>
           <Text style={globalStyles.errorText}>{error}</Text>

@@ -15,6 +15,7 @@ import { Snackbar, IconButton, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
+import { DetailSkeleton } from '../../components/SkeletonLoader';
 import Avatar from '../../components/Avatar';
 import MediaPickerModal from '../../components/MediaPickerModal';
 import ActivityCard from '../../components/ActivityCard';
@@ -413,9 +414,7 @@ const ClientDetailScreen = ({ route, navigation }) => {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
         <ScreenHeader title="Client" onBack={handleGoBack} />
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <DetailSkeleton />
       </SafeAreaView>
     );
   }

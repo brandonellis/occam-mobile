@@ -5,7 +5,6 @@ import {
   ScrollView,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   Alert,
 } from 'react-native';
@@ -18,6 +17,7 @@ import { getBookings, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, generateDateRangeInTz, getTodayKey, formatDateKeyLong } from '../../helpers/timezone.helper';
 import { scheduleStyles as styles } from '../../styles/schedule.styles';
 import { globalStyles } from '../../styles/global.styles';
+import { ScheduleSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import { colors, spacing } from '../../theme';
 import logger from '../../helpers/logger.helper';
@@ -146,9 +146,7 @@ const CoachScheduleScreen = ({ navigation }) => {
       />
 
       {isLoading ? (
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ScheduleSkeleton />
       ) : (
         <ScrollView
           contentContainerStyle={[

@@ -4,10 +4,10 @@ import {
   Text,
   ScrollView,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ListSkeleton } from '../../components/SkeletonLoader';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { ProgressBar } from 'react-native-paper';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -420,9 +420,7 @@ const MembershipPlansScreen = ({ navigation, route }) => {
       />
 
       {isLoading ? (
-        <View style={globalStyles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-        </View>
+        <ListSkeleton count={4} />
       ) : error ? (
         <View style={globalStyles.errorContainer}>
           <Text style={globalStyles.errorText}>{error}</Text>

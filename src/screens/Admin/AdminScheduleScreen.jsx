@@ -1,14 +1,20 @@
-import React, { useEffect, useCallback, useMemo, useState } from 'react';
+import React, { useEffect, useCallback, useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
   ScrollView,
   FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   RefreshControl,
   Alert,
+  LayoutAnimation,
+  UIManager,
+  Platform,
 } from 'react-native';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IconButton, Portal, Modal, TouchableRipple } from 'react-native-paper';
@@ -29,6 +35,7 @@ import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
 import { adminScheduleStyles as styles } from '../../styles/adminSchedule.styles';
 import { globalStyles } from '../../styles/global.styles';
 import EmptyState from '../../components/EmptyState';
+import { ScheduleSkeleton } from '../../components/SkeletonLoader';
 import { colors, spacing } from '../../theme';
 import logger from '../../helpers/logger.helper';
 
@@ -36,6 +43,7 @@ const AdminScheduleScreen = ({ navigation }) => {
   const { company } = useAuth();
   const todayKey = getTodayKey(company);
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
+  const dateListRef = useRef(null);
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -118,6 +126,11 @@ const AdminScheduleScreen = ({ navigation }) => {
   }, [navigation, loadBookings]);
 
   const dateStrip = useMemo(() => buildDateStrip(selectedDateKey, todayKey), [selectedDateKey, todayKey]);
+
+  const shiftDate = useCallback((offset) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setSelectedDateKey((prev) => shiftDateKey(prev, offset));
+  }, []);
 
   const filteredBookings = useMemo(() => {
     return bookings.filter((booking) => (
@@ -255,46 +268,42 @@ const AdminScheduleScreen = ({ navigation }) => {
             <MaterialCommunityIcons name="plus" size={18} color={colors.accent} />
             <Text style={globalStyles.headerActionText}>New</Text>
           </TouchableOpacity>
+          {!isTodaySelected && (
+            <TouchableOpacity style={styles.todayResetButton} onPress={() => setSelectedDateKey(todayKey)} activeOpacity={0.75}>
+              <Text style={styles.todayResetText}>Today</Text>
+            </TouchableOpacity>
+          )}
         </View>
-        <Text style={styles.headerSubtitle}>
-          Today-first team schedule with fast filters and one-tap booking follow-up.
-        </Text>
-
-        <View style={styles.dateNavRow}>
-          <IconButton
-            icon="chevron-left"
-            size={22}
-            iconColor={colors.primary}
-            onPress={() => setSelectedDateKey((prev) => shiftDateKey(prev, -1))}
-            style={styles.navIconButton}
-          />
-          <View style={styles.dateNavCenter}>
-            <Text style={styles.dateNavLabel}>{formatDateKeyLong(selectedDateKey)}</Text>
-            {!isTodaySelected && (
-              <TouchableOpacity style={styles.todayResetButton} onPress={() => setSelectedDateKey(todayKey)} activeOpacity={0.75}>
-                <Text style={styles.todayResetText}>Jump to Today</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          <IconButton
-            icon="chevron-right"
-            size={22}
-            iconColor={colors.primary}
-            onPress={() => setSelectedDateKey((prev) => shiftDateKey(prev, 1))}
-            style={styles.navIconButton}
-          />
-        </View>
+        <Text style={styles.monthLabel}>{formatDateKeyLong(selectedDateKey).split(',').pop().trim()}</Text>
       </View>
 
-      <FlatList
-        data={dateStrip}
-        renderItem={renderDateItem}
-        keyExtractor={(item) => item.key}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.dateStrip}
-        contentContainerStyle={{ paddingHorizontal: spacing.lg }}
-      />
+      <View style={styles.dateStripRow}>
+        <IconButton
+          icon="chevron-left"
+          size={20}
+          iconColor={colors.primary}
+          onPress={() => shiftDate(-1)}
+          style={styles.navIconButton}
+        />
+        <FlatList
+          ref={dateListRef}
+          data={dateStrip}
+          renderItem={renderDateItem}
+          keyExtractor={(item) => item.key}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.dateStripList}
+          initialScrollIndex={3}
+          getItemLayout={(_, index) => ({ length: 54, offset: 54 * index, index })}
+        />
+        <IconButton
+          icon="chevron-right"
+          size={20}
+          iconColor={colors.primary}
+          onPress={() => shiftDate(1)}
+          style={styles.navIconButton}
+        />
+      </View>
 
       <ScrollView
         horizontal
@@ -358,9 +367,7 @@ const AdminScheduleScreen = ({ navigation }) => {
 
       <View style={styles.contentWrap}>
         {isLoading ? (
-          <View style={globalStyles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.primary} />
-          </View>
+          <ScheduleSkeleton />
         ) : (
           <ScrollView
             contentContainerStyle={styles.scrollContent}
@@ -374,30 +381,7 @@ const AdminScheduleScreen = ({ navigation }) => {
           >
             <View style={styles.summaryCard}>
               <Text style={styles.summaryTitle}>{filteredBookings.length} booking{filteredBookings.length === 1 ? '' : 's'} in view</Text>
-              <Text style={styles.summarySubtitle}>
-                {formatDateKeyLong(selectedDateKey)} · Tap a booking for full detail, or use the close action for quick cancellation.
-              </Text>
-            </View>
-
-            {activeFilterPills.length > 0 && (
-              <View style={styles.activeFilterRow}>
-                {activeFilterPills.map((item) => (
-                  <View key={item.key} style={styles.activeFilterPill}>
-                    <Text style={styles.activeFilterText}>{item.label}</Text>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryText}>
-                {filtersLoading ? 'Loading filters…' : isTodaySelected ? 'Today' : 'Selected day'}
-              </Text>
-              {hasActiveFilters && (
-                <TouchableOpacity onPress={clearFilters} activeOpacity={0.75}>
-                  <Text style={styles.resetFiltersText}>Reset Filters</Text>
-                </TouchableOpacity>
-              )}
+              <Text style={styles.summarySubtitle}>{formatDateKeyLong(selectedDateKey)}</Text>
             </View>
 
             {filteredBookings.length === 0 ? (

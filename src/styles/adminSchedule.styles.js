@@ -24,32 +24,20 @@ export const adminScheduleStyles = StyleSheet.create({
     ...typography.h3,
     color: colors.textPrimary,
   },
+  monthLabel: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+    marginTop: spacing.xs,
+    textAlign: 'center',
+  },
   headerSubtitle: {
     ...typography.bodySmall,
     color: colors.textSecondary,
     marginBottom: spacing.md,
     lineHeight: 18,
   },
-  dateNavRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  navIconButton: {
-    margin: 0,
-  },
-  dateNavCenter: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-  },
-  dateNavLabel: {
-    ...typography.label,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
   todayResetButton: {
-    marginTop: spacing.xs,
+    marginLeft: spacing.sm,
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
     borderRadius: borderRadius.full,
@@ -60,10 +48,17 @@ export const adminScheduleStyles = StyleSheet.create({
     color: colors.accent,
     fontWeight: '600',
   },
-  dateStrip: {
+  dateStripRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.white,
-    flexGrow: 0,
     paddingVertical: spacing.xs,
+  },
+  navIconButton: {
+    margin: 0,
+  },
+  dateStripList: {
+    flex: 1,
   },
   dateItem: {
     alignItems: 'center',
@@ -128,6 +123,7 @@ export const adminScheduleStyles = StyleSheet.create({
   },
   filterChipText: {
     ...typography.labelSmall,
+    textTransform: 'none',
     color: colors.textSecondary,
     marginRight: spacing.xs,
   },
