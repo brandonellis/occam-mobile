@@ -12,6 +12,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getBooking, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
+import { COACH_ROLES } from '../../constants/auth.constants';
 import { bookingDetailStyles as styles } from '../../styles/bookingDetail.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
@@ -27,7 +28,7 @@ const STATUS_CONFIG = {
 
 const BookingDetailScreen = ({ navigation, route }) => {
   const { bookingId, booking: passedBooking } = route.params || {};
-  const { company } = useAuth();
+  const { company, activeRole } = useAuth();
 
   const [booking, setBooking] = useState(passedBooking || null);
   const [isLoading, setIsLoading] = useState(!passedBooking);
@@ -53,9 +54,10 @@ const BookingDetailScreen = ({ navigation, route }) => {
 
   const handleCancel = useCallback(() => {
     if (!booking) return;
+    const isStaffView = COACH_ROLES.includes(activeRole);
     Alert.alert(
       'Cancel Booking',
-      `Are you sure you want to cancel your ${booking.services?.[0]?.name || 'booking'}?`,
+      `Are you sure you want to cancel ${isStaffView ? 'this' : 'your'} ${booking.services?.[0]?.name || 'booking'}?`,
       [
         { text: 'Keep', style: 'cancel' },
         {
@@ -79,7 +81,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
         },
       ]
     );
-  }, [booking, navigation]);
+  }, [activeRole, booking, navigation]);
 
   if (isLoading) {
     return (
@@ -111,7 +113,8 @@ const BookingDetailScreen = ({ navigation, route }) => {
   const windowHours = company?.cancellation_window_hours ?? 24;
   const isWithinCancellationWindow = booking.start_time &&
     new Date(booking.start_time).getTime() < Date.now() + windowHours * 3600000;
-  const canCancel = !isWithinCancellationWindow &&
+  const isStaffView = COACH_ROLES.includes(activeRole);
+  const canCancel = (isStaffView || !isWithinCancellationWindow) &&
     (booking.status === 'confirmed' || booking.status === 'pending');
 
   return (

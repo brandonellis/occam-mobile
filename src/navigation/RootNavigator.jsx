@@ -4,9 +4,9 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import useAuth from '../hooks/useAuth';
 import usePushNotifications from '../hooks/usePushNotifications';
 import { SCREENS } from '../constants/navigation.constants';
-import { COACH_ROLES } from '../constants/auth.constants';
 import { colors } from '../theme/colors';
 import LoginScreen from '../screens/Auth/LoginScreen';
+import AdminTabNavigator from './AdminTabNavigator';
 import CoachTabNavigator from './CoachTabNavigator';
 import ClientTabNavigator from './ClientTabNavigator';
 import VideoRecordingScreen from '../screens/Coach/VideoRecordingScreen';
@@ -48,7 +48,8 @@ const RootNavigator = () => {
     );
   }
 
-  const isCoachOrAdmin = COACH_ROLES.includes(activeRole);
+  const isAdmin = activeRole === 'admin';
+  const isCoach = activeRole === 'coach';
   const navigatorKey = isAuthenticated ? `app-${activeRole}` : 'auth';
 
   return (
@@ -61,7 +62,12 @@ const RootNavigator = () => {
         />
       ) : (
         <>
-          {isCoachOrAdmin ? (
+          {isAdmin ? (
+            <Stack.Screen
+              name={SCREENS.ADMIN_TABS}
+              component={AdminTabNavigator}
+            />
+          ) : isCoach ? (
             <Stack.Screen
               name={SCREENS.COACH_TABS}
               component={CoachTabNavigator}

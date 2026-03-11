@@ -6,19 +6,25 @@ import { roleSwitcherStyles as styles } from '../styles/roleSwitcher.styles';
 import { colors } from '../theme';
 
 const ICON_MAP = {
+  admin: { target: 'shield-account-outline', swap: 'swap-horizontal' },
   coach: { target: 'account-outline', swap: 'swap-horizontal' },
   client: { target: 'briefcase-outline', swap: 'swap-horizontal' },
 };
 
 const RoleSwitcher = () => {
-  const { activeRole, isDualRole, switchRole } = useAuth();
+  const { activeRole, isDualRole, switchRole, user } = useAuth();
 
   if (!isDualRole) return null;
 
-  const isCoachView = activeRole === 'coach' || activeRole === 'admin';
-  const targetRole = isCoachView ? 'client' : 'coach';
-  const targetLabel = isCoachView ? 'Client View' : 'Coach View';
-  const icons = isCoachView ? ICON_MAP.coach : ICON_MAP.client;
+  const roleNames = user?.roles?.map((role) => (typeof role === 'string' ? role : role.name)) || [];
+  const hasAdminRole = roleNames.includes('admin');
+  const isStaffView = activeRole === 'coach' || activeRole === 'admin';
+  const targetRole = isStaffView ? 'client' : (hasAdminRole ? 'admin' : 'coach');
+  const targetLabel = isStaffView ? 'Client View' : (hasAdminRole ? 'Admin View' : 'Coach View');
+  const currentLabel = activeRole === 'admin' ? 'Admin' : isStaffView ? 'Coach' : 'Client';
+  const icons = isStaffView
+    ? (activeRole === 'admin' ? ICON_MAP.admin : ICON_MAP.coach)
+    : ICON_MAP.client;
 
   return (
     <Surface style={styles.container} elevation={1}>
@@ -35,7 +41,7 @@ const RoleSwitcher = () => {
             Switch to {targetLabel}
           </Text>
           <Text variant="bodySmall" style={styles.hint}>
-            You're currently in {isCoachView ? 'Coach' : 'Client'} mode
+            You're currently in {currentLabel} mode
           </Text>
         </Surface>
         <Icon source={icons.swap} size={20} color={colors.accent} />

@@ -2,6 +2,11 @@ export const SCREENS = {
   // Auth
   LOGIN: 'Login',
 
+  // Admin tabs
+  ADMIN_TABS: 'AdminTabs',
+  ADMIN_DASHBOARD: 'AdminDashboard',
+  ADMIN_SCHEDULE: 'AdminSchedule',
+
   // Coach tabs
   COACH_TABS: 'CoachTabs',
   COACH_DASHBOARD: 'CoachDashboard',
