@@ -100,6 +100,22 @@ export const formatTimeInTz = (timeString, company) => {
   return formatter.format(date);
 };
 
+
+export const formatHourInTz = (timeString, company) => {
+  if (!timeString) return '';
+
+  const tz = getEffectiveTimezone(company);
+  const date = toDate(timeString);
+  if (isNaN(date.getTime())) return '';
+
+  const formatter = getFormatter(tz, {
+    hour: 'numeric',
+    hour12: true,
+  });
+
+  return formatter.format(date);
+};
+
 /**
  * Format an ISO 8601 datetime string into a date string in the company timezone.
  *

@@ -217,61 +217,76 @@ export const adminDashboardStyles = StyleSheet.create({
   bookingCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.gray200,
     marginBottom: spacing.md,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accent,
     ...shadows.sm,
   },
-  bookingCardRow: {
+  bookingCardCancelled: {
+    opacity: 0.8,
+  },
+  bookingCardHeader: {
     flexDirection: 'row',
     alignItems: 'flex-start',
   },
-  bookingTimeBlock: {
-    width: 74,
-    marginRight: spacing.md,
-  },
-  bookingTimeValue: {
-    ...typography.label,
-    color: colors.accentDark,
-    fontSize: 15,
-  },
-  bookingTimeMeta: {
-    ...typography.bodySmall,
-    color: colors.textTertiary,
-    marginTop: 4,
-  },
-  bookingCardContent: {
+  bookingMain: {
     flex: 1,
-  },
-  bookingHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    paddingRight: spacing.sm,
   },
   bookingService: {
     ...typography.label,
     color: colors.textPrimary,
-    flex: 1,
-    paddingRight: spacing.sm,
+  },
+  bookingClient: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginTop: 1,
+  },
+  bookingTime: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+    marginTop: 2,
+  },
+  bookingMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  bookingMetaPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: borderRadius.full,
+    backgroundColor: colors.gray100,
+  },
+  bookingMetaText: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+  },
+  bookingMetaIcon: {
+    marginRight: 4,
+  },
+  bookingActions: {
+    alignItems: 'flex-end',
   },
   bookingStatusPill: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: borderRadius.full,
+    marginBottom: 2,
   },
   bookingStatusText: {
     ...typography.labelSmall,
     fontWeight: '700',
   },
-  bookingClient: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  bookingMeta: {
-    ...typography.bodySmall,
-    color: colors.textTertiary,
-    marginTop: spacing.sm,
-    lineHeight: 18,
+  bookingChevron: {
+    marginTop: 2,
   },
   bookingCountText: {
     ...typography.labelSmall,

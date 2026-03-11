@@ -30,6 +30,11 @@ export const getClient = async (clientId) => {
   return response.data;
 };
 
+export const createClient = async (payload) => {
+  const response = await apiClient.post('/clients', payload);
+  return response.data;
+};
+
 export const getClientPerformanceCurriculum = async (clientId, params = {}) => {
   const response = await apiClient.get(
     `/clients/${clientId}/performance/curriculum`,

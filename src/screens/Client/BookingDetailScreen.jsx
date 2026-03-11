@@ -11,7 +11,6 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getBooking, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
-import { COACH_ROLES } from '../../constants/auth.constants';
 import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
 import { bookingDetailStyles as styles } from '../../styles/bookingDetail.styles';
 import { globalStyles } from '../../styles/global.styles';
@@ -19,10 +18,16 @@ import { colors } from '../../theme';
 import ScreenHeader from '../../components/ScreenHeader';
 import { DetailSkeleton } from '../../components/SkeletonLoader';
 import logger from '../../helpers/logger.helper';
+import {
+  buildBookingEditData,
+  canEditBooking,
+  getBookingEditEntryScreen,
+  isStaffBookingRole,
+} from '../../helpers/bookingEdit.helper';
 
 const BookingDetailScreen = ({ navigation, route }) => {
   const { bookingId, booking: passedBooking } = route.params || {};
-  const { company, activeRole } = useAuth();
+  const { company, activeRole, user } = useAuth();
 
   const [booking, setBooking] = useState(passedBooking || null);
   const [isLoading, setIsLoading] = useState(!passedBooking);
@@ -48,7 +53,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
 
   const handleCancel = useCallback(() => {
     if (!booking) return;
-    const isStaffView = COACH_ROLES.includes(activeRole);
+    const isStaffView = isStaffBookingRole(activeRole) || activeRole === 'coach';
     Alert.alert(
       'Cancel Booking',
       `Are you sure you want to cancel ${isStaffView ? 'this' : 'your'} ${booking.services?.[0]?.name || 'booking'}?`,
@@ -75,6 +80,13 @@ const BookingDetailScreen = ({ navigation, route }) => {
         },
       ]
     );
+  }, [activeRole, booking, navigation]);
+
+  const handleEdit = useCallback(() => {
+    if (!booking) return;
+    navigation.navigate(getBookingEditEntryScreen(activeRole), {
+      bookingData: buildBookingEditData(booking),
+    });
   }, [activeRole, booking, navigation]);
 
   if (isLoading) {
@@ -105,9 +117,10 @@ const BookingDetailScreen = ({ navigation, route }) => {
   const windowHours = company?.cancellation_window_hours ?? 24;
   const isWithinCancellationWindow = booking.start_time &&
     new Date(booking.start_time).getTime() < Date.now() + windowHours * 3600000;
-  const isStaffView = COACH_ROLES.includes(activeRole);
+  const isStaffView = isStaffBookingRole(activeRole) || activeRole === 'coach';
   const canCancel = (isStaffView || !isWithinCancellationWindow) &&
     (booking.status === 'confirmed' || booking.status === 'pending');
+  const canEdit = canEditBooking({ booking, activeRole, user });
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -201,16 +214,29 @@ const BookingDetailScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {/* Cancel action */}
-        {canCancel && (
-          <TouchableOpacity
-            style={styles.cancelButton}
-            onPress={handleCancel}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="close-circle-outline" size={18} color={colors.error} />
-            <Text style={styles.cancelButtonText}>Cancel Booking</Text>
-          </TouchableOpacity>
+        {(canEdit || canCancel) && (
+          <View style={styles.actionGroup}>
+            {canEdit && (
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={handleEdit}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.accentDark} />
+                <Text style={styles.editButtonText}>Edit Booking</Text>
+              </TouchableOpacity>
+            )}
+            {canCancel && (
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={handleCancel}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons name="close-circle-outline" size={18} color={colors.error} />
+                <Text style={styles.cancelButtonText}>Cancel Booking</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>

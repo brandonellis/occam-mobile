@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { View, ScrollView, Alert, TouchableOpacity, ActivityIndicator, Animated } from 'react-native';
-import { Text, ProgressBar, Icon } from 'react-native-paper';
+import { Text, ProgressBar, Icon, TextInput, SegmentedButtons } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CardField, useConfirmPayment, StripeProvider } from '@stripe/stripe-react-native';
 import config from '../../config';
@@ -8,7 +8,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { formatDuration } from '../../constants/booking.constants';
-import { createBooking, cancelBooking, getBooking } from '../../services/bookings.api';
+import { createBooking, updateBooking, cancelBooking, getBooking } from '../../services/bookings.api';
 import { createServicePayment, handlePaymentSuccess, getClientPaymentMethods } from '../../services/billing.api';
 import { getCurrentClientMembership } from '../../services/accounts.api';
 import { buildPaymentSummary } from '../../helpers/pricing.helper';
@@ -19,6 +19,7 @@ import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import { colors } from '../../theme';
 import { COACH_ROLES } from '../../constants/auth.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
+import { isStaffBookingRole } from '../../helpers/bookingEdit.helper';
 import logger from '../../helpers/logger.helper';
 import PromoCodeInput from '../../components/PromoCodeInput';
 
@@ -90,12 +91,17 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   }, [ecommerceLoading, skeletonAnim]);
 
   const isCoach = COACH_ROLES.includes(activeRole);
+  const isEditMode = Boolean(bookingData.editMode);
+  const isStaffEditor = isStaffBookingRole(activeRole);
+  const bookingId = bookingData.bookingId || null;
   const clientId = isCoach ? client?.id : user?.id;
   const effectiveDuration = bookingData.duration_minutes || service?.duration_minutes;
+  const [bookingNotes, setBookingNotes] = useState(bookingData.notes || '');
+  const [bookingStatus, setBookingStatus] = useState(bookingData.status || 'confirmed');
 
   // Fetch client membership status (matches web's useBookingMembership)
   useEffect(() => {
-    if (!clientId || !service?.id) return;
+    if (isEditMode || !clientId || !service?.id) return;
     let cancelled = false;
     (async () => {
       try {
@@ -155,7 +161,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       }
     })();
     return () => { cancelled = true; };
-  }, [clientId, service?.id, membershipRefreshKey]);
+  }, [clientId, isEditMode, service?.id, membershipRefreshKey]);
 
   const isMembershipBooking =
     membershipStatus?.hasActiveMembership && membershipStatus?.hasUsage;
@@ -176,6 +182,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Fetch saved payment methods for the booking client
   useEffect(() => {
+    if (isEditMode) return;
     if (!clientId) return;
     // Skip for membership bookings (no payment needed)
     if (isMembershipBooking) return;
@@ -203,7 +210,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       }
     })();
     return () => { cancelled = true; };
-  }, [clientId, isCoach, isMembershipBooking, paymentsEnabled]);
+  }, [clientId, isCoach, isEditMode, isMembershipBooking, paymentsEnabled]);
 
   // Build payment summary (matches web's usePaymentSummary)
   const summary = buildPaymentSummary({
@@ -235,7 +242,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       start_time: timeSlot?.start_time,
       end_time: timeSlot?.end_time,
       status,
-      notes: bookingData.notes || '',
+      notes: bookingNotes || '',
     };
 
     if (coach?.id) {
@@ -267,7 +274,28 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     }
 
     return payload;
-  }, [clientId, isMembershipBooking, location, service, coach, timeSlot, bookingData, membershipStatus]);
+  }, [clientId, isMembershipBooking, location, service, coach, timeSlot, bookingData, membershipStatus, bookingNotes]);
+
+  const buildUpdatePayload = useCallback(() => {
+    const payload = {
+      notes: bookingNotes || '',
+      status: bookingStatus,
+      start_time: timeSlot?.start_time,
+      end_time: timeSlot?.end_time,
+      resource_ids: selectedResource?.id ? [selectedResource.id] : [],
+    };
+
+    if (isStaffEditor) {
+      if (service?.id) {
+        payload.service_ids = [service.id];
+      }
+      payload.location_id = location?.id || null;
+      payload.client_id = client?.id || null;
+      payload.coach_ids = coach?.id ? [coach.id] : [];
+    }
+
+    return payload;
+  }, [bookingNotes, bookingStatus, timeSlot?.start_time, timeSlot?.end_time, selectedResource?.id, isStaffEditor, service?.id, location?.id, client?.id, coach?.id]);
 
   // Handle direct booking (membership or no-payment — no Stripe involved)
   const handleDirectConfirm = useCallback(async () => {
@@ -288,6 +316,26 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       setLoadingMessage('');
     }
   }, [buildBookingPayload]);
+
+  const handleUpdateConfirm = useCallback(async () => {
+    if (!bookingId) {
+      Alert.alert('Error', 'Booking information is missing.');
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      setLoadingMessage('Updating booking...');
+      const result = await updateBooking(bookingId, buildUpdatePayload());
+      setCreatedBookingData(result?.data || result);
+      setShowSuccess(true);
+    } catch (error) {
+      Alert.alert('Update Failed', extractErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+      setLoadingMessage('');
+    }
+  }, [bookingId, buildUpdatePayload]);
 
   // Handle one-off payment booking (Stripe card)
   const handlePaymentConfirm = useCallback(async () => {
@@ -453,6 +501,10 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Main confirm handler — routes to membership, payment, or no-payment flow
   const handleConfirm = useCallback(() => {
+    if (isEditMode) {
+      handleUpdateConfirm();
+      return;
+    }
     if (!clientId) {
       Alert.alert('Error', 'Client information is missing.');
       return;
@@ -482,11 +534,13 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     } else {
       handleDirectConfirm();
     }
-  }, [clientId, service, selectedResource, isCoach, isMembershipBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, handleDirectConfirm, handlePaymentConfirm, handleSavedCardPayment]);
+  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, handleDirectConfirm, handlePaymentConfirm, handleSavedCardPayment]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
-    if (isSubmitting || membershipLoading || ecommerceLoading) return false;
+    if (isSubmitting) return false;
+    if (isEditMode) return Boolean(bookingId && timeSlot?.start_time);
+    if (membershipLoading || ecommerceLoading) return false;
     if (isMembershipBooking) return true;
     // Service doesn't require payment — allow booking without card
     if (isPaymentNotRequired) return true;
@@ -498,10 +552,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     if (paymentsEnabled) return cardComplete;
     // Payments not enabled — allow booking without payment
     return true;
-  }, [isSubmitting, membershipLoading, ecommerceLoading, isMembershipBooking, isPaymentNotRequired, isCoach, paymentsEnabled, paymentMode, selectedSavedMethodId, cardComplete]);
+  }, [isSubmitting, isEditMode, bookingId, timeSlot?.start_time, membershipLoading, ecommerceLoading, isMembershipBooking, isPaymentNotRequired, isCoach, paymentsEnabled, paymentMode, selectedSavedMethodId, cardComplete]);
 
   // Allotment progress bars for membership
   const renderAllotmentSection = () => {
+    if (isEditMode) return null;
     if (membershipLoading || ecommerceLoading) {
       return (
         <View style={styles.allotmentSection}>
@@ -629,6 +684,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Stripe card input for one-off bookings (shown for both client and coach when payment is needed)
   const renderCardSection = () => {
+    if (isEditMode) return null;
     // Already know no payment needed — skip entirely
     if (isMembershipBooking || isPaymentNotRequired) return null;
 
@@ -764,6 +820,9 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     const clientName = client ? `${client.first_name}` : null;
 
     const getSuccessSubtitle = () => {
+      if (isEditMode) {
+        return 'Your booking changes have been saved.';
+      }
       if (isMembershipBooking && isCoach && clientName) {
         return `${clientName}'s membership session is all set.`;
       }
@@ -791,7 +850,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </Animated.View>
 
           <Animated.View style={{ opacity: successOpacity, alignItems: 'center' }}>
-            <Text style={styles.successTitle}>Booking Confirmed</Text>
+            <Text style={styles.successTitle}>{isEditMode ? 'Booking Updated' : 'Booking Confirmed'}</Text>
             <Text style={styles.successSubtitle}>{getSuccessSubtitle()}</Text>
           </Animated.View>
 
@@ -851,7 +910,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         </ScrollView>
 
         <View style={styles.successBottomBar}>
-          {isCoach && (
+          {!isEditMode && isCoach && (
             <TouchableOpacity
               style={styles.successSecondaryButton}
               onPress={() => navigation.popToTop()}
@@ -861,12 +920,12 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             </TouchableOpacity>
           )}
           <TouchableOpacity
-            style={[styles.continueButton, !isCoach && styles.successPrimaryFull]}
+            style={[styles.continueButton, (!isCoach || isEditMode) && styles.successPrimaryFull]}
             onPress={() => navigation.popToTop()}
             activeOpacity={0.8}
           >
             <Text style={styles.continueButtonText}>
-              {isCoach ? 'Book Another Session' : 'Done'}
+              {isEditMode ? 'Done' : isCoach ? 'Book Another Session' : 'Done'}
             </Text>
           </TouchableOpacity>
         </View>
@@ -877,7 +936,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ScreenHeader
-        title="Confirm Booking"
+        title={isEditMode ? 'Update Booking' : 'Confirm Booking'}
         onBack={() => navigation.goBack()}
         onClose={() => confirmCancelBooking(navigation)}
       />
@@ -964,11 +1023,35 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </Text>
         </View>
 
-        {/* Membership Allotment */}
+        {isEditMode && (
+          <View style={styles.confirmSection}>
+            <Text style={styles.confirmLabel}>STATUS</Text>
+            <SegmentedButtons
+              value={bookingStatus}
+              onValueChange={setBookingStatus}
+              style={styles.editStatusControl}
+              buttons={[
+                { value: 'pending', label: 'Pending' },
+                { value: 'confirmed', label: 'Confirmed' },
+                { value: 'cancelled', label: 'Cancelled' },
+              ]}
+            />
+            <View style={styles.confirmDivider} />
+            <TextInput
+              mode="outlined"
+              label="Notes"
+              value={bookingNotes}
+              onChangeText={setBookingNotes}
+              style={styles.editNotesInput}
+              multiline
+              numberOfLines={4}
+            />
+          </View>
+        )}
+
         {renderAllotmentSection()}
 
-        {/* Membership Booking Banner */}
-        {!membershipLoading && !ecommerceLoading && isMembershipBooking && (
+        {!isEditMode && !membershipLoading && !ecommerceLoading && isMembershipBooking && (
           <View style={[styles.confirmSection, { backgroundColor: colors.successLight }]}>
             <Text style={[styles.confirmLabel, { color: colors.success }]}>
               INCLUDED WITH MEMBERSHIP
@@ -981,8 +1064,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
-        {/* No-payment service banner (payment_required === false) */}
-        {!membershipLoading && !ecommerceLoading && !isMembershipBooking && isPaymentNotRequired && (
+        {!isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && isPaymentNotRequired && (
           <View style={[styles.confirmSection, { backgroundColor: colors.successLight }]}>
             <Text style={[styles.confirmLabel, { color: colors.success }]}>
               NO UPFRONT PAYMENT
@@ -995,8 +1077,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
-        {/* Promo Code Input (shown when payment is required) */}
-        {!membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPaymentNotRequired && paymentsEnabled && (
+        {!isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPaymentNotRequired && paymentsEnabled && (
           <View style={styles.confirmSection}>
             <Text style={styles.confirmLabel}>PROMO CODE</Text>
             <PromoCodeInput
@@ -1011,84 +1092,84 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
-        {/* Stripe Card Input (client one-off only — coaches create confirmed bookings directly) */}
         {renderCardSection()}
 
-        {/* Payment Summary */}
-        {(membershipLoading || ecommerceLoading) ? (
-          <View style={styles.confirmSection}>
-            <Text style={styles.confirmLabel}>PAYMENT SUMMARY</Text>
-            <Animated.View style={[styles.skeletonBlock, { opacity: skeletonAnim }]}>
-              <View style={styles.skeletonRow}>
-                <View style={[styles.skeletonBar, { width: '35%' }]} />
-                <View style={[styles.skeletonBar, { width: '15%' }]} />
-              </View>
-              <View style={styles.skeletonRow}>
-                <View style={[styles.skeletonBar, { width: '40%' }]} />
-                <View style={[styles.skeletonBar, { width: '15%' }]} />
-              </View>
-              <View style={[styles.confirmDivider, styles.totalDivider]} />
-              <View style={styles.skeletonRow}>
-                <View style={[styles.skeletonBar, { width: '25%', height: 18 }]} />
-                <View style={[styles.skeletonBar, { width: '20%', height: 18 }]} />
-              </View>
-            </Animated.View>
-          </View>
-        ) : (
-          <View style={styles.confirmSection}>
-            <Text style={styles.confirmLabel}>PAYMENT SUMMARY</Text>
-
-            <View style={[styles.confirmRow, styles.summaryFeesRow]}>
-              <Text style={styles.summaryLabel}>Subtotal</Text>
-              <Text style={[styles.summaryValue, appliedPromo && { textDecorationLine: 'line-through', color: colors.textTertiary }]}>
-                {summary.subtotalFormatted}
-              </Text>
-            </View>
-
-            {appliedPromo && (
-              <View style={[styles.confirmRow, styles.summaryFeesRow]}>
-                <Text style={[styles.summaryLabel, { color: colors.success }]}>Promo: {appliedPromo.code}</Text>
-                <Text style={[styles.summaryValue, { color: colors.success }]}>-${Number(appliedPromo.discount_amount || 0).toFixed(2)}</Text>
-              </View>
-            )}
-
-            <View style={styles.summaryFeesRow}>
-              <View style={styles.confirmRow}>
-                <View style={styles.summaryFeesInner}>
-                  <Text style={styles.summaryLabel}>Taxes and Fees</Text>
-                  <TouchableOpacity
-                    onPress={() => setFeeBreakdownVisible((v) => !v)}
-                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                    style={styles.summaryInfoButton}
-                  >
-                    <Text style={[styles.summaryInfoIcon, { color: colors.primary }]}>ⓘ</Text>
-                  </TouchableOpacity>
+        {!isEditMode && (
+          (membershipLoading || ecommerceLoading) ? (
+            <View style={styles.confirmSection}>
+              <Text style={styles.confirmLabel}>PAYMENT SUMMARY</Text>
+              <Animated.View style={[styles.skeletonBlock, { opacity: skeletonAnim }]}>
+                <View style={styles.skeletonRow}>
+                  <View style={[styles.skeletonBar, { width: '35%' }]} />
+                  <View style={[styles.skeletonBar, { width: '15%' }]} />
                 </View>
-                <Text style={styles.summaryValue}>
-                  {summary.platformFeeFormatted}
+                <View style={styles.skeletonRow}>
+                  <View style={[styles.skeletonBar, { width: '40%' }]} />
+                  <View style={[styles.skeletonBar, { width: '15%' }]} />
+                </View>
+                <View style={[styles.confirmDivider, styles.totalDivider]} />
+                <View style={styles.skeletonRow}>
+                  <View style={[styles.skeletonBar, { width: '25%', height: 18 }]} />
+                  <View style={[styles.skeletonBar, { width: '20%', height: 18 }]} />
+                </View>
+              </Animated.View>
+            </View>
+          ) : (
+            <View style={styles.confirmSection}>
+              <Text style={styles.confirmLabel}>PAYMENT SUMMARY</Text>
+
+              <View style={[styles.confirmRow, styles.summaryFeesRow]}>
+                <Text style={styles.summaryLabel}>Subtotal</Text>
+                <Text style={[styles.summaryValue, appliedPromo && { textDecorationLine: 'line-through', color: colors.textTertiary }]}>
+                  {summary.subtotalFormatted}
                 </Text>
               </View>
 
-              {feeBreakdownVisible && (
-                <View style={styles.feeBreakdown}>
-                  <Text style={styles.feeBreakdownTitle}>Breakdown:</Text>
-                  <Text style={styles.feeBreakdownItem}>
-                    Platform Fee ({summary.platformFeePercent}%): {summary.platformFeeFormatted}
-                  </Text>
-                  <Text style={styles.feeBreakdownDesc}>
-                    {feeDescription}
-                  </Text>
+              {appliedPromo && (
+                <View style={[styles.confirmRow, styles.summaryFeesRow]}>
+                  <Text style={[styles.summaryLabel, { color: colors.success }]}>Promo: {appliedPromo.code}</Text>
+                  <Text style={[styles.summaryValue, { color: colors.success }]}>-${Number(appliedPromo.discount_amount || 0).toFixed(2)}</Text>
                 </View>
               )}
-            </View>
 
-            <View style={[styles.confirmDivider, styles.totalDivider]} />
+              <View style={styles.summaryFeesRow}>
+                <View style={styles.confirmRow}>
+                  <View style={styles.summaryFeesInner}>
+                    <Text style={styles.summaryLabel}>Taxes and Fees</Text>
+                    <TouchableOpacity
+                      onPress={() => setFeeBreakdownVisible((v) => !v)}
+                      hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                      style={styles.summaryInfoButton}
+                    >
+                      <Text style={[styles.summaryInfoIcon, { color: colors.primary }]}>ⓘ</Text>
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.summaryValue}>
+                    {summary.platformFeeFormatted}
+                  </Text>
+                </View>
 
-            <View style={styles.confirmRow}>
-              <Text style={styles.totalLabel}>Total</Text>
-              <Text style={styles.totalPrice}>{summary.totalFormatted}</Text>
+                {feeBreakdownVisible && (
+                  <View style={styles.feeBreakdown}>
+                    <Text style={styles.feeBreakdownTitle}>Breakdown:</Text>
+                    <Text style={styles.feeBreakdownItem}>
+                      Platform Fee ({summary.platformFeePercent}%): {summary.platformFeeFormatted}
+                    </Text>
+                    <Text style={styles.feeBreakdownDesc}>
+                      {feeDescription}
+                    </Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={[styles.confirmDivider, styles.totalDivider]} />
+
+              <View style={styles.confirmRow}>
+                <Text style={styles.totalLabel}>Total</Text>
+                <Text style={styles.totalPrice}>{summary.totalFormatted}</Text>
+              </View>
             </View>
-          </View>
+          )
         )}
       </ScrollView>
 
@@ -1110,13 +1191,15 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
               <ActivityIndicator color={colors.textInverse} />
             ) : (
               <Text style={styles.continueButtonText}>
-                {isMembershipBooking
-                  ? 'Confirm Session'
-                  : isCoach && !coachNeedsPayment
-                    ? 'Book Session'
-                    : isPaymentNotRequired || !paymentsEnabled
-                      ? 'Confirm Booking'
-                      : `Pay ${summary.totalFormatted}`}
+                {isEditMode
+                  ? 'Update Booking'
+                  : isMembershipBooking
+                    ? 'Confirm Session'
+                    : isCoach && !coachNeedsPayment
+                      ? 'Book Session'
+                      : isPaymentNotRequired || !paymentsEnabled
+                        ? 'Confirm Booking'
+                        : `Pay ${summary.totalFormatted}`}
               </Text>
             )}
           </TouchableOpacity>

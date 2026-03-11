@@ -6,26 +6,22 @@ import {
   FlatList,
   TouchableOpacity,
   RefreshControl,
-  Alert,
   LayoutAnimation,
   UIManager,
   Platform,
 } from 'react-native';
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IconButton, Portal, Modal, TouchableRipple } from 'react-native-paper';
 import PropTypes from 'prop-types';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
-import { getBookings, cancelBooking, getCoaches, getLocations, getServices } from '../../services/bookings.api';
-import { formatTimeInTz, getTodayKey, formatDateKeyLong } from '../../helpers/timezone.helper';
+import { getBookings, getCoaches, getLocations, getServices } from '../../services/bookings.api';
+import { formatTimeInTz, formatHourInTz, getTodayKey, formatDateKeyLong } from '../../helpers/timezone.helper';
 import { shiftDateKey, buildDateStrip } from '../../helpers/date.helper';
 import {
   getSessionCoachNames,
+  getSessionResourceNames,
   getSessionServiceName,
   matchesCoach,
   matchesService,
@@ -39,14 +35,20 @@ import { ScheduleSkeleton } from '../../components/SkeletonLoader';
 import { colors, spacing } from '../../theme';
 import logger from '../../helpers/logger.helper';
 
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 const AdminScheduleScreen = ({ navigation }) => {
   const { company } = useAuth();
   const todayKey = getTodayKey(company);
   const [selectedDateKey, setSelectedDateKey] = useState(todayKey);
   const dateListRef = useRef(null);
+  const previousTodayKeyRef = useRef(todayKey);
   const [bookings, setBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   const [filtersLoading, setFiltersLoading] = useState(true);
   const [filterModal, setFilterModal] = useState(null);
   const [filterOptions, setFilterOptions] = useState({
@@ -92,23 +94,51 @@ const AdminScheduleScreen = ({ navigation }) => {
         setIsLoading(true);
       }
 
-      const { data } = await getBookings({
+      const params = {
         start_date: selectedDateKey,
         end_date: selectedDateKey,
-        per_page: 200,
+        no_paginate: true,
         status: 'all',
+      };
+
+      logger.info('[AdminSchedule] loading bookings', {
+        selectedDateKey,
+        todayKey,
+        timezone: company?.timezone || 'UTC',
+        params,
       });
 
+      const { data } = await getBookings(params);
+
       const sorted = [...(data || [])].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+      logger.info('[AdminSchedule] loaded bookings', {
+        selectedDateKey,
+        rawCount: data?.length || 0,
+        sample: (data || []).slice(0, 3).map((booking) => ({
+          id: booking?.id,
+          status: booking?.status,
+          start_time: booking?.start_time,
+          client_id: booking?.client?.id || booking?.client_id || null,
+        })),
+      });
+      setError(null);
       setBookings(sorted);
     } catch (err) {
       logger.warn('Failed to load admin schedule bookings:', err?.message || err);
+      logger.warn('[AdminSchedule] booking request failed', {
+        selectedDateKey,
+        todayKey,
+        timezone: company?.timezone || 'UTC',
+        status: err?.response?.status,
+        data: err?.response?.data,
+      });
+      setError('Unable to load the admin schedule. Pull down to retry.');
       setBookings([]);
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [selectedDateKey]);
+  }, [company?.timezone, selectedDateKey, todayKey]);
 
   useEffect(() => {
     loadFilters();
@@ -117,6 +147,16 @@ const AdminScheduleScreen = ({ navigation }) => {
   useEffect(() => {
     loadBookings();
   }, [loadBookings]);
+
+  useEffect(() => {
+    setSelectedDateKey((current) => {
+      if (!current || current === previousTodayKeyRef.current) {
+        return todayKey;
+      }
+      return current;
+    });
+    previousTodayKeyRef.current = todayKey;
+  }, [todayKey]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -133,51 +173,54 @@ const AdminScheduleScreen = ({ navigation }) => {
   }, []);
 
   const filteredBookings = useMemo(() => {
+    const now = Date.now();
     return bookings.filter((booking) => (
-      matchesCoach(booking, filters.coachId)
+      (!isTodaySelected || (() => {
+        if (!booking?.start_time) return false;
+        const start = new Date(booking.start_time).getTime();
+        return !Number.isNaN(start) && start >= now;
+      })())
+      && matchesCoach(booking, filters.coachId)
       && matchesLocation(booking, filters.locationId)
       && matchesService(booking, filters.serviceId)
     ));
-  }, [bookings, filters]);
+  }, [bookings, filters, isTodaySelected]);
+
+  const groupedBookings = useMemo(() => {
+    return filteredBookings.reduce((groups, booking) => {
+      const hourLabel = formatHourInTz(booking.start_time, company) || 'Time TBD';
+      const existingGroup = groups[groups.length - 1];
+
+      if (existingGroup && existingGroup.hourLabel === hourLabel) {
+        existingGroup.bookings.push(booking);
+        return groups;
+      }
+
+      groups.push({
+        hourLabel,
+        bookings: [booking],
+      });
+
+      return groups;
+    }, []);
+  }, [company, filteredBookings]);
+
+  useEffect(() => {
+    logger.info('[AdminSchedule] filtered bookings', {
+      selectedDateKey,
+      rawCount: bookings.length,
+      filteredCount: filteredBookings.length,
+      groupCount: groupedBookings.length,
+      filters,
+    });
+  }, [bookings.length, filteredBookings.length, groupedBookings.length, filters, selectedDateKey]);
 
   const hasActiveFilters = Boolean(filters.coachId || filters.locationId || filters.serviceId);
+  const hasPastOnlyBookings = isTodaySelected && !hasActiveFilters && bookings.length > 0 && filteredBookings.length === 0;
 
   const selectedCoach = filterOptions.coaches.find((coach) => coach.id === filters.coachId);
   const selectedLocation = filterOptions.locations.find((location) => location.id === filters.locationId);
   const selectedService = filterOptions.services.find((service) => service.id === filters.serviceId);
-  const activeFilterPills = [
-    selectedCoach ? { key: 'coach', label: `Coach: ${`${selectedCoach.first_name || ''} ${selectedCoach.last_name || ''}`.trim() || selectedCoach.name}` } : null,
-    selectedLocation ? { key: 'location', label: `Location: ${selectedLocation.name}` } : null,
-    selectedService ? { key: 'service', label: `Service: ${selectedService.name}` } : null,
-  ].filter(Boolean);
-
-  const handleCancelBooking = useCallback((bookingId, serviceName) => {
-    Alert.alert(
-      'Cancel Booking',
-      `Cancel "${serviceName}"? This cannot be undone.`,
-      [
-        { text: 'Keep', style: 'cancel' },
-        {
-          text: 'Cancel Booking',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await cancelBooking(bookingId);
-              loadBookings(true);
-            } catch (err) {
-              const status = err?.response?.status;
-              const serverMsg = err?.response?.data?.message;
-              if (status === 403 && serverMsg) {
-                Alert.alert('Cannot Cancel', serverMsg);
-              } else {
-                Alert.alert('Error', 'Failed to cancel booking.');
-              }
-            }
-          },
-        },
-      ]
-    );
-  }, [loadBookings]);
 
   const renderDateItem = ({ item }) => {
     const isSelected = item.key === selectedDateKey;
@@ -305,14 +348,9 @@ const AdminScheduleScreen = ({ navigation }) => {
         />
       </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.filterScroll}
-        contentContainerStyle={styles.filterRow}
-      >
+      <View style={styles.filterRow}>
         <TouchableOpacity
-          style={[styles.filterChip, filters.coachId && styles.filterChipActive]}
+          style={[styles.filterChip, styles.filterChipHalf, filters.coachId && styles.filterChipActive]}
           onPress={() => openFilter('coach')}
           activeOpacity={0.75}
         >
@@ -322,7 +360,11 @@ const AdminScheduleScreen = ({ navigation }) => {
             color={filters.coachId ? colors.accent : colors.textTertiary}
             style={styles.filterChipIcon}
           />
-          <Text style={[styles.filterChipText, filters.coachId && styles.filterChipTextActive]}>
+          <Text
+            style={[styles.filterChipText, filters.coachId && styles.filterChipTextActive]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {selectedCoach
               ? `${selectedCoach.first_name || ''} ${selectedCoach.last_name || ''}`.trim() || selectedCoach.name || 'Coach'
               : 'All Coaches'}
@@ -331,7 +373,7 @@ const AdminScheduleScreen = ({ navigation }) => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.filterChip, filters.locationId && styles.filterChipActive]}
+          style={[styles.filterChip, styles.filterChipHalf, filters.locationId && styles.filterChipActive]}
           onPress={() => openFilter('location')}
           activeOpacity={0.75}
         >
@@ -341,14 +383,18 @@ const AdminScheduleScreen = ({ navigation }) => {
             color={filters.locationId ? colors.accent : colors.textTertiary}
             style={styles.filterChipIcon}
           />
-          <Text style={[styles.filterChipText, filters.locationId && styles.filterChipTextActive]}>
+          <Text
+            style={[styles.filterChipText, filters.locationId && styles.filterChipTextActive]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {selectedLocation ? selectedLocation.name : 'All Locations'}
           </Text>
           <MaterialCommunityIcons name="chevron-down" size={16} color={filters.locationId ? colors.accent : colors.textTertiary} />
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.filterChip, filters.serviceId && styles.filterChipActive]}
+          style={[styles.filterChip, styles.filterChipFull, filters.serviceId && styles.filterChipActive]}
           onPress={() => openFilter('service')}
           activeOpacity={0.75}
         >
@@ -358,12 +404,16 @@ const AdminScheduleScreen = ({ navigation }) => {
             color={filters.serviceId ? colors.accent : colors.textTertiary}
             style={styles.filterChipIcon}
           />
-          <Text style={[styles.filterChipText, filters.serviceId && styles.filterChipTextActive]}>
+          <Text
+            style={[styles.filterChipText, filters.serviceId && styles.filterChipTextActive]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
             {selectedService ? selectedService.name : 'All Services'}
           </Text>
           <MaterialCommunityIcons name="chevron-down" size={16} color={filters.serviceId ? colors.accent : colors.textTertiary} />
         </TouchableOpacity>
-      </ScrollView>
+      </View>
 
       <View style={styles.contentWrap}>
         {isLoading ? (
@@ -384,99 +434,123 @@ const AdminScheduleScreen = ({ navigation }) => {
               <Text style={styles.summarySubtitle}>{formatDateKeyLong(selectedDateKey)}</Text>
             </View>
 
-            {filteredBookings.length === 0 ? (
+            {error ? (
+              <View style={styles.emptyWrap}>
+                <EmptyState
+                  icon="cloud-off-outline"
+                  title="Couldn't Load Schedule"
+                  message={error}
+                  actionLabel="Retry"
+                  onAction={() => loadBookings()}
+                />
+              </View>
+            ) : filteredBookings.length === 0 ? (
               <View style={styles.emptyWrap}>
                 <EmptyState
                   icon="calendar-outline"
-                  title="No Bookings"
-                  message={hasActiveFilters ? 'No bookings match the current filters for this day.' : 'There are no bookings scheduled for this day.'}
+                  title={hasPastOnlyBookings ? 'No Upcoming Bookings' : 'No Bookings'}
+                  message={
+                    hasActiveFilters
+                      ? 'No bookings match the current filters for this day.'
+                      : hasPastOnlyBookings
+                        ? 'All of today’s bookings are already in the past.'
+                        : 'There are no bookings scheduled for this day.'
+                  }
                 />
               </View>
             ) : (
-              filteredBookings.map((booking) => {
-                const serviceName = getSessionServiceName(booking);
-                const clientName = booking.client
-                  ? `${booking.client.first_name || ''} ${booking.client.last_name || ''}`.trim()
-                  : 'No client assigned';
-                const coachNames = getSessionCoachNames(booking);
-                const locationName = booking.location?.name || null;
-                const statusConfig = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
-                const canCancel = booking.status === 'confirmed' || booking.status === 'pending';
-
-                return (
-                  <View key={booking.id} style={styles.timelineRow}>
-                    <View style={styles.timeLabel}>
-                      <Text style={styles.timeLabelText}>{formatTimeInTz(booking.start_time, company)}</Text>
-                    </View>
-                    <View style={styles.timelineContent}>
-                      <TouchableRipple
-                        style={[
-                          styles.sessionCard,
-                          { borderLeftColor: statusConfig.color },
-                          booking.status === 'cancelled' && styles.sessionCardCancelled,
-                        ]}
-                        onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { bookingId: booking.id })}
-                        borderless
-                      >
-                        <View style={styles.sessionCardHeader}>
-                          <View style={styles.sessionMain}>
-                            <Text style={styles.sessionService}>{serviceName}</Text>
-                            <Text style={styles.sessionClient}>{clientName}</Text>
-                            <Text style={styles.sessionTime}>
-                              {formatTimeInTz(booking.start_time, company)}
-                              {booking.end_time ? ` — ${formatTimeInTz(booking.end_time, company)}` : ''}
-                            </Text>
-                            <View style={styles.sessionMetaRow}>
-                              {coachNames ? (
-                                <View style={styles.sessionMetaPill}>
-                                  <MaterialCommunityIcons
-                                    name="account-outline"
-                                    size={12}
-                                    color={colors.textTertiary}
-                                    style={styles.sessionMetaIcon}
-                                  />
-                                  <Text style={styles.sessionMetaText}>{coachNames}</Text>
-                                </View>
-                              ) : null}
-                              {locationName ? (
-                                <View style={styles.sessionMetaPill}>
-                                  <MaterialCommunityIcons
-                                    name="map-marker-outline"
-                                    size={12}
-                                    color={colors.textTertiary}
-                                    style={styles.sessionMetaIcon}
-                                  />
-                                  <Text style={styles.sessionMetaText}>{locationName}</Text>
-                                </View>
-                              ) : null}
-                            </View>
-                          </View>
-                          <View style={styles.sessionActions}>
-                            <View style={[styles.sessionStatusPill, { backgroundColor: statusConfig.backgroundColor }]}>
-                              <Text style={[styles.sessionStatusText, { color: statusConfig.color }]}>{statusConfig.label}</Text>
-                            </View>
-                            {canCancel && (
-                              <IconButton
-                                icon="close-circle-outline"
-                                size={20}
-                                iconColor={colors.error}
-                                onPress={() => handleCancelBooking(booking.id, serviceName)}
-                                style={{ margin: 0 }}
-                              />
-                            )}
-                            <MaterialCommunityIcons
-                              name="chevron-right"
-                              size={18}
-                              color={colors.textTertiary}
-                              style={styles.sessionChevron}
-                            />
-                          </View>
-                        </View>
-                      </TouchableRipple>
-                    </View>
+              groupedBookings.map((group) => (
+                <View key={group.hourLabel} style={styles.timelineRow}>
+                  <View style={styles.timeLabel}>
+                    <Text style={styles.timeLabelText}>{group.hourLabel}</Text>
                   </View>
-                );
-              })
+                  <View style={styles.timelineContent}>
+                    {group.bookings.map((booking, index) => {
+                      const serviceName = getSessionServiceName(booking);
+                      const clientName = booking.client
+                        ? `${booking.client.first_name || ''} ${booking.client.last_name || ''}`.trim()
+                        : 'No client assigned';
+                      const coachNames = getSessionCoachNames(booking);
+                      const resourceNames = getSessionResourceNames(booking);
+                      const locationName = booking.location?.name || null;
+                      const statusConfig = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
+
+                      return (
+                        <TouchableRipple
+                          key={booking.id}
+                          style={[
+                            styles.sessionCard,
+                            index > 0 && styles.sessionCardStackGap,
+                            { borderLeftColor: statusConfig.color },
+                            booking.status === 'cancelled' && styles.sessionCardCancelled,
+                          ]}
+                          onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { bookingId: booking.id })}
+                          borderless
+                        >
+                          <View style={styles.sessionCardHeader}>
+                            <View style={styles.sessionMain}>
+                              <Text style={styles.sessionService}>{serviceName}</Text>
+                              <Text style={styles.sessionClient}>{clientName}</Text>
+                              <Text style={styles.sessionTime}>
+                                {formatTimeInTz(booking.start_time, company)}
+                                {booking.end_time ? ` — ${formatTimeInTz(booking.end_time, company)}` : ''}
+                              </Text>
+                              <View style={styles.sessionMetaRow}>
+                                {coachNames ? (
+                                  <View style={styles.sessionMetaPill}>
+                                    <MaterialCommunityIcons
+                                      name="account-outline"
+                                      size={12}
+                                      color={colors.textTertiary}
+                                      style={styles.sessionMetaIcon}
+                                    />
+                                    <Text style={styles.sessionMetaText}>{coachNames}</Text>
+                                  </View>
+                                ) : null}
+                                {locationName ? (
+                                  <View style={styles.sessionMetaPill}>
+                                    <MaterialCommunityIcons
+                                      name="map-marker-outline"
+                                      size={12}
+                                      color={colors.textTertiary}
+                                      style={styles.sessionMetaIcon}
+                                    />
+                                    <Text style={styles.sessionMetaText}>{locationName}</Text>
+                                  </View>
+                                ) : null}
+                                {resourceNames ? (
+                                  <View style={styles.sessionMetaPill}>
+                                    <MaterialCommunityIcons
+                                      name="golf"
+                                      size={12}
+                                      color={colors.textTertiary}
+                                      style={styles.sessionMetaIcon}
+                                    />
+                                    <Text style={styles.sessionMetaText}>{resourceNames}</Text>
+                                  </View>
+                                ) : null}
+                              </View>
+                            </View>
+                            <View style={styles.sessionActions}>
+                              {booking.status !== 'confirmed' ? (
+                                <View style={[styles.sessionStatusPill, { backgroundColor: statusConfig.backgroundColor }]}>
+                                  <Text style={[styles.sessionStatusText, { color: statusConfig.color }]}>{statusConfig.label}</Text>
+                                </View>
+                              ) : null}
+                              <MaterialCommunityIcons
+                                name="chevron-right"
+                                size={18}
+                                color={colors.textTertiary}
+                                style={styles.sessionChevron}
+                              />
+                            </View>
+                          </View>
+                        </TouchableRipple>
+                      );
+                    })}
+                  </View>
+                </View>
+              ))
             )}
           </ScrollView>
         )}

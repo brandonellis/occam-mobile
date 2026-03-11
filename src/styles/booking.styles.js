@@ -133,6 +133,73 @@ export const bookingStyles = StyleSheet.create({
   coachCardSelected: {
     borderColor: colors.accent,
   },
+  clientTypeRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  clientTypeCard: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1.5,
+    borderColor: colors.borderLight,
+    ...shadows.sm,
+  },
+  clientTypeCardActive: {
+    borderColor: colors.accent,
+    backgroundColor: colors.white,
+  },
+  clientTypeCardContent: {
+    padding: spacing.lg,
+  },
+  clientTypeIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.accentSubtle,
+    marginBottom: spacing.sm,
+  },
+  clientTypeTitle: {
+    ...typography.label,
+    color: colors.textPrimary,
+    fontSize: 15,
+  },
+  clientTypeDescription: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+  clientInlineError: {
+    backgroundColor: colors.errorLight,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+  },
+  clientInlineErrorText: {
+    ...typography.bodySmall,
+    color: colors.error,
+  },
+  clientSearchbar: {
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+    elevation: 0,
+  },
+  clientFormCard: {
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    ...shadows.sm,
+  },
+  clientFormField: {
+    marginBottom: spacing.md,
+    backgroundColor: colors.surface,
+  },
+  clientFormFieldLast: {
+    backgroundColor: colors.surface,
+  },
   coachInfo: {
     flex: 1,
     marginLeft: spacing.md,
@@ -250,6 +317,12 @@ export const bookingStyles = StyleSheet.create({
     backgroundColor: colors.borderLight,
     marginVertical: spacing.sm,
   },
+  editStatusControl: {
+    marginTop: spacing.sm,
+  },
+  editNotesInput: {
+    backgroundColor: colors.surface,
+  },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -286,6 +359,17 @@ export const bookingStyles = StyleSheet.create({
     opacity: 0.5,
   },
   continueButtonText: {
+    ...typography.button,
+    color: colors.textInverse,
+    fontSize: 16,
+  },
+  clientContinueButton: {
+    borderRadius: borderRadius.md,
+  },
+  clientContinueButtonContent: {
+    minHeight: 52,
+  },
+  clientContinueButtonLabel: {
     ...typography.button,
     color: colors.textInverse,
     fontSize: 16,

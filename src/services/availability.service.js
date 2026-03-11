@@ -81,6 +81,8 @@ export const getAvailableTimeSlots = async ({
   company,
   resourcePool = [],
   durationMinutes = null,
+  excludeBookingId = null,
+  clientId = null,
   signal
 }) => {
   try {
@@ -101,6 +103,8 @@ export const getAvailableTimeSlots = async ({
       date: selectedDate.format('YYYY-MM-DD'),
       coach_ids: coach?.id ? [coach.id] : [],
       resource_ids: resourceIds,
+      ...(excludeBookingId ? { exclude_booking_id: excludeBookingId } : {}),
+      ...(clientId ? { client_id: clientId } : {}),
       ...(durationMinutes ? { duration_minutes: durationMinutes } : {}),
     });
 

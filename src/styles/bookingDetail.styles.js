@@ -87,4 +87,25 @@ export const bookingDetailStyles = StyleSheet.create({
     color: colors.error,
     fontSize: 14,
   },
+  actionGroup: {
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.xl,
+    gap: spacing.sm,
+  },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.accent,
+    backgroundColor: colors.accentSubtle,
+  },
+  editButtonText: {
+    ...typography.label,
+    color: colors.accentDark,
+    fontSize: 14,
+  },
 });

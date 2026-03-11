@@ -1,11 +1,21 @@
+import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import useUnreadNotifications from '../../src/hooks/useUnreadNotifications';
+import NotificationBadgeProvider from '../../src/providers/NotificationBadgeProvider';
 import { getUnreadNotificationCount } from '../../src/services/notifications.api';
 
 // Mock the API
 jest.mock('../../src/services/notifications.api', () => ({
   getUnreadNotificationCount: jest.fn(),
 }));
+
+// Wrapper that provides both NavigationContainer and NotificationBadgeProvider
+const wrapper = ({ children }) => (
+  <NavigationContainer>
+    <NotificationBadgeProvider>{children}</NotificationBadgeProvider>
+  </NavigationContainer>
+);
 
 describe('useUnreadNotifications', () => {
   beforeEach(() => {
@@ -16,7 +26,7 @@ describe('useUnreadNotifications', () => {
   test('fetches unread count on mount', async () => {
     getUnreadNotificationCount.mockResolvedValue(5);
 
-    const { result } = renderHook(() => useUnreadNotifications());
+    const { result } = renderHook(() => useUnreadNotifications(), { wrapper });
 
     await waitFor(() => {
       expect(result.current.unreadCount).toBe(5);
@@ -28,7 +38,7 @@ describe('useUnreadNotifications', () => {
   test('returns 0 when API fails', async () => {
     getUnreadNotificationCount.mockRejectedValue(new Error('Network error'));
 
-    const { result } = renderHook(() => useUnreadNotifications());
+    const { result } = renderHook(() => useUnreadNotifications(), { wrapper });
 
     // Should remain 0 — error is silently caught
     await waitFor(() => {
@@ -39,7 +49,7 @@ describe('useUnreadNotifications', () => {
   test('refresh with force bypasses throttle', async () => {
     getUnreadNotificationCount.mockResolvedValue(3);
 
-    const { result } = renderHook(() => useUnreadNotifications());
+    const { result } = renderHook(() => useUnreadNotifications(), { wrapper });
 
     await waitFor(() => {
       expect(result.current.unreadCount).toBe(3);
@@ -59,7 +69,7 @@ describe('useUnreadNotifications', () => {
   test('refresh without force is throttled within 30s', async () => {
     getUnreadNotificationCount.mockResolvedValue(2);
 
-    const { result } = renderHook(() => useUnreadNotifications());
+    const { result } = renderHook(() => useUnreadNotifications(), { wrapper });
 
     await waitFor(() => {
       expect(result.current.unreadCount).toBe(2);
@@ -78,7 +88,7 @@ describe('useUnreadNotifications', () => {
   });
 
   test('exposes refresh function', () => {
-    const { result } = renderHook(() => useUnreadNotifications());
+    const { result } = renderHook(() => useUnreadNotifications(), { wrapper });
     expect(typeof result.current.refresh).toBe('function');
   });
 });

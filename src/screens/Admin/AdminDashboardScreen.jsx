@@ -15,6 +15,11 @@ import { SCREENS } from '../../constants/navigation.constants';
 import { formatDateKeyLong, formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
 import { getBookings } from '../../services/bookings.api';
 import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
+import {
+  getSessionCoachNames,
+  getSessionResourceNames,
+  getSessionServiceName,
+} from '../../helpers/booking.helper';
 import { adminDashboardStyles as styles } from '../../styles/adminDashboard.styles';
 import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
@@ -77,7 +82,7 @@ const AdminDashboardScreen = ({ navigation }) => {
       }
 
       const [bookingsRes] = await Promise.allSettled([
-        getBookings({ start_date: todayKey, end_date: todayKey, per_page: 200, status: 'all' }),
+        getBookings({ start_date: todayKey, end_date: todayKey, no_paginate: true, status: 'all' }),
       ]);
 
       setError(null);
@@ -100,6 +105,10 @@ const AdminDashboardScreen = ({ navigation }) => {
   }, [todayKey]);
 
   useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadDashboard();
     });
@@ -116,12 +125,12 @@ const AdminDashboardScreen = ({ navigation }) => {
   }, [bookings]);
 
   const remainingTodayCount = upcomingBookings.filter((booking) => booking?.status !== 'cancelled').length;
-  const visibleBookings = upcomingBookings.length > 0 ? upcomingBookings : bookings;
+  const hasPastOnlyBookings = bookings.length > 0 && upcomingBookings.length === 0;
+  const visibleBookings = upcomingBookings;
   const todayLabel = formatDateKeyLong(todayKey);
   const heroMetrics = [
     { key: 'bookings', label: 'Bookings', value: bookings.length },
     { key: 'remaining', label: 'Still ahead', value: remainingTodayCount },
-    { key: 'notifications', label: 'Unread', value: unreadCount || 0 },
   ];
 
   const handleQuickAction = useCallback((key) => {
@@ -163,7 +172,7 @@ const AdminDashboardScreen = ({ navigation }) => {
           <CoachDashboardSkeleton />
         ) : error ? (
           <EmptyState
-            icon="cloud-offline-outline"
+            icon="cloud-off-outline"
             title="Couldn't Load Dashboard"
             message={error}
             actionLabel="Retry"
@@ -250,49 +259,92 @@ const AdminDashboardScreen = ({ navigation }) => {
               {visibleBookings.length === 0 ? (
                 <EmptyState
                   icon="calendar-outline"
-                  title="No Bookings Today"
-                  message="You're clear for the day. New bookings and schedule updates will appear here."
+                  title={hasPastOnlyBookings ? 'No Upcoming Bookings' : 'No Bookings Today'}
+                  message={hasPastOnlyBookings
+                    ? 'All of today’s bookings are already in the past.'
+                    : 'You\'re clear for the day. New bookings and schedule updates will appear here.'}
                 />
               ) : (
                 visibleBookings.slice(0, 5).map((booking) => {
-                  const serviceName = booking.services?.[0]?.name || booking.service?.name || 'Session';
+                  const serviceName = getSessionServiceName(booking);
                   const clientName = booking.client
                     ? `${booking.client.first_name || ''} ${booking.client.last_name || ''}`.trim()
                     : 'No client assigned';
-                  const coachNames = Array.isArray(booking.coaches) && booking.coaches.length > 0
-                    ? booking.coaches.map((coach) => `${coach.first_name || ''} ${coach.last_name || ''}`.trim()).join(', ')
-                    : null;
+                  const coachNames = getSessionCoachNames(booking);
+                  const resourceNames = getSessionResourceNames(booking);
+                  const locationName = booking.location?.name || null;
                   const statusConfig = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
 
                   return (
                     <TouchableRipple
                       key={booking.id}
-                      style={styles.bookingCard}
+                      style={[
+                        styles.bookingCard,
+                        { borderLeftColor: statusConfig.color },
+                        booking.status === 'cancelled' && styles.bookingCardCancelled,
+                      ]}
                       onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { bookingId: booking.id })}
                       borderless
                     >
-                      <View style={styles.bookingCardRow}>
-                        <View style={styles.bookingTimeBlock}>
-                          <Text style={styles.bookingTimeValue}>{formatTimeInTz(booking.start_time, company)}</Text>
-                          <Text style={styles.bookingTimeMeta}>
-                            {booking.end_time ? `Until ${formatTimeInTz(booking.end_time, company)}` : 'Single slot'}
+                      <View style={styles.bookingCardHeader}>
+                        <View style={styles.bookingMain}>
+                          <Text style={styles.bookingService}>{serviceName}</Text>
+                          <Text style={styles.bookingClient}>{clientName}</Text>
+                          <Text style={styles.bookingTime}>
+                            {formatTimeInTz(booking.start_time, company)}
+                            {booking.end_time ? ` — ${formatTimeInTz(booking.end_time, company)}` : ''}
                           </Text>
+                          <View style={styles.bookingMetaRow}>
+                            {coachNames ? (
+                              <View style={styles.bookingMetaPill}>
+                                <MaterialCommunityIcons
+                                  name="account-outline"
+                                  size={12}
+                                  color={colors.textTertiary}
+                                  style={styles.bookingMetaIcon}
+                                />
+                                <Text style={styles.bookingMetaText}>{coachNames}</Text>
+                              </View>
+                            ) : null}
+                            {locationName ? (
+                              <View style={styles.bookingMetaPill}>
+                                <MaterialCommunityIcons
+                                  name="map-marker-outline"
+                                  size={12}
+                                  color={colors.textTertiary}
+                                  style={styles.bookingMetaIcon}
+                                />
+                                <Text style={styles.bookingMetaText}>{locationName}</Text>
+                              </View>
+                            ) : null}
+                            {resourceNames ? (
+                              <View style={styles.bookingMetaPill}>
+                                <MaterialCommunityIcons
+                                  name="golf"
+                                  size={12}
+                                  color={colors.textTertiary}
+                                  style={styles.bookingMetaIcon}
+                                />
+                                <Text style={styles.bookingMetaText}>{resourceNames}</Text>
+                              </View>
+                            ) : null}
+                          </View>
                         </View>
-                        <View style={styles.bookingCardContent}>
-                          <View style={styles.bookingHeaderRow}>
-                            <Text style={styles.bookingService}>{serviceName}</Text>
+                        <View style={styles.bookingActions}>
+                          {booking.status !== 'confirmed' ? (
                             <View style={[styles.bookingStatusPill, { backgroundColor: statusConfig.backgroundColor }]}>
                               <Text style={[styles.bookingStatusText, { color: statusConfig.color }]}>
                                 {statusConfig.label}
                               </Text>
                             </View>
-                          </View>
-                          <Text style={styles.bookingClient}>{clientName}</Text>
-                          <Text style={styles.bookingMeta}>
-                            {[coachNames, booking.location?.name].filter(Boolean).join(' · ') || 'Booking details available'}
-                          </Text>
+                          ) : null}
+                          <MaterialCommunityIcons
+                            name="chevron-right"
+                            size={18}
+                            color={colors.textTertiary}
+                            style={styles.bookingChevron}
+                          />
                         </View>
-                        <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
                       </View>
                     </TouchableRipple>
                   );

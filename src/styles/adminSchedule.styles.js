@@ -93,19 +93,18 @@ export const adminScheduleStyles = StyleSheet.create({
   dateDayNumberSelected: {
     color: colors.textInverse,
   },
-  filterScroll: {
-    flexGrow: 0,
-  },
   filterRow: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.md,
     paddingBottom: spacing.sm,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.sm,
   },
   filterChip: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 44,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.full,
@@ -113,6 +112,12 @@ export const adminScheduleStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     ...shadows.sm,
+  },
+  filterChipHalf: {
+    width: '48%',
+  },
+  filterChipFull: {
+    width: '100%',
   },
   filterChipActive: {
     borderColor: colors.accent,
@@ -123,9 +128,11 @@ export const adminScheduleStyles = StyleSheet.create({
   },
   filterChipText: {
     ...typography.labelSmall,
+    flex: 1,
     textTransform: 'none',
     color: colors.textSecondary,
     marginRight: spacing.xs,
+    flexShrink: 1,
   },
   filterChipTextActive: {
     color: colors.accent,
@@ -191,14 +198,10 @@ export const adminScheduleStyles = StyleSheet.create({
     fontWeight: '600',
   },
   timelineRow: {
-    flexDirection: 'row',
     marginBottom: spacing.sm,
-    minHeight: 92,
   },
   timeLabel: {
-    width: 56,
-    paddingTop: spacing.xs,
-    alignItems: 'flex-end',
+    marginBottom: 2,
   },
   timeLabelText: {
     ...typography.label,
@@ -207,15 +210,20 @@ export const adminScheduleStyles = StyleSheet.create({
   },
   timelineContent: {
     flex: 1,
-    marginLeft: spacing.md,
   },
   sessionCard: {
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.gray200,
     borderLeftWidth: 3,
     borderLeftColor: colors.accent,
     ...shadows.sm,
+  },
+  sessionCardStackGap: {
+    marginTop: spacing.sm,
   },
   sessionCardCancelled: {
     opacity: 0.8,
@@ -235,24 +243,24 @@ export const adminScheduleStyles = StyleSheet.create({
   sessionClient: {
     ...typography.body,
     color: colors.textSecondary,
-    marginTop: 2,
+    marginTop: 1,
   },
   sessionTime: {
     ...typography.bodySmall,
     color: colors.textTertiary,
-    marginTop: 4,
+    marginTop: 2,
   },
   sessionMetaRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.xs,
-    marginTop: spacing.sm,
+    marginTop: spacing.xs,
   },
   sessionMetaPill: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderRadius: borderRadius.full,
     backgroundColor: colors.gray100,
   },
@@ -268,16 +276,16 @@ export const adminScheduleStyles = StyleSheet.create({
   },
   sessionStatusPill: {
     paddingHorizontal: spacing.sm,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: borderRadius.full,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   sessionStatusText: {
     ...typography.labelSmall,
     fontWeight: '700',
   },
   sessionChevron: {
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
   emptyWrap: {
     paddingTop: spacing.xxxl,

@@ -33,6 +33,13 @@ export const getSessionServiceName = (booking) => {
   return services.map((service) => service.name).filter(Boolean).join(', ') || 'Session';
 };
 
+export const getSessionResourceNames = (booking) => {
+  return (Array.isArray(booking?.resources) ? booking.resources : [])
+    .map((resource) => resource?.name)
+    .filter(Boolean)
+    .join(', ');
+};
+
 export const matchesCoach = (booking, coachId) => {
   if (!coachId) return true;
   return getSessionCoaches(booking).some((coach) => coach.id === coachId);

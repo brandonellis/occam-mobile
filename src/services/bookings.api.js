@@ -15,6 +15,11 @@ export const createBooking = async (payload) => {
   return response.data;
 };
 
+export const updateBooking = async (bookingId, payload) => {
+  const response = await apiClient.put(`/bookings/${bookingId}`, payload);
+  return response.data;
+};
+
 export const cancelBooking = async (bookingId) => {
   const response = await apiClient.delete(`/bookings/${bookingId}`);
   return response.data;

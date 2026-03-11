@@ -47,6 +47,14 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   const { company, user, activeRole } = useAuth();
   const isCoach = COACH_ROLES.includes(activeRole);
   const isClassService = useMemo(() => isClassLike(service), [service]);
+  const companyTz = useMemo(() => getEffectiveTimezone(company), [company]);
+  const initialDateKey = useMemo(() => {
+    if (!bookingData?.date) return null;
+    if (typeof bookingData.date === 'string' && bookingData.date.includes('T')) {
+      return dayjs(bookingData.date).tz(companyTz).format('YYYY-MM-DD');
+    }
+    return bookingData.date;
+  }, [bookingData?.date, companyTz]);
 
   const [selectedDate, setSelectedDate] = useState(null);
   const [timeSlots, setTimeSlots] = useState([]);
@@ -79,7 +87,6 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   }, [isLoading, classLoading, skeletonAnim]);
 
   // Build date range in company timezone (rebuilds when company loads)
-  const companyTz = useMemo(() => getEffectiveTimezone(company), [company]);
   const allDates = useMemo(() => generateDateRangeInTz(company), [company]);
 
   // Filter dates by advance booking limit (if service has one)
@@ -92,9 +99,12 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
   // Select first date on mount (company is already available from auth context)
   useEffect(() => {
     if (dates.length > 0 && !selectedDate) {
-      setSelectedDate(dates[0]);
+      const initialDate = initialDateKey
+        ? dates.find((dateItem) => dateItem.key === initialDateKey)
+        : null;
+      setSelectedDate(initialDate || dates[0]);
     }
-  }, [dates]);
+  }, [dates, initialDateKey, selectedDate]);
 
   // Fetch resources when service requires them (for auto-selection, skip for class services)
   useEffect(() => {
@@ -280,6 +290,8 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         company,
         resourcePool: effectiveResourcePool,
         durationMinutes: bookingData.duration_minutes || null,
+        excludeBookingId: bookingData.editMode ? bookingData.bookingId : null,
+        clientId: bookingData.client?.id || null,
       });
 
       setTimeSlots(slots);
@@ -289,7 +301,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [service, coach, location, bookingData.duration_minutes, bookingData.selectedResource, effectiveResourcePool, company, companyTz]);
+  }, [service, coach, location, bookingData.duration_minutes, bookingData.selectedResource, bookingData.editMode, bookingData.bookingId, bookingData.client?.id, effectiveResourcePool, company, companyTz]);
 
   // Reset hasFetchedSlots when date changes so the fetch effect shows skeleton
   useEffect(() => {
@@ -315,6 +327,21 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       loadTimeSlots(selectedDate, { showSkeleton: false });
     }
   }, [selectedDate, isClassService, loadClassSessions, loadTimeSlots, company, resourcePoolReady]);
+
+  useEffect(() => {
+    if (!bookingData?.editMode || isClassService || !bookingData?.timeSlot?.start_time || selectedSlot || timeSlots.length === 0) {
+      return;
+    }
+
+    const matchingSlot = timeSlots.find((slot) => (
+      slot?.start_time === bookingData.timeSlot.start_time
+      && slot?.end_time === bookingData.timeSlot.end_time
+    ));
+
+    if (matchingSlot) {
+      setSelectedSlot(matchingSlot);
+    }
+  }, [bookingData?.editMode, bookingData?.timeSlot, isClassService, selectedSlot, timeSlots]);
 
   const handleSelectSlot = useCallback((slot) => {
     setSelectedSlot(slot);
@@ -372,7 +399,11 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     // Auto-assign first available resource from the selected time slot
     let selectedResource = null;
     if (service?.requires_resource && currentSlot?.available_resource_ids?.length > 0) {
-      const resourceId = currentSlot.available_resource_ids[0];
+      const preferredResourceId = bookingData?.editMode && bookingData?.selectedResource?.id
+        && currentSlot.available_resource_ids.includes(bookingData.selectedResource.id)
+        ? bookingData.selectedResource.id
+        : currentSlot.available_resource_ids[0];
+      const resourceId = preferredResourceId;
       selectedResource = effectiveResourcePool.find(
         (r) => (r.id || r.resource_id)?.toString() === resourceId?.toString()
       ) || { id: resourceId };
