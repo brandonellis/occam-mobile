@@ -13,18 +13,12 @@ import { getBooking, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 import { COACH_ROLES } from '../../constants/auth.constants';
+import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
 import { bookingDetailStyles as styles } from '../../styles/bookingDetail.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
 import ScreenHeader from '../../components/ScreenHeader';
 import logger from '../../helpers/logger.helper';
-
-const STATUS_CONFIG = {
-  confirmed: { icon: 'check-circle', color: colors.success, label: 'Confirmed' },
-  pending: { icon: 'clock-outline', color: colors.warning, label: 'Pending' },
-  cancelled: { icon: 'close-circle', color: colors.error, label: 'Cancelled' },
-  completed: { icon: 'check-circle-outline', color: colors.textTertiary, label: 'Completed' },
-};
 
 const BookingDetailScreen = ({ navigation, route }) => {
   const { bookingId, booking: passedBooking } = route.params || {};
@@ -105,7 +99,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
     );
   }
 
-  const status = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
+  const status = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
   const service = booking.services?.[0];
   const coach = booking.coaches?.[0];
   const location = booking.location;

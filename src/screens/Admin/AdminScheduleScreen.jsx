@@ -12,97 +12,25 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IconButton, Portal, Modal, TouchableRipple } from 'react-native-paper';
+import PropTypes from 'prop-types';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings, cancelBooking, getCoaches, getLocations, getServices } from '../../services/bookings.api';
 import { formatTimeInTz, getTodayKey, formatDateKeyLong } from '../../helpers/timezone.helper';
+import { shiftDateKey, buildDateStrip } from '../../helpers/date.helper';
+import {
+  getSessionCoachNames,
+  getSessionServiceName,
+  matchesCoach,
+  matchesService,
+  matchesLocation,
+} from '../../helpers/booking.helper';
+import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
 import { adminScheduleStyles as styles } from '../../styles/adminSchedule.styles';
 import { globalStyles } from '../../styles/global.styles';
 import EmptyState from '../../components/EmptyState';
-import { colors } from '../../theme';
+import { colors, spacing } from '../../theme';
 import logger from '../../helpers/logger.helper';
-
-const STATUS_CONFIG = {
-  confirmed: { label: 'Confirmed', backgroundColor: colors.successLight, color: colors.success },
-  pending: { label: 'Pending', backgroundColor: colors.warningLight, color: colors.warning },
-  cancelled: { label: 'Cancelled', backgroundColor: colors.errorLight, color: colors.error },
-  completed: { label: 'Completed', backgroundColor: colors.gray100, color: colors.textTertiary },
-};
-
-const parseDateKey = (dateKey) => new Date(`${dateKey}T12:00:00Z`);
-
-const formatDateKey = (date) => {
-  const year = date.getUTCFullYear();
-  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(date.getUTCDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const shiftDateKey = (dateKey, offset) => {
-  const next = parseDateKey(dateKey);
-  next.setUTCDate(next.getUTCDate() + offset);
-  return formatDateKey(next);
-};
-
-const buildDateStrip = (selectedDateKey, todayKey) => {
-  return Array.from({ length: 7 }, (_, index) => {
-    const key = shiftDateKey(selectedDateKey, index - 3);
-    const date = parseDateKey(key);
-    return {
-      key,
-      dayName: new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' }).format(date),
-      dayNumber: new Intl.DateTimeFormat('en-US', { day: 'numeric', timeZone: 'UTC' }).format(date),
-      isToday: key === todayKey,
-    };
-  });
-};
-
-const getSessionCoaches = (booking) => {
-  if (Array.isArray(booking?.coaches) && booking.coaches.length > 0) {
-    return booking.coaches;
-  }
-  if (booking?.coach) {
-    return [booking.coach];
-  }
-  return [];
-};
-
-const getSessionServices = (booking) => {
-  if (Array.isArray(booking?.services) && booking.services.length > 0) {
-    return booking.services;
-  }
-  if (booking?.service) {
-    return [booking.service];
-  }
-  return [];
-};
-
-const getSessionCoachNames = (booking) => {
-  return getSessionCoaches(booking)
-    .map((coach) => `${coach.first_name || ''} ${coach.last_name || ''}`.trim())
-    .filter(Boolean)
-    .join(', ');
-};
-
-const getSessionServiceName = (booking) => {
-  const services = getSessionServices(booking);
-  return services.map((service) => service.name).filter(Boolean).join(', ') || 'Session';
-};
-
-const matchesCoach = (booking, coachId) => {
-  if (!coachId) return true;
-  return getSessionCoaches(booking).some((coach) => coach.id === coachId);
-};
-
-const matchesService = (booking, serviceId) => {
-  if (!serviceId) return true;
-  return getSessionServices(booking).some((service) => service.id === serviceId);
-};
-
-const matchesLocation = (booking, locationId) => {
-  if (!locationId) return true;
-  return booking?.location?.id === locationId;
-};
 
 const AdminScheduleScreen = ({ navigation }) => {
   const { company } = useAuth();
@@ -365,7 +293,7 @@ const AdminScheduleScreen = ({ navigation }) => {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.dateStrip}
-        contentContainerStyle={{ paddingHorizontal: 24 }}
+        contentContainerStyle={{ paddingHorizontal: spacing.lg }}
       />
 
       <ScrollView
@@ -487,7 +415,7 @@ const AdminScheduleScreen = ({ navigation }) => {
                   : 'No client assigned';
                 const coachNames = getSessionCoachNames(booking);
                 const locationName = booking.location?.name || null;
-                const statusConfig = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
+                const statusConfig = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
                 const canCancel = booking.status === 'confirmed' || booking.status === 'pending';
 
                 return (
@@ -620,6 +548,13 @@ const AdminScheduleScreen = ({ navigation }) => {
       </Portal>
     </SafeAreaView>
   );
+};
+
+AdminScheduleScreen.propTypes = {
+  navigation: PropTypes.shape({
+    navigate: PropTypes.func.isRequired,
+    addListener: PropTypes.func.isRequired,
+  }).isRequired,
 };
 
 export default AdminScheduleScreen;

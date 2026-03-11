@@ -196,7 +196,7 @@ const CoachDashboardScreen = ({ navigation }) => {
                   <TouchableRipple
                     key={session.id}
                     style={styles.bookingCard}
-                    onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { booking: session })}
+                    onPress={() => navigation.navigate(SCREENS.BOOKING_DETAIL, { bookingId: session.id })}
                     borderless
                   >
                     <View style={styles.bookingCardRow}>

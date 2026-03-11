@@ -1,6 +1,53 @@
 import { SCREENS } from '../constants/navigation.constants';
 import { isClassLike } from './normalizers.helper';
 
+export const getSessionCoaches = (booking) => {
+  if (Array.isArray(booking?.coaches) && booking.coaches.length > 0) {
+    return booking.coaches;
+  }
+  if (booking?.coach) {
+    return [booking.coach];
+  }
+  return [];
+};
+
+export const getSessionServices = (booking) => {
+  if (Array.isArray(booking?.services) && booking.services.length > 0) {
+    return booking.services;
+  }
+  if (booking?.service) {
+    return [booking.service];
+  }
+  return [];
+};
+
+export const getSessionCoachNames = (booking) => {
+  return getSessionCoaches(booking)
+    .map((coach) => `${coach.first_name || ''} ${coach.last_name || ''}`.trim())
+    .filter(Boolean)
+    .join(', ');
+};
+
+export const getSessionServiceName = (booking) => {
+  const services = getSessionServices(booking);
+  return services.map((service) => service.name).filter(Boolean).join(', ') || 'Session';
+};
+
+export const matchesCoach = (booking, coachId) => {
+  if (!coachId) return true;
+  return getSessionCoaches(booking).some((coach) => coach.id === coachId);
+};
+
+export const matchesService = (booking, serviceId) => {
+  if (!serviceId) return true;
+  return getSessionServices(booking).some((service) => service.id === serviceId);
+};
+
+export const matchesLocation = (booking, locationId) => {
+  if (!locationId) return true;
+  return booking?.location?.id === locationId;
+};
+
 /**
  * Determine the next booking screen and params after location is resolved.
  * Centralizes the service-requirement branching logic used by both

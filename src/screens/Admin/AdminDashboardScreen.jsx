@@ -9,23 +9,19 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TouchableRipple } from 'react-native-paper';
+import PropTypes from 'prop-types';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { formatDateKeyLong, formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
 import { getBookings } from '../../services/bookings.api';
 import { getClients } from '../../services/accounts.api';
+import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
 import { adminDashboardStyles as styles } from '../../styles/adminDashboard.styles';
 import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import useUnreadNotifications from '../../hooks/useUnreadNotifications';
 import { colors } from '../../theme';
-
-const STATUS_CONFIG = {
-  confirmed: { label: 'Confirmed', backgroundColor: colors.successLight, color: colors.success },
-  pending: { label: 'Pending', backgroundColor: colors.warningLight, color: colors.warning },
-  cancelled: { label: 'Cancelled', backgroundColor: colors.errorLight, color: colors.error },
-  completed: { label: 'Completed', backgroundColor: colors.gray100, color: colors.textTertiary },
-};
+import logger from '../../helpers/logger.helper';
 
 const QUICK_ACTIONS = [
   {
@@ -103,7 +99,8 @@ const AdminDashboardScreen = ({ navigation }) => {
       } else {
         setClientCount(null);
       }
-    } catch {
+    } catch (err) {
+      logger.warn('Failed to load admin dashboard:', err?.message || err);
       setError('Unable to load the admin dashboard. Pull down to retry.');
     } finally {
       setIsLoading(false);
@@ -118,15 +115,14 @@ const AdminDashboardScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation, loadDashboard]);
 
-  const now = Date.now();
-
   const upcomingBookings = useMemo(() => {
+    const now = Date.now();
     return bookings.filter((booking) => {
       if (!booking?.start_time) return false;
       const start = new Date(booking.start_time).getTime();
       return !Number.isNaN(start) && start >= now;
     });
-  }, [bookings, now]);
+  }, [bookings]);
 
   const remainingTodayCount = upcomingBookings.filter((booking) => booking?.status !== 'cancelled').length;
   const visibleBookings = upcomingBookings.length > 0 ? upcomingBookings : bookings;
@@ -302,7 +298,7 @@ const AdminDashboardScreen = ({ navigation }) => {
                   const coachNames = Array.isArray(booking.coaches) && booking.coaches.length > 0
                     ? booking.coaches.map((coach) => `${coach.first_name || ''} ${coach.last_name || ''}`.trim()).join(', ')
                     : null;
-                  const statusConfig = STATUS_CONFIG[booking.status] || STATUS_CONFIG.confirmed;
+                  const statusConfig = BOOKING_STATUS_CONFIG[booking.status] || BOOKING_STATUS_CONFIG.confirmed;
 
                   return (
                     <TouchableRipple
@@ -344,6 +340,13 @@ const AdminDashboardScreen = ({ navigation }) => {
       </ScrollView>
     </SafeAreaView>
   );
+};
+
+AdminDashboardScreen.propTypes = {
+  navigation: PropTypes.shape({
+    navigate: PropTypes.func.isRequired,
+    addListener: PropTypes.func.isRequired,
+  }).isRequired,
 };
 
 export default AdminDashboardScreen;

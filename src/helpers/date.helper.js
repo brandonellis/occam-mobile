@@ -1,3 +1,34 @@
+export const parseDateKey = (dateKey) => new Date(`${dateKey}T12:00:00Z`);
+
+export const formatDateKey = (date) => {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const shiftDateKey = (dateKey, offset) => {
+  const next = parseDateKey(dateKey);
+  next.setUTCDate(next.getUTCDate() + offset);
+  return formatDateKey(next);
+};
+
+const _weekdayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'short', timeZone: 'UTC' });
+const _dayFormatter = new Intl.DateTimeFormat('en-US', { day: 'numeric', timeZone: 'UTC' });
+
+export const buildDateStrip = (selectedDateKey, todayKey) => {
+  return Array.from({ length: 7 }, (_, index) => {
+    const key = shiftDateKey(selectedDateKey, index - 3);
+    const date = parseDateKey(key);
+    return {
+      key,
+      dayName: _weekdayFormatter.format(date),
+      dayNumber: _dayFormatter.format(date),
+      isToday: key === todayKey,
+    };
+  });
+};
+
 /**
  * Returns a human-readable relative time string (e.g. "5m ago", "2h ago", "3d ago").
  * Falls back to a short date format for older dates.

@@ -1,4 +1,13 @@
+import { colors } from '../theme/colors';
+
 export const STEP_LABELS = ['Service', 'Coach', 'Date & Time', 'Confirm'];
+
+export const BOOKING_STATUS_CONFIG = {
+  confirmed: { label: 'Confirmed', icon: 'check-circle', backgroundColor: colors.successLight, color: colors.success },
+  pending: { label: 'Pending', icon: 'clock-outline', backgroundColor: colors.warningLight, color: colors.warning },
+  cancelled: { label: 'Cancelled', icon: 'close-circle', backgroundColor: colors.errorLight, color: colors.error },
+  completed: { label: 'Completed', icon: 'check-circle-outline', backgroundColor: colors.gray100, color: colors.textTertiary },
+};
 
 export const formatPrice = (amount) => {
   if (amount == null) return '$0';
