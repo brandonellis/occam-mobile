@@ -308,7 +308,7 @@ const AdminScheduleScreen = ({ navigation }) => {
             onPress={() => navigation.navigate(SCREENS.CLIENT_SELECTION, { bookingData: {} })}
             activeOpacity={0.75}
           >
-            <MaterialCommunityIcons name="plus" size={18} color={colors.accent} />
+            <MaterialCommunityIcons name="plus" size={18} color={colors.textInverse} />
             <Text style={globalStyles.headerActionText}>New</Text>
           </TouchableOpacity>
           {!isTodaySelected && (

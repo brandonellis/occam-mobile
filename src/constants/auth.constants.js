@@ -1,10 +1,12 @@
 export const ROLES = {
   ADMIN: 'admin',
+  OWNER: 'owner',
   COACH: 'coach',
   CLIENT: 'client',
 };
 
-export const COACH_ROLES = [ROLES.ADMIN, ROLES.COACH];
+export const ADMIN_SHELL_ROLES = [ROLES.ADMIN, ROLES.OWNER];
+export const COACH_ROLES = [...ADMIN_SHELL_ROLES, ROLES.COACH];
 
 export const STORAGE_KEYS = {
   AUTH_TOKEN: 'occam_auth_token',

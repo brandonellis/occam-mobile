@@ -4,6 +4,7 @@ import { Surface, Text, Icon } from 'react-native-paper';
 import useAuth from '../hooks/useAuth';
 import { roleSwitcherStyles as styles } from '../styles/roleSwitcher.styles';
 import { colors } from '../theme';
+import { ADMIN_SHELL_ROLES } from '../constants/auth.constants';
 
 const ICON_MAP = {
   admin: { target: 'shield-account-outline', swap: 'swap-horizontal' },
@@ -17,7 +18,7 @@ const RoleSwitcher = () => {
   if (!isDualRole) return null;
 
   const roleNames = user?.roles?.map((role) => (typeof role === 'string' ? role : role.name)) || [];
-  const hasAdminRole = roleNames.includes('admin');
+  const hasAdminRole = roleNames.some((role) => ADMIN_SHELL_ROLES.includes(role));
   const isStaffView = activeRole === 'coach' || activeRole === 'admin';
   const targetRole = isStaffView ? 'client' : (hasAdminRole ? 'admin' : 'coach');
   const targetLabel = isStaffView ? 'Client View' : (hasAdminRole ? 'Admin View' : 'Coach View');

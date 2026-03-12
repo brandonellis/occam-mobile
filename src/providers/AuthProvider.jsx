@@ -1,7 +1,7 @@
 import React, { useReducer, useEffect, useCallback } from 'react';
 import AuthContext from '../context/Auth.context';
 import { authReducer, initialAuthState, AUTH_ACTIONS } from '../reducers/auth.reducer';
-import { COACH_ROLES } from '../constants/auth.constants';
+import { ADMIN_SHELL_ROLES, COACH_ROLES } from '../constants/auth.constants';
 import {
   setToken,
   setTenantId,
@@ -23,19 +23,34 @@ import logger from '../helpers/logger.helper';
 const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialAuthState);
 
+  const getRoleNames = useCallback((user) => (
+    user?.roles?.map((role) => (typeof role === 'string' ? role : role.name)) || []
+  ), []);
+
   const resolveRole = (user) => {
-    if (!user?.roles?.length) return null;
-    const roleNames = user.roles.map((r) => (typeof r === 'string' ? r : r.name));
-    if (roleNames.some((r) => COACH_ROLES.includes(r))) {
-      return roleNames.includes('admin') ? 'admin' : 'coach';
-    }
+    const roleNames = getRoleNames(user);
+    if (!roleNames.length) return null;
+    if (roleNames.some((roleName) => ADMIN_SHELL_ROLES.includes(roleName))) return 'admin';
+    if (roleNames.some((roleName) => COACH_ROLES.includes(roleName))) return 'coach';
     return 'client';
   };
 
+  const normalizeActiveRole = useCallback((user, savedActiveRole, resolvedRole) => {
+    const roleNames = getRoleNames(user);
+    const hasAdminShellRole = roleNames.some((roleName) => ADMIN_SHELL_ROLES.includes(roleName));
+
+    if (!savedActiveRole) return resolvedRole;
+    if (savedActiveRole === 'owner') return 'admin';
+    if (hasAdminShellRole && savedActiveRole === 'coach') return 'admin';
+    if (!['admin', 'coach', 'client'].includes(savedActiveRole)) return resolvedRole;
+
+    return savedActiveRole;
+  }, [getRoleNames]);
+
   const checkIsDualRole = (user) => {
-    if (!user?.roles?.length) return false;
-    const roleNames = user.roles.map((r) => (typeof r === 'string' ? r : r.name));
-    const hasCoachOrAdmin = roleNames.some((r) => COACH_ROLES.includes(r));
+    const roleNames = getRoleNames(user);
+    if (!roleNames.length) return false;
+    const hasCoachOrAdmin = roleNames.some((roleName) => COACH_ROLES.includes(roleName));
     const hasClient = roleNames.includes('client');
     return hasCoachOrAdmin && hasClient;
   };
@@ -67,12 +82,13 @@ const AuthProvider = ({ children }) => {
 
       if (cachedUser) {
         const role = resolveRole(cachedUser);
+        const activeRole = normalizeActiveRole(cachedUser, savedActiveRole, role);
         dispatch({
           type: AUTH_ACTIONS.RESTORE_SESSION,
           payload: {
             user: cachedUser,
             role,
-            activeRole: savedActiveRole || role,
+            activeRole,
           },
         });
       }
@@ -83,13 +99,15 @@ const AuthProvider = ({ children }) => {
 
       const freshUser = await authApi.getUser();
       const role = resolveRole(freshUser);
+      const activeRole = normalizeActiveRole(freshUser, savedActiveRole, role);
       await setUserData(freshUser);
+      await persistActiveRole(activeRole);
       dispatch({
         type: AUTH_ACTIONS.SET_USER,
         payload: {
           user: freshUser,
           role,
-          activeRole: savedActiveRole || role,
+          activeRole,
         },
       });
 
@@ -98,7 +116,7 @@ const AuthProvider = ({ children }) => {
       await clearAllStorage();
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     }
-  }, [fetchAndStoreCompany]);
+  }, [fetchAndStoreCompany, normalizeActiveRole]);
 
   useEffect(() => {
     restoreSession();

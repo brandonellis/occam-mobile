@@ -268,7 +268,7 @@ const ClientBookingsScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.SERVICE_SELECTION, params: { bookingData: {} } })}
           activeOpacity={0.7}
         >
-          <MaterialCommunityIcons name="plus" size={18} color={colors.accent} />
+          <MaterialCommunityIcons name="plus" size={18} color={colors.textInverse} />
           <Text style={globalStyles.headerActionText}>New</Text>
         </TouchableOpacity>
       </View>

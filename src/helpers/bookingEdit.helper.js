@@ -3,7 +3,7 @@ import { ROLES } from '../constants/auth.constants';
 import { getSessionCoaches, getSessionServices } from './booking.helper';
 import { isClassLike } from './normalizers.helper';
 
-const STAFF_ROLE_NAMES = [ROLES.ADMIN, 'facility_admin', 'owner', 'staff'];
+const STAFF_ROLE_NAMES = [ROLES.ADMIN, 'owner', 'staff'];
 
 const getUserRoleNames = (user, activeRole) => {
   const explicitRoles = Array.isArray(user?.roles)
