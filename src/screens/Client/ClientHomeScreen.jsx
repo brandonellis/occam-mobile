@@ -168,6 +168,16 @@ const ClientHomeScreen = ({ navigation }) => {
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={1}>Membership</Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.quickActionButton}
+              activeOpacity={0.7}
+              onPress={() => navigation.navigate(SCREENS.PACKAGE_LIST)}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: colors.warningLight }]}>
+                <MaterialCommunityIcons name="package-variant" size={18} color={colors.warning} />
+              </View>
+              <Text style={styles.quickActionLabel} numberOfLines={1}>Packages</Text>
+            </TouchableOpacity>
           </View>
         </View>
 

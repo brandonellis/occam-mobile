@@ -69,6 +69,7 @@ export const calculatePlatformFee = (subtotal, feeRate = 0) => {
  * @param {number|null} params.durationMinutes - Selected duration (for variable services)
  * @param {number} params.platformFeeRate    - Decimal rate (e.g. 0.04 for 4%)
  * @param {boolean} params.isMembershipBooking - Whether membership covers this booking
+ * @param {boolean} [params.isPackageBooking=false] - Whether a package covers this booking
  * @param {number|null} [params.memberPriceCents] - Member price in cents (overrides service.price)
  * @param {Object} [params.currencyOpts]     - { locale, currency }
  * @returns {Object} Payment summary
@@ -78,11 +79,13 @@ export const buildPaymentSummary = ({
   durationMinutes = null,
   platformFeeRate = 0,
   isMembershipBooking = false,
+  isPackageBooking = false,
   memberPriceCents = null,
   currencyOpts = {},
 }) => {
+  const isCoveredByBenefit = isMembershipBooking || isPackageBooking;
   let subtotal;
-  if (memberPriceCents !== null && !isMembershipBooking) {
+  if (memberPriceCents !== null && !isCoveredByBenefit) {
     subtotal = memberPriceCents / 100;
     if (service?.is_variable_duration && durationMinutes) {
       const baseDuration = (service.duration_minutes != null && service.duration_minutes > 0) ? service.duration_minutes : 60;
@@ -91,23 +94,24 @@ export const buildPaymentSummary = ({
   } else {
     subtotal = calculateEffectivePrice(service, durationMinutes);
   }
-  const platformFee = isMembershipBooking
+  const platformFee = isCoveredByBenefit
     ? 0
     : calculatePlatformFee(subtotal, platformFeeRate);
-  const total = isMembershipBooking ? 0 : subtotal + platformFee;
+  const total = isCoveredByBenefit ? 0 : subtotal + platformFee;
 
   return {
     subtotal,
     platformFee,
     total,
     subtotalFormatted: formatCurrency(subtotal, currencyOpts),
-    platformFeeFormatted: isMembershipBooking
+    platformFeeFormatted: isCoveredByBenefit
       ? formatCurrency(0, currencyOpts)
       : formatCurrency(platformFee, currencyOpts),
-    totalFormatted: isMembershipBooking
+    totalFormatted: isCoveredByBenefit
       ? 'FREE'
       : formatCurrency(total, currencyOpts),
     isMembershipBooking,
+    isPackageBooking,
     platformFeePercent: Math.round(platformFeeRate * 10000) / 100,
   };
 };

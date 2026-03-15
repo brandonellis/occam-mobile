@@ -35,6 +35,10 @@ export const SCREENS = {
   MEMBERSHIP_PLANS: 'MembershipPlans',
   MEMBERSHIP_CHECKOUT: 'MembershipCheckout',
 
+  // Package flow
+  PACKAGE_LIST: 'PackageList',
+  PACKAGE_CHECKOUT: 'PackageCheckout',
+
   // Coach detail screens
   CLIENT_DETAIL: 'ClientDetail',
   CLIENT_SHARED_MEDIA: 'ClientSharedMedia',

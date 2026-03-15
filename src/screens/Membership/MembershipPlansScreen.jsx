@@ -9,9 +9,9 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ListSkeleton } from '../../components/SkeletonLoader';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { ProgressBar } from 'react-native-paper';
 import ScreenHeader from '../../components/ScreenHeader';
 import EmptyState from '../../components/EmptyState';
+import ServiceUsageCard from '../../components/ServiceUsageCard';
 import { membershipStyles as styles } from '../../styles/membership.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { getMembershipPlans, getMyMembership } from '../../services/accounts.api';
@@ -26,76 +26,6 @@ import {
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import logger from '../../helpers/logger.helper';
-
-// ─── Service Usage Card ──────────────────────────────────────────────────────
-const ServiceUsageCard = ({ planService, billingCycle, startDate }) => {
-  const serviceName = planService.service?.name || 'Service';
-  const used = Number(planService.used_quantity || 0);
-  const remaining = planService.remaining_quantity == null ? null : Number(planService.remaining_quantity);
-  const total = remaining === null ? null : used + remaining;
-  const isUnlimited = remaining === null;
-
-  let percent = 0;
-  let barColor = colors.accent;
-  if (total) {
-    percent = Math.min(1, used / Math.max(1, total));
-    if (percent > 0.8) barColor = colors.error;
-    else if (percent > 0.6) barColor = colors.warning;
-  }
-
-  const nextReset = useMemo(
-    () => getNextRenewalDate(startDate, billingCycle),
-    [startDate, billingCycle]
-  );
-
-  return (
-    <View style={styles.serviceCard}>
-      <Text style={styles.serviceCardName}>{serviceName}</Text>
-
-      {isUnlimited ? (
-        <View style={styles.serviceUnlimited}>
-          <MaterialCommunityIcons name="infinity" size={20} color={colors.success} />
-          <Text style={styles.serviceUnlimitedText}>
-            <Text style={styles.serviceUsageBold}>{used}</Text> sessions used
-          </Text>
-        </View>
-      ) : (
-        <>
-          <View style={styles.serviceUsageRow}>
-            <View style={styles.serviceUsageStat}>
-              <Text style={styles.serviceUsageBig}>{used}</Text>
-              <Text style={styles.serviceUsageLabel}>used</Text>
-            </View>
-            <View style={styles.serviceUsageDivider} />
-            <View style={styles.serviceUsageStat}>
-              <Text style={styles.serviceUsageBig}>{remaining}</Text>
-              <Text style={styles.serviceUsageLabel}>remaining</Text>
-            </View>
-            <View style={styles.serviceUsageDivider} />
-            <View style={styles.serviceUsageStat}>
-              <Text style={styles.serviceUsageBig}>{total}</Text>
-              <Text style={styles.serviceUsageLabel}>total</Text>
-            </View>
-          </View>
-          <ProgressBar
-            progress={percent}
-            color={barColor}
-            style={styles.serviceProgressBar}
-          />
-        </>
-      )}
-
-      {nextReset && (
-        <View style={styles.serviceResetRow}>
-          <MaterialCommunityIcons name="sync" size={13} color={colors.textTertiary} />
-          <Text style={styles.serviceResetText}>
-            Resets {formatDate(nextReset)}
-          </Text>
-        </View>
-      )}
-    </View>
-  );
-};
 
 // ─── Active Membership View ─────────────────────────────────────────────────
 const ActiveMembershipView = ({ membership, onUpgrade }) => {
@@ -202,14 +132,23 @@ const ActiveMembershipView = ({ membership, onUpgrade }) => {
             <MaterialCommunityIcons name="view-grid-outline" size={16} color={colors.textPrimary} />
             <Text style={styles.sectionTitleText}>Service Allotments</Text>
           </View>
-          {planServices.map((ps) => (
-            <ServiceUsageCard
-              key={ps.id || ps.service_id}
-              planService={ps}
-              billingCycle={billing_cycle}
-              startDate={start_date}
-            />
-          ))}
+          {planServices.map((ps) => {
+            const used = Number(ps.used_quantity || 0);
+            const remaining = ps.remaining_quantity == null ? null : Number(ps.remaining_quantity);
+            const total = remaining === null ? null : used + remaining;
+            const nextReset = getNextRenewalDate(start_date, billing_cycle);
+
+            return (
+              <ServiceUsageCard
+                key={ps.id || ps.service_id}
+                serviceName={ps.service?.name || 'Service'}
+                used={used}
+                remaining={remaining}
+                total={total}
+                resetDate={nextReset ? formatDate(nextReset) : null}
+              />
+            );
+          })}
         </>
       )}
     </>

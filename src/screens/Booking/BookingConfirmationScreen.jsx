@@ -11,6 +11,7 @@ import { formatDuration } from '../../constants/booking.constants';
 import { createBooking, updateBooking, cancelBooking, getBooking } from '../../services/bookings.api';
 import { createServicePayment, handlePaymentSuccess, getClientPaymentMethods } from '../../services/billing.api';
 import { getCurrentClientMembership } from '../../services/accounts.api';
+import { getMyBookingBenefits } from '../../services/packages.api';
 import { buildPaymentSummary } from '../../helpers/pricing.helper';
 import { extractErrorMessage } from '../../helpers/error.helper';
 import useAuth from '../../hooks/useAuth';
@@ -37,6 +38,10 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const [membershipStatus, setMembershipStatus] = useState(null);
   const [membershipLoading, setMembershipLoading] = useState(false);
   const [membershipRefreshKey, setMembershipRefreshKey] = useState(0);
+
+  // Package benefit state
+  const [packageBenefit, setPackageBenefit] = useState(null);
+  const [packageBenefitLoading, setPackageBenefitLoading] = useState(false);
 
   // Stripe card state
   const [cardComplete, setCardComplete] = useState(false);
@@ -166,6 +171,51 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const isMembershipBooking =
     membershipStatus?.hasActiveMembership && membershipStatus?.hasUsage;
 
+  // Fetch package benefit status (only for client flow, after membership resolves)
+  useEffect(() => {
+    if (isEditMode || !clientId || !service?.id) return;
+    // Wait for membership to finish loading before checking packages
+    if (membershipLoading) return;
+    // If membership covers this service, skip package check
+    if (isMembershipBooking) {
+      setPackageBenefit(null);
+      return;
+    }
+    // Only check for the authenticated client (not coach booking for others)
+    if (isCoach) {
+      setPackageBenefit(null);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        setPackageBenefitLoading(true);
+        const data = await getMyBookingBenefits(service.id);
+        if (cancelled) return;
+        const packages = data?.packages || [];
+        if (packages.length > 0) {
+          setPackageBenefit({
+            hasPackage: true,
+            bestPackage: packages[0],
+            client_package_id: packages[0].client_package_id,
+            package_name: packages[0].package_name,
+            remaining: packages[0].remaining,
+          });
+        } else {
+          setPackageBenefit({ hasPackage: false });
+        }
+      } catch (err) {
+        logger.warn('Failed to fetch booking benefits:', err.message);
+        if (!cancelled) setPackageBenefit({ hasPackage: false });
+      } finally {
+        if (!cancelled) setPackageBenefitLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [clientId, isEditMode, service?.id, isCoach, membershipLoading, isMembershipBooking, membershipRefreshKey]);
+
+  const isPackageBooking = !isMembershipBooking && !!packageBenefit?.hasPackage;
+
   // Resolve member price from plan-service pivot (if set)
   const memberPriceCents = useMemo(() => {
     if (!membershipStatus?.hasActiveMembership || !service?.id) return null;
@@ -177,15 +227,15 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   // Per-service toggle: service does not require upfront payment
   const isPaymentNotRequired = service?.payment_required === false;
 
-  // Whether coach needs to collect payment (no membership, payment required, payments enabled)
-  const coachNeedsPayment = isCoach && !isMembershipBooking && !isPaymentNotRequired && paymentsEnabled;
+  // Whether coach needs to collect payment (no membership, no package, payment required, payments enabled)
+  const coachNeedsPayment = isCoach && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled;
 
   // Fetch saved payment methods for the booking client
   useEffect(() => {
     if (isEditMode) return;
     if (!clientId) return;
-    // Skip for membership bookings (no payment needed)
-    if (isMembershipBooking) return;
+    // Skip for membership or package bookings (no payment needed)
+    if (isMembershipBooking || isPackageBooking) return;
     // For client flow, always fetch; for coach flow, only when payment is needed
     if (isCoach && !paymentsEnabled) return;
     let cancelled = false;
@@ -210,7 +260,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       }
     })();
     return () => { cancelled = true; };
-  }, [clientId, isCoach, isEditMode, isMembershipBooking, paymentsEnabled]);
+  }, [clientId, isCoach, isEditMode, isMembershipBooking, isPackageBooking, paymentsEnabled]);
 
   // Build payment summary (matches web's usePaymentSummary)
   const summary = buildPaymentSummary({
@@ -218,6 +268,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     durationMinutes: bookingData.duration_minutes || null,
     platformFeeRate,
     isMembershipBooking: !!isMembershipBooking,
+    isPackageBooking,
     memberPriceCents,
   });
 
@@ -232,11 +283,16 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         })
       : '';
 
-  // Build the booking payload (shared between membership and payment flows)
+  // Build the booking payload (shared between membership, package, and payment flows)
   const buildBookingPayload = useCallback((status = 'confirmed') => {
+    // Resolve booking type: membership > package > one_off
+    let bookingType = 'one_off';
+    if (isMembershipBooking) bookingType = 'membership';
+    else if (isPackageBooking) bookingType = 'package';
+
     const payload = {
       client_id: clientId,
-      booking_type: isMembershipBooking ? 'membership' : 'one_off',
+      booking_type: bookingType,
       location_id: location?.id,
       service_ids: [service?.id],
       start_time: timeSlot?.start_time,
@@ -267,6 +323,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       payload.membership_plan_service_id = membershipStatus.membershipPlanServiceId;
     }
 
+    // Package booking — attach client_package_id for backend usage tracking
+    if (isPackageBooking && packageBenefit?.client_package_id) {
+      payload.client_package_id = packageBenefit.client_package_id;
+    }
+
     // Class/group session booking — attach the class_session_id so the backend
     // links this booking to the correct session occurrence.
     if (bookingData.selectedClassSession?.id) {
@@ -274,7 +335,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     }
 
     return payload;
-  }, [clientId, isMembershipBooking, location, service, coach, timeSlot, bookingData, membershipStatus, bookingNotes]);
+  }, [clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes]);
 
   const buildUpdatePayload = useCallback(() => {
     const payload = {
@@ -517,7 +578,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       );
       return;
     }
-    if (isMembershipBooking) {
+    if (isMembershipBooking || isPackageBooking) {
       handleDirectConfirm();
     } else if (isCoach && !paymentsEnabled) {
       // Coach flow without payments enabled: create confirmed booking directly
@@ -534,14 +595,14 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     } else {
       handleDirectConfirm();
     }
-  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, handleDirectConfirm, handlePaymentConfirm, handleSavedCardPayment]);
+  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, handleDirectConfirm, handlePaymentConfirm, handleSavedCardPayment]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
     if (isSubmitting) return false;
     if (isEditMode) return Boolean(bookingId && timeSlot?.start_time);
-    if (membershipLoading || ecommerceLoading) return false;
-    if (isMembershipBooking) return true;
+    if (membershipLoading || packageBenefitLoading || ecommerceLoading) return false;
+    if (isMembershipBooking || isPackageBooking) return true;
     // Service doesn't require payment — allow booking without card
     if (isPaymentNotRequired) return true;
     // Coach flow without payments enabled — allow direct booking
@@ -552,7 +613,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     if (paymentsEnabled) return cardComplete;
     // Payments not enabled — allow booking without payment
     return true;
-  }, [isSubmitting, isEditMode, bookingId, timeSlot?.start_time, membershipLoading, ecommerceLoading, isMembershipBooking, isPaymentNotRequired, isCoach, paymentsEnabled, paymentMode, selectedSavedMethodId, cardComplete]);
+  }, [isSubmitting, isEditMode, bookingId, timeSlot?.start_time, membershipLoading, packageBenefitLoading, ecommerceLoading, isMembershipBooking, isPackageBooking, isPaymentNotRequired, isCoach, paymentsEnabled, paymentMode, selectedSavedMethodId, cardComplete]);
 
   // Allotment progress bars for membership
   const renderAllotmentSection = () => {
@@ -686,7 +747,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const renderCardSection = () => {
     if (isEditMode) return null;
     // Already know no payment needed — skip entirely
-    if (isMembershipBooking || isPaymentNotRequired) return null;
+    if (isMembershipBooking || isPackageBooking || isPaymentNotRequired) return null;
 
     // Show skeleton while membership or ecommerce config is loading
     if (membershipLoading || ecommerceLoading) {
@@ -828,6 +889,9 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       }
       if (isMembershipBooking) {
         return 'Your membership session is all set.';
+      }
+      if (isPackageBooking) {
+        return 'Your package session is all set. No payment needed.';
       }
       if (isCoach && clientName) {
         return `${clientName}'s session has been booked.`;
@@ -1064,6 +1128,26 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
+        {!isEditMode && !membershipLoading && !isMembershipBooking && packageBenefitLoading && (
+          <View style={[styles.confirmSection]}>
+            <Animated.View style={[styles.skeletonBlock, { opacity: skeletonAnim }]}>
+              <View style={[styles.skeletonBar, { width: '50%' }]} />
+              <View style={[styles.skeletonBar, { width: '80%' }]} />
+            </Animated.View>
+          </View>
+        )}
+
+        {!isEditMode && !membershipLoading && !packageBenefitLoading && !ecommerceLoading && isPackageBooking && (
+          <View style={[styles.confirmSection, { backgroundColor: colors.successLight }]}>
+            <Text style={[styles.confirmLabel, { color: colors.success }]}>
+              COVERED BY PACKAGE
+            </Text>
+            <Text style={[styles.confirmSubtext, { color: colors.textSecondary, marginTop: 2 }]}>
+              {packageBenefit?.package_name || 'Package'} — {packageBenefit?.remaining ?? '?'} use{packageBenefit?.remaining !== 1 ? 's' : ''} remaining. No payment needed.
+            </Text>
+          </View>
+        )}
+
         {!isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && isPaymentNotRequired && (
           <View style={[styles.confirmSection, { backgroundColor: colors.successLight }]}>
             <Text style={[styles.confirmLabel, { color: colors.success }]}>
@@ -1077,7 +1161,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
-        {!isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPaymentNotRequired && paymentsEnabled && (
+        {!isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled && (
           <View style={styles.confirmSection}>
             <Text style={styles.confirmLabel}>PROMO CODE</Text>
             <PromoCodeInput
@@ -1193,7 +1277,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
               <Text style={styles.continueButtonText}>
                 {isEditMode
                   ? 'Update Booking'
-                  : isMembershipBooking
+                  : isMembershipBooking || isPackageBooking
                     ? 'Confirm Session'
                     : isCoach && !coachNeedsPayment
                       ? 'Book Session'

@@ -12,6 +12,8 @@ import TimeSlotSelectionScreen from '../screens/Booking/TimeSlotSelectionScreen'
 import BookingConfirmationScreen from '../screens/Booking/BookingConfirmationScreen';
 import MembershipPlansScreen from '../screens/Membership/MembershipPlansScreen';
 import MembershipCheckoutScreen from '../screens/Membership/MembershipCheckoutScreen';
+import PackageListScreen from '../screens/Package/PackageListScreen';
+import PackageCheckoutScreen from '../screens/Package/PackageCheckoutScreen';
 import ProgressReportDetailScreen from '../screens/Coach/ProgressReportDetailScreen';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 import VideoPlayerScreen from '../screens/Shared/VideoPlayerScreen';
@@ -68,6 +70,16 @@ const ClientHomeStack = () => {
       <Stack.Screen
         name={SCREENS.MEMBERSHIP_CHECKOUT}
         component={MembershipCheckoutScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name={SCREENS.PACKAGE_LIST}
+        component={PackageListScreen}
+        options={{ animation: 'slide_from_right' }}
+      />
+      <Stack.Screen
+        name={SCREENS.PACKAGE_CHECKOUT}
+        component={PackageCheckoutScreen}
         options={{ animation: 'slide_from_right' }}
       />
       <Stack.Screen
