@@ -71,6 +71,7 @@ export const calculatePlatformFee = (subtotal, feeRate = 0) => {
  * @param {boolean} params.isMembershipBooking - Whether membership covers this booking
  * @param {boolean} [params.isPackageBooking=false] - Whether a package covers this booking
  * @param {number|null} [params.memberPriceCents] - Member price in cents (overrides service.price)
+ * @param {number} [params.discountAmount=0] - Promo discount amount in dollars
  * @param {Object} [params.currencyOpts]     - { locale, currency }
  * @returns {Object} Payment summary
  */
@@ -81,6 +82,7 @@ export const buildPaymentSummary = ({
   isMembershipBooking = false,
   isPackageBooking = false,
   memberPriceCents = null,
+  discountAmount = 0,
   currencyOpts = {},
 }) => {
   const isCoveredByBenefit = isMembershipBooking || isPackageBooking;
@@ -94,10 +96,12 @@ export const buildPaymentSummary = ({
   } else {
     subtotal = calculateEffectivePrice(service, durationMinutes);
   }
+  // Platform fee is calculated on the post-discount price (matches backend)
+  const effectiveSubtotal = isCoveredByBenefit ? 0 : Math.max(0, subtotal - discountAmount);
   const platformFee = isCoveredByBenefit
     ? 0
-    : calculatePlatformFee(subtotal, platformFeeRate);
-  const total = isCoveredByBenefit ? 0 : subtotal + platformFee;
+    : calculatePlatformFee(effectiveSubtotal, platformFeeRate);
+  const total = isCoveredByBenefit ? 0 : effectiveSubtotal + platformFee;
 
   return {
     subtotal,

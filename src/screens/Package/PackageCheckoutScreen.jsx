@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { CardField, useStripe } from '@stripe/stripe-react-native';
+import { CardField, useStripe, useConfirmPayment } from '@stripe/stripe-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
 import { packageStyles as styles } from '../../styles/packages.styles';
 import { formatCurrency } from '../../helpers/pricing.helper';
@@ -18,17 +19,41 @@ import { createPackagePayment, handlePackagePaymentSuccess } from '../../service
 import useAuth from '../../hooks/useAuth';
 import useEcommerceConfig from '../../hooks/useEcommerceConfig';
 import { colors } from '../../theme';
+import { checkoutSuccessStyles as successStyles } from '../../styles/checkoutSuccess.styles';
 
 const PackageCheckoutScreen = ({ route, navigation }) => {
   const pkg = route.params?.package;
   const { user } = useAuth();
   const { createPaymentMethod } = useStripe();
+  const { confirmPayment } = useConfirmPayment();
   const { platformFeeRate, paymentsEnabled } = useEcommerceConfig();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Success screen entrance animation
+  const successScale = useRef(new Animated.Value(0)).current;
+  const successOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!showSuccess) return;
+    Animated.parallel([
+      Animated.spring(successScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [showSuccess, successScale, successOpacity]);
 
   const packagePrice = parseFloat(pkg?.price) || 0;
   const platformFee = Math.round(packagePrice * platformFeeRate * 100) / 100;
@@ -84,17 +109,24 @@ const PackageCheckoutScreen = ({ route, navigation }) => {
         throw new Error(result?.error || result?.message || 'Payment failed.');
       }
 
-      // PHASE 3: If payment succeeded immediately (off-session), notify backend
-      if (result.status === 'succeeded') {
+      // PHASE 3: Handle payment confirmation
+      if (result.status === 'requires_action' && result.client_secret) {
+        // 3D Secure (SCA) required — confirm on-device
+        setLoadingMessage('Confirming payment...');
+        const { error: confirmError, paymentIntent } = await confirmPayment(result.client_secret, {
+          paymentMethodType: 'Card',
+        });
+        if (confirmError) {
+          throw new Error(confirmError.message || 'Payment confirmation failed.');
+        }
+        setLoadingMessage('Finalizing purchase...');
+        await handlePackagePaymentSuccess(paymentIntent?.id || result.payment_intent_id);
+      } else if (result.status === 'succeeded') {
         setLoadingMessage('Finalizing purchase...');
         await handlePackagePaymentSuccess(result.payment_intent_id);
       }
 
-      Alert.alert(
-        'Package Purchased!',
-        `You now own the ${pkg.name} package. Your session allotments are ready to use.`,
-        [{ text: 'OK', onPress: () => navigation.popToTop() }]
-      );
+      setShowSuccess(true);
     } catch (error) {
       Alert.alert('Purchase Failed', extractErrorMessage(error, 'Failed to purchase package.'));
     } finally {
@@ -102,6 +134,52 @@ const PackageCheckoutScreen = ({ route, navigation }) => {
       setLoadingMessage('');
     }
   }, [cardComplete, createPaymentMethod, user, pkg, navigation]);
+
+  if (showSuccess) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, successStyles.container]}>
+          <Animated.View style={[
+            successStyles.iconCircle,
+            { transform: [{ scale: successScale }], opacity: successOpacity },
+          ]}>
+            <MaterialCommunityIcons name="check-bold" size={40} color={colors.white} />
+          </Animated.View>
+
+          <Animated.View style={{ opacity: successOpacity, alignItems: 'center' }}>
+            <Text style={successStyles.title}>Package Purchased!</Text>
+            <Text style={successStyles.subtitle}>
+              You now own the {pkg.name} package. Your session allotments are ready to use.
+            </Text>
+          </Animated.View>
+
+          <Animated.View style={[successStyles.detailsCard, { opacity: successOpacity }]}>
+            <Text style={successStyles.detailLabel}>PACKAGE</Text>
+            <Text style={successStyles.detailValue}>{pkg.name}</Text>
+            {services.length > 0 && (
+              <>
+                <View style={successStyles.detailDivider} />
+                <Text style={successStyles.detailLabel}>INCLUDES</Text>
+                {services.map((ps, i) => (
+                  <Text key={ps.id || i} style={successStyles.detailValue}>
+                    {ps.service?.name || `Service ${ps.service_id}`} × {ps.quantity}
+                  </Text>
+                ))}
+              </>
+            )}
+          </Animated.View>
+
+          <TouchableOpacity
+            style={[styles.purchaseButton, successStyles.doneButton]}
+            onPress={() => navigation.popToTop()}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.purchaseButtonText}>Done</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   if (!pkg) {
     return (

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,10 +6,11 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { CardField, useStripe } from '@stripe/stripe-react-native';
+import { CardField, useStripe, useConfirmPayment } from '@stripe/stripe-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
 import { membershipStyles as styles } from '../../styles/membership.styles';
 import { formatCurrency } from '../../helpers/pricing.helper';
@@ -19,17 +20,41 @@ import useAuth from '../../hooks/useAuth';
 import useEcommerceConfig from '../../hooks/useEcommerceConfig';
 import { getBillingCycleLabel } from '../../constants/billing.constants';
 import { colors } from '../../theme';
+import { checkoutSuccessStyles as successStyles } from '../../styles/checkoutSuccess.styles';
 
 const MembershipCheckoutScreen = ({ route, navigation }) => {
   const { plan, billingCycle } = route.params;
   const { user } = useAuth();
   const { createPaymentMethod } = useStripe();
+  const { confirmPayment } = useConfirmPayment();
   const { platformFeeRate, paymentsEnabled } = useEcommerceConfig();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
   const [cardComplete, setCardComplete] = useState(false);
   const [cardError, setCardError] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+
+  // Success screen entrance animation
+  const successScale = useRef(new Animated.Value(0)).current;
+  const successOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!showSuccess) return;
+    Animated.parallel([
+      Animated.spring(successScale, {
+        toValue: 1,
+        friction: 5,
+        tension: 80,
+        useNativeDriver: true,
+      }),
+      Animated.timing(successOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [showSuccess, successScale, successOpacity]);
 
   // Price calculation
   const cyclePrice = billingCycle ? parseFloat(billingCycle.price) || 0 : parseFloat(plan.monthly_price || plan.price || 0);
@@ -86,11 +111,18 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
         throw new Error(result?.error || result?.message || 'Subscription creation failed.');
       }
 
-      Alert.alert(
-        'Membership Activated',
-        `You are now a ${plan.name} member!`,
-        [{ text: 'OK', onPress: () => navigation.popToTop() }]
-      );
+      // Handle 3D Secure (SCA) if the subscription's first payment requires authentication
+      if (result.client_secret) {
+        setLoadingMessage('Confirming payment...');
+        const { error: confirmError } = await confirmPayment(result.client_secret, {
+          paymentMethodType: 'Card',
+        });
+        if (confirmError) {
+          throw new Error(confirmError.message || 'Payment confirmation failed.');
+        }
+      }
+
+      setShowSuccess(true);
     } catch (error) {
       Alert.alert('Purchase Failed', extractErrorMessage(error, 'Failed to purchase membership.'));
     } finally {
@@ -98,6 +130,44 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
       setLoadingMessage('');
     }
   }, [cardComplete, createPaymentMethod, user, plan, billingCycle, navigation]);
+
+  if (showSuccess) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <ScrollView contentContainerStyle={[styles.scrollContent, successStyles.container]}>
+          <Animated.View style={[
+            successStyles.iconCircle,
+            { transform: [{ scale: successScale }], opacity: successOpacity },
+          ]}>
+            <MaterialCommunityIcons name="check-bold" size={40} color={colors.white} />
+          </Animated.View>
+
+          <Animated.View style={{ opacity: successOpacity, alignItems: 'center' }}>
+            <Text style={successStyles.title}>Membership Activated</Text>
+            <Text style={successStyles.subtitle}>You are now a {plan.name} member!</Text>
+          </Animated.View>
+
+          <Animated.View style={[successStyles.detailsCard, { opacity: successOpacity }]}>
+            <Text style={successStyles.detailLabel}>PLAN</Text>
+            <Text style={successStyles.detailValue}>{plan.name}</Text>
+            <View style={successStyles.detailDivider} />
+            <Text style={successStyles.detailLabel}>BILLING</Text>
+            <Text style={successStyles.detailValue}>
+              {getBillingCycleLabel(billingCycle?.billing_cycle)} — {formatCurrency(cyclePrice)}
+            </Text>
+          </Animated.View>
+
+          <TouchableOpacity
+            style={[styles.purchaseButton, successStyles.doneButton]}
+            onPress={() => navigation.popToTop()}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.purchaseButtonText}>Done</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>

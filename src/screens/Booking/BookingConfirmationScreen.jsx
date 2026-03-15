@@ -270,6 +270,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     isMembershipBooking: !!isMembershipBooking,
     isPackageBooking,
     memberPriceCents,
+    discountAmount: appliedPromo?.discount_amount ? Number(appliedPromo.discount_amount) : 0,
   });
 
   const formattedDate = timeSlot?.start_time
