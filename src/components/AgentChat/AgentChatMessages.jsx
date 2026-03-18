@@ -23,6 +23,10 @@ const TypingDot = ({ delay }) => {
   return <Animated.View style={[styles.loadingDot, { opacity }]} />;
 };
 
+TypingDot.propTypes = {
+  delay: PropTypes.number.isRequired,
+};
+
 const AgentChatMessages = ({
   agentLabel,
   isLoading,

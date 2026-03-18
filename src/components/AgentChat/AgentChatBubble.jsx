@@ -189,7 +189,7 @@ const HandoffCard = ({ handoff, handoffActionLabel, onHandoffAction }) => {
           compact
           style={styles.handoffAction}
           icon="arrow-right"
-          contentStyle={{ flexDirection: 'row-reverse' }}
+          contentStyle={styles.handoffActionContent}
           onPress={() => onHandoffAction(handoff)}
         >
           {handoffActionLabel || 'Open in Marshal'}
@@ -197,6 +197,18 @@ const HandoffCard = ({ handoff, handoffActionLabel, onHandoffAction }) => {
       ) : null}
     </View>
   );
+};
+
+HandoffCard.propTypes = {
+  handoff: PropTypes.shape({
+    target: PropTypes.string,
+    reason: PropTypes.string,
+    title: PropTypes.string,
+    summary: PropTypes.string,
+    prompt: PropTypes.string,
+  }),
+  handoffActionLabel: PropTypes.string,
+  onHandoffAction: PropTypes.func,
 };
 
 const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction, onHandoffAction, handoffActionLabel, onSlotSelect }) => {

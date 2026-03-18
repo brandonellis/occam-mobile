@@ -264,7 +264,7 @@ export const agentChatStyles = StyleSheet.create({
     color: colors.accent,
   },
   handoffPromptWrap: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: colors.textInverseDisabled,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginBottom: spacing.md,
@@ -294,6 +294,9 @@ export const agentChatStyles = StyleSheet.create({
   },
   handoffAction: {
     marginTop: spacing.xs,
+  },
+  handoffActionContent: {
+    flexDirection: 'row-reverse',
   },
   confirmationList: {
     gap: spacing.sm,
