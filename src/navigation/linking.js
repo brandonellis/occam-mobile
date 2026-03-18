@@ -90,6 +90,7 @@ const linking = {
               [SCREENS.ADMIN_SCHEDULE]: 'admin/schedule',
             },
           },
+          [SCREENS.MARSHAL]: 'admin/marshal',
         },
       },
 

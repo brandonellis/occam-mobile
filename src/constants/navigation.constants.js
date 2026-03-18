@@ -79,4 +79,6 @@ export const NOTIFICATION_SCREEN_MAP = {
   BookingDetail: SCREENS.BOOKING_DETAIL,
   CoachDashboard: SCREENS.COACH_DASHBOARD,
   AdminDashboard: SCREENS.ADMIN_DASHBOARD,
+  Caddie: SCREENS.CADDIE,
+  Marshal: SCREENS.MARSHAL,
 };

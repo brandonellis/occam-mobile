@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { Text, View } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useOfflineStatus } from '../hooks/useOfflineStatus';
 import { styles } from '../styles/offlineBanner.styles';
