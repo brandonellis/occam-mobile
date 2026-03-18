@@ -66,3 +66,17 @@ export const SCREENS = {
   VIDEO_PLAYER: 'VideoPlayer',
   NOTIFICATIONS: 'Notifications',
 };
+
+/**
+ * Maps notification payload `screen` values to actual screen names.
+ * Used by usePushNotifications and the deep linking config.
+ */
+export const NOTIFICATION_SCREEN_MAP = {
+  Bookings: SCREENS.CLIENT_BOOKINGS,
+  Schedule: SCREENS.COACH_SCHEDULE,
+  Resources: SCREENS.CLIENT_PROGRESS,
+  Notifications: SCREENS.NOTIFICATIONS,
+  BookingDetail: SCREENS.BOOKING_DETAIL,
+  CoachDashboard: SCREENS.COACH_DASHBOARD,
+  AdminDashboard: SCREENS.ADMIN_DASHBOARD,
+};

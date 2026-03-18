@@ -5,7 +5,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { registerPushToken } from '../services/notifications.api';
 import { navigate } from '../helpers/navigation.helper';
-import { SCREENS } from '../constants/navigation.constants';
+import { SCREENS, NOTIFICATION_SCREEN_MAP } from '../constants/navigation.constants';
 import logger from '../helpers/logger.helper';
 
 Notifications.setNotificationHandler({
@@ -80,15 +80,15 @@ const usePushNotifications = () => {
       Notifications.addNotificationResponseReceivedListener((response) => {
         const data = response.notification.request.content.data;
         if (data?.screen) {
-          const screenMap = {
-            Bookings: SCREENS.CLIENT_BOOKINGS,
-            Schedule: SCREENS.COACH_SCHEDULE,
-            Resources: SCREENS.CLIENT_PROGRESS,
-            Notifications: SCREENS.NOTIFICATIONS,
-          };
-          const targetScreen = screenMap[data.screen] || SCREENS.NOTIFICATIONS;
-          const params = data.booking_id ? { bookingId: data.booking_id } : undefined;
-          navigate(targetScreen, params);
+          const targetScreen = NOTIFICATION_SCREEN_MAP[data.screen] || SCREENS.NOTIFICATIONS;
+
+          // Build params from common notification payload fields
+          const params = {};
+          if (data.booking_id) params.bookingId = data.booking_id;
+          if (data.report_id) params.reportId = data.report_id;
+          if (data.client_id) params.clientId = data.client_id;
+
+          navigate(targetScreen, Object.keys(params).length > 0 ? params : undefined);
         }
       });
 
