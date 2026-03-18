@@ -11,6 +11,7 @@ import { SCREENS } from '../../constants/navigation.constants';
 import { navigate } from '../../helpers/navigation.helper';
 import { buildMarshalIntentFromHandoff } from '../../helpers/marshalIntent.helper';
 import { caddieStyles as styles } from '../../styles/caddie.styles';
+import { logger } from '../../helpers/logger.helper';
 
 const CaddieScreen = () => {
   const { user, activeRole, isDualRole, switchRole } = useAuth();
@@ -72,8 +73,8 @@ const CaddieScreen = () => {
 
       openMarshalWithIntent(intent);
     } catch (handoffActionError) {
-      void handoffActionError;
-      setHandoffError('We couldn’t open Marshal right now. Please try again.');
+      logger.warn(‘CaddieScreen: Marshal handoff failed’, handoffActionError?.message || handoffActionError);
+      setHandoffError(‘We couldn’t open Marshal right now. Please try again.’);
     }
   }, [activeRole, canLaunchMarshal, marshalTargetRole, openMarshalWithIntent, switchRole]);
 
