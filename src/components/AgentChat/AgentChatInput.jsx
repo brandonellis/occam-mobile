@@ -57,7 +57,7 @@ const AgentChatInput = ({
           style={styles.composerInput}
           contentStyle={styles.composerInputContent}
           underlineColor="transparent"
-          activeUnlineColor="transparent"
+          activeUnderlineColor="transparent"
           dense
         />
         <Pressable
