@@ -4,6 +4,7 @@ import { Linking, Pressable, View } from 'react-native';
 import { Button, Divider, Icon, Surface, Text } from 'react-native-paper';
 import { agentChatStyles as styles } from '../../styles/agentChat.styles';
 import { colors } from '../../theme/colors';
+import { formatEligibilityLabel } from '../../helpers/agentChat.helper';
 import AvailabilityCard from './AvailabilityCard';
 
 const ACTION_LABELS = {
@@ -108,14 +109,7 @@ const renderBookingLinkCard = (bookingLink) => {
     return null;
   }
 
-  let eligibilityLabel = null;
-  if (bookingLink.eligibility?.source === 'membership') {
-    eligibilityLabel = `Covered by membership${bookingLink.eligibility?.remaining !== undefined && bookingLink.eligibility?.remaining !== null ? ` • ${bookingLink.eligibility.remaining} remaining` : ''}`;
-  } else if (bookingLink.eligibility?.source === 'package') {
-    eligibilityLabel = `${bookingLink.eligibility?.package_name || 'Package booking'}${bookingLink.eligibility?.remaining !== undefined && bookingLink.eligibility?.remaining !== null ? ` • ${bookingLink.eligibility.remaining} remaining` : ''}`;
-  } else if (bookingLink.eligibility?.source === 'one_off') {
-    eligibilityLabel = 'This booking requires payment';
-  }
+  const eligibilityLabel = formatEligibilityLabel(bookingLink.eligibility);
 
   return (
     <Surface style={styles.bookingCard} elevation={0}>

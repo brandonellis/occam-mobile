@@ -1,18 +1,7 @@
 import { useCallback, useReducer } from 'react';
 import logger from '../helpers/logger.helper';
+import { buildMessage, buildHistory, normalizeSuggestions } from '../helpers/agentChat.helper';
 import { AGENT_CHAT_ACTIONS, agentChatReducer, createInitialAgentChatState } from '../reducers/agentChat.reducer';
-
-const buildMessage = (sender, text, extras = {}) => ({
-  id: `${sender}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  sender,
-  text,
-  ...extras,
-});
-
-const buildHistory = (messages) => messages.map((message) => ({
-  role: message.sender === 'user' ? 'user' : 'assistant',
-  content: message.text,
-}));
 
 const defaultFallback = (agentName, suggestions) => ({
   response: `${agentName} is available on mobile now, and the live AI backend is still being connected. You can already use this screen as the home for ${agentName.toLowerCase()} conversations.`,
@@ -26,6 +15,7 @@ const useAgentChat = ({
   sendMessageApi,
   fallbackMessage,
   supportsBookingState = false,
+  transformResponse,
 }) => {
   const [state, dispatch] = useReducer(
     agentChatReducer,
@@ -45,14 +35,14 @@ const useAgentChat = ({
     dispatch({ type: AGENT_CHAT_ACTIONS.SET_INPUT, payload: '' });
   }, [initialMessages, initialSuggestions]);
 
-  const sendMessage = useCallback(async (value, { slotContext } = {}) => {
+  const sendMessage = useCallback(async (value, { slotContext, displayText } = {}) => {
     const trimmed = typeof value === 'string' ? value.trim() : '';
 
     if (!trimmed || state.isLoading) {
       return;
     }
 
-    const userMessage = buildMessage('user', trimmed);
+    const userMessage = buildMessage('user', displayText || trimmed);
     const history = buildHistory([...state.messages, userMessage]);
 
     dispatch({ type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE, payload: userMessage });
@@ -72,29 +62,33 @@ const useAgentChat = ({
       }
 
       const result = await sendMessageApi(trimmed, history, apiOptions);
-      const responseText = result?.response || fallbackMessage;
-      const suggestions = Array.isArray(result?.suggested_actions)
-        ? result.suggested_actions
-            .map((action) => action?.prompt || action?.label)
-            .filter(Boolean)
-        : initialSuggestions;
 
       // Update booking state from response
       if (supportsBookingState && result?.booking_state !== undefined) {
         dispatch({ type: AGENT_CHAT_ACTIONS.SET_BOOKING_STATE, payload: result.booking_state });
       }
 
-      dispatch({
-        type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
-        payload: buildMessage('assistant', responseText, {
-          type: result?.handoff ? 'handoff' : 'assistant',
-          handoff: result?.handoff || null,
-          card: result?.card || null,
-          bookingLink: result?.booking_link || null,
-          availability: result?.availability || null,
-        }),
-      });
-      dispatch({ type: AGENT_CHAT_ACTIONS.SET_SUGGESTIONS, payload: suggestions.slice(0, 3) });
+      // Allow consumers to customize how the response becomes a message + suggestions
+      if (transformResponse) {
+        const transformed = transformResponse(result, initialSuggestions);
+        dispatch({ type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE, payload: transformed.message });
+        dispatch({ type: AGENT_CHAT_ACTIONS.SET_SUGGESTIONS, payload: transformed.suggestions });
+      } else {
+        const responseText = result?.response || fallbackMessage;
+        const suggestions = normalizeSuggestions(result?.suggested_actions, initialSuggestions);
+
+        dispatch({
+          type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
+          payload: buildMessage('assistant', responseText, {
+            type: result?.handoff ? 'handoff' : 'assistant',
+            handoff: result?.handoff || null,
+            card: result?.card || null,
+            bookingLink: result?.booking_link || null,
+            availability: result?.availability || null,
+          }),
+        });
+        dispatch({ type: AGENT_CHAT_ACTIONS.SET_SUGGESTIONS, payload: suggestions });
+      }
     } catch (error) {
       logger.warn(`${agentName} mobile message failed:`, error?.message || error);
       const fallback = defaultFallback(agentName, initialSuggestions);
@@ -119,7 +113,7 @@ const useAgentChat = ({
     } finally {
       dispatch({ type: AGENT_CHAT_ACTIONS.SET_LOADING, payload: false });
     }
-  }, [agentName, fallbackMessage, initialSuggestions, sendMessageApi, state.isLoading, state.messages, state.bookingState, supportsBookingState]);
+  }, [agentName, fallbackMessage, initialSuggestions, sendMessageApi, state.isLoading, state.messages, state.bookingState, supportsBookingState, transformResponse]);
 
   const sendCurrentMessage = useCallback(() => {
     sendMessage(state.input);
@@ -131,6 +125,7 @@ const useAgentChat = ({
 
   return {
     ...state,
+    dispatch,
     resetConversation,
     selectSuggestion,
     sendCurrentMessage,

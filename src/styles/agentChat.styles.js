@@ -362,9 +362,11 @@ export const agentChatStyles = StyleSheet.create({
     backgroundColor: 'transparent',
     minHeight: 40,
     maxHeight: 100,
-    paddingVertical: 0,
-    marginVertical: 0,
+    paddingHorizontal: 0,
     ...typography.body,
+  },
+  composerInputContent: {
+    paddingVertical: 0,
     color: colors.textPrimary,
   },
   sendButtonCircle: {

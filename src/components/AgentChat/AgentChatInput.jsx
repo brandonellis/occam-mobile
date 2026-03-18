@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Pressable, ScrollView, TextInput, View } from 'react-native';
-import { ActivityIndicator, Icon, Text } from 'react-native-paper';
+import { Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Icon, Text, TextInput } from 'react-native-paper';
 import { agentChatStyles as styles } from '../../styles/agentChat.styles';
 import { colors } from '../../theme/colors';
 
@@ -46,15 +46,19 @@ const AgentChatInput = ({
       ) : null}
       <View style={[styles.composerRow, isFocused && styles.composerRowFocused]}>
         <TextInput
+          mode="flat"
           multiline
           value={input}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor={colors.disabled}
-          editable={!disabled && !isLoading}
+          disabled={disabled || isLoading}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           style={styles.composerInput}
+          contentStyle={styles.composerInputContent}
+          underlineColor="transparent"
+          activeUnlineColor="transparent"
+          dense
         />
         <Pressable
           onPress={canSend ? onSend : undefined}

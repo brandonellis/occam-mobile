@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Button, Text } from 'react-native-paper';
 import { agentChatStyles as styles } from '../../styles/agentChat.styles';
+import { formatEligibilityLabel } from '../../helpers/agentChat.helper';
 
 const MAX_VISIBLE_SLOTS = 6;
 
@@ -26,17 +27,6 @@ const formatDayLabel = (dateStr) => {
   } catch {
     return { weekday: dateStr, day: '' };
   }
-};
-
-const formatEligibilityLabel = (eligibility) => {
-  if (!eligibility) return null;
-  const remaining = eligibility.remaining !== undefined && eligibility.remaining !== null
-    ? ` \u2022 ${eligibility.remaining} remaining`
-    : '';
-  if (eligibility.source === 'membership') return `Covered by membership${remaining}`;
-  if (eligibility.source === 'package') return `${eligibility.package_name || 'Package booking'}${remaining}`;
-  if (eligibility.source === 'one_off') return 'Payment required';
-  return null;
 };
 
 const AvailabilityCard = ({ availability, onSlotSelect }) => {
