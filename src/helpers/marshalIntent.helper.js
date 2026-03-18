@@ -30,7 +30,10 @@ export const buildBookingMarshalIntent = ({ booking, company }) => {
   const endTime = booking?.end_time ? formatTimeInTz(booking.end_time, company) : '';
   const timeRange = endTime ? `${startTime} – ${endTime}` : startTime;
   const status = booking?.status || 'unknown';
-  const notes = booking?.notes ? String(booking.notes).trim() : '';
+  // Strip potential LLM instruction characters from user-supplied notes to
+  // prevent prompt injection before embedding in the intent message.
+  const rawNotes = booking?.notes ? String(booking.notes).trim() : '';
+  const notes = rawNotes.replace(/[<>\[\]{}]/g, '').substring(0, 500);
   const summary = `Review ${serviceName} for ${clientName} on ${bookingDate}${timeRange ? ` at ${timeRange}` : ''}.`;
 
   const promptLines = [
@@ -48,7 +51,7 @@ export const buildBookingMarshalIntent = ({ booking, company }) => {
   ];
 
   if (notes) {
-    promptLines.push(`Notes: ${notes}`);
+    promptLines.push(`[BOOKING_NOTE_START] ${notes} [BOOKING_NOTE_END]`);
   }
 
   promptLines.push('Please review this booking and recommend or perform the next facility-side follow-up. Any mutation still requires explicit human approval.');

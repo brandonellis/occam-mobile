@@ -126,7 +126,12 @@ const renderBookingLinkCard = (bookingLink) => {
       {eligibilityLabel ? (
         <Text style={styles.bookingEligibility}>{eligibilityLabel}</Text>
       ) : null}
-      <Button mode="contained" compact style={styles.bookingButton} onPress={() => Linking.openURL(bookingLink.booking_url)}>
+      <Button mode="contained" compact style={styles.bookingButton} onPress={() => {
+          const url = bookingLink.booking_url;
+          if (url && (url.startsWith('https://') || url.startsWith('/'))) {
+            Linking.openURL(url);
+          }
+        }}>
         Continue to booking
       </Button>
     </Surface>

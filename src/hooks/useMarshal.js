@@ -107,7 +107,7 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null } = {}) => {
     dispatch({ type: AGENT_CHAT_ACTIONS.SET_ERROR, payload: null });
 
     try {
-      const result = await confirmMarshalAction(action.tool, action.args || {});
+      const result = await confirmMarshalAction(action.action_id);
       dispatch({
         type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
         payload: buildMessage('assistant', result?.message || 'Marshal completed that action.', {

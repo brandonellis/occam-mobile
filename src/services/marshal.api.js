@@ -9,10 +9,9 @@ export const sendMarshalMessage = async (message, history = []) => {
   return response.data?.data || response.data;
 };
 
-export const confirmMarshalAction = async (tool, args = {}) => {
+export const confirmMarshalAction = async (actionId) => {
   const response = await apiClient.post('/marshal/confirm', {
-    tool,
-    args,
+    action_id: actionId,
   });
 
   return response.data?.data || response.data;
