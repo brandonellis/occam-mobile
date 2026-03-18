@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator, View } from 'react-native';
+import OfflineBanner from '../components/OfflineBanner';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import useAuth from '../hooks/useAuth';
 import usePushNotifications from '../hooks/usePushNotifications';
@@ -53,6 +54,8 @@ const RootNavigator = () => {
   const navigatorKey = isAuthenticated ? `app-${activeRole}` : 'auth';
 
   return (
+    <View style={{ flex: 1 }}>
+      <OfflineBanner />
     <Stack.Navigator key={navigatorKey} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       {!isAuthenticated ? (
         <Stack.Screen
@@ -144,6 +147,7 @@ const RootNavigator = () => {
         </>
       )}
     </Stack.Navigator>
+    </View>
   );
 };
 
