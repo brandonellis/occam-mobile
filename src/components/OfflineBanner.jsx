@@ -1,9 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import { View, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useOfflineStatus } from '../hooks/useOfflineStatus';
-import { colors } from '../theme/colors';
-import { typography } from '../theme/typography';
+import { styles } from '../styles/offlineBanner.styles';
 
 /**
  * Renders a sticky banner at the top of the screen when the device has no
@@ -17,33 +16,8 @@ export default function OfflineBanner() {
 
   return (
     <View style={styles.banner}>
-      <MaterialCommunityIcons name="wifi-off" size={16} color={colors.white} style={styles.icon} />
+      <MaterialCommunityIcons name="wifi-off" size={16} color={styles.text.color} style={styles.icon} />
       <Text style={styles.text}>No internet connection</Text>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  banner: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 9999,
-    backgroundColor: colors.error || '#D32F2F',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  icon: {
-    marginRight: 6,
-  },
-  text: {
-    color: colors.white || '#FFFFFF',
-    fontSize: 13,
-    fontFamily: typography?.medium || undefined,
-    fontWeight: '500',
-  },
-});

@@ -1,5 +1,6 @@
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -14,6 +15,7 @@ import ErrorBoundary from './src/components/ErrorBoundary';
 import { initGlobalErrorHandler } from './src/services/errorReporting.service';
 import { paperTheme } from './src/theme';
 import { colors } from './src/theme/colors';
+import { styles } from './src/styles/app.styles';
 
 initGlobalErrorHandler();
 
@@ -26,7 +28,7 @@ const navigationTheme = {
 };
 
 const LinkingFallback = () => (
-  <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background }}>
+  <View style={styles.linkingFallbackContainer}>
     <ActivityIndicator size="large" color={colors.primary} />
   </View>
 );

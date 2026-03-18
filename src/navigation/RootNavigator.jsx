@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator } from 'react-native-paper';
+import { View } from 'react-native';
 import OfflineBanner from '../components/OfflineBanner';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import useAuth from '../hooks/useAuth';
 import usePushNotifications from '../hooks/usePushNotifications';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
+import { styles } from '../styles/rootNavigator.styles';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import AdminTabNavigator from './AdminTabNavigator';
 import CoachTabNavigator from './CoachTabNavigator';
@@ -36,14 +38,7 @@ const RootNavigator = () => {
 
   if (isLoading) {
     return (
-      <View
-        style={{
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: colors.background,
-        }}
-      >
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -54,7 +49,7 @@ const RootNavigator = () => {
   const navigatorKey = isAuthenticated ? `app-${activeRole}` : 'auth';
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={styles.container}>
       <OfflineBanner />
     <Stack.Navigator key={navigatorKey} screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       {!isAuthenticated ? (
