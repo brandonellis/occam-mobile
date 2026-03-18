@@ -8,10 +8,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Button } from 'react-native-paper';
 import { getBooking, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
+import { SCREENS } from '../../constants/navigation.constants';
 import { bookingDetailStyles as styles } from '../../styles/bookingDetail.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
@@ -24,6 +26,7 @@ import {
   getBookingEditEntryScreen,
   isStaffBookingRole,
 } from '../../helpers/bookingEdit.helper';
+import { buildBookingMarshalIntent } from '../../helpers/marshalIntent.helper';
 
 const BookingDetailScreen = ({ navigation, route }) => {
   const { bookingId, booking: passedBooking } = route.params || {};
@@ -88,6 +91,20 @@ const BookingDetailScreen = ({ navigation, route }) => {
       bookingData: buildBookingEditData(booking),
     });
   }, [activeRole, booking, navigation]);
+
+  const handleOpenMarshal = useCallback(() => {
+    if (!booking) return;
+
+    const intent = buildBookingMarshalIntent({ booking, company });
+    const parentScreen = activeRole === 'coach' ? SCREENS.COACH_TABS : SCREENS.ADMIN_TABS;
+
+    navigation.navigate(parentScreen, {
+      screen: SCREENS.MARSHAL,
+      params: {
+        marshalIntent: intent,
+      },
+    });
+  }, [activeRole, booking, company, navigation]);
 
   if (isLoading) {
     return (
@@ -214,8 +231,20 @@ const BookingDetailScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {(canEdit || canCancel) && (
+        {(isStaffView || canEdit || canCancel) && (
           <View style={styles.actionGroup}>
+            {isStaffView && (
+              <Button
+                mode="contained-tonal"
+                icon="robot-outline"
+                onPress={handleOpenMarshal}
+                style={styles.marshalButton}
+                contentStyle={styles.marshalButtonContent}
+                labelStyle={styles.marshalButtonLabel}
+              >
+                Open in Marshal
+              </Button>
+            )}
             {canEdit && (
               <TouchableOpacity
                 style={styles.editButton}

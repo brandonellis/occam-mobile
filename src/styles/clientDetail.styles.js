@@ -116,6 +116,20 @@ export const clientDetailStyles = StyleSheet.create({
     paddingTop: spacing.lg,
     gap: spacing.md,
   },
+  marshalActionWrap: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+  },
+  marshalButton: {
+    borderRadius: borderRadius.md,
+  },
+  marshalButtonContent: {
+    minHeight: 48,
+  },
+  marshalButtonLabel: {
+    ...typography.label,
+    fontSize: 13,
+  },
   actionButton: {
     flex: 1,
     flexDirection: 'row',

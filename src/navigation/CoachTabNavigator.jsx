@@ -7,6 +7,7 @@ import CoachDashboardScreen from '../screens/Coach/CoachDashboardScreen';
 import CoachScheduleStack from './CoachScheduleStack';
 import CoachClientsStack from './CoachClientsStack';
 import CoachProfileScreen from '../screens/Coach/CoachProfileScreen';
+import MarshalScreen from '../screens/Marshal/MarshalScreen';
 import { createTabResetListener } from '../helpers/navigation.helper';
 
 const Tab = createBottomTabNavigator();
@@ -15,6 +16,7 @@ const TAB_ICONS = {
   [SCREENS.COACH_DASHBOARD]: { focused: 'view-dashboard', unfocused: 'view-dashboard-outline' },
   ScheduleTab: { focused: 'calendar', unfocused: 'calendar-outline' },
   ClientsTab: { focused: 'account-group', unfocused: 'account-group-outline' },
+  [SCREENS.MARSHAL]: { focused: 'robot', unfocused: 'robot-outline' },
   [SCREENS.COACH_PROFILE]: { focused: 'account-circle', unfocused: 'account-circle-outline' },
 };
 
@@ -48,6 +50,11 @@ const CoachTabNavigator = () => {
         component={CoachClientsStack}
         options={{ tabBarLabel: 'Clients' }}
         listeners={createTabResetListener('ClientsTab', SCREENS.COACH_CLIENTS)}
+      />
+      <Tab.Screen
+        name={SCREENS.MARSHAL}
+        component={MarshalScreen}
+        options={{ tabBarLabel: 'Marshal' }}
       />
       <Tab.Screen
         name={SCREENS.COACH_PROFILE}

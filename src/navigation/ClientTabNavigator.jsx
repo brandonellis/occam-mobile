@@ -8,6 +8,7 @@ import ClientBookingsScreen from '../screens/Client/ClientBookingsScreen';
 import ClientActivityFeedScreen from '../screens/Client/ClientActivityFeedScreen';
 import ClientProgressStack from './ClientProgressStack';
 import ClientProfileScreen from '../screens/Client/ClientProfileScreen';
+import CaddieScreen from '../screens/Caddie/CaddieScreen';
 import useActivityBadge from '../hooks/useActivityBadge';
 import { createTabResetListener } from '../helpers/navigation.helper';
 import { BadgeProvider } from '../context/BadgeContext';
@@ -19,6 +20,7 @@ const TAB_ICONS = {
   [SCREENS.CLIENT_BOOKINGS]: { focused: 'calendar', unfocused: 'calendar-outline' },
   [SCREENS.CLIENT_ACTIVITY]: { focused: 'pulse', unfocused: 'pulse' },
   ProgressTab: { focused: 'trending-up', unfocused: 'trending-up' },
+  [SCREENS.CADDIE]: { focused: 'robot', unfocused: 'robot-outline' },
   [SCREENS.CLIENT_PROFILE]: { focused: 'account-circle', unfocused: 'account-circle-outline' },
 };
 
@@ -67,6 +69,11 @@ const ClientTabNavigator = () => {
         component={ClientProgressStack}
         options={{ tabBarLabel: 'Progress' }}
         listeners={createTabResetListener('ProgressTab', SCREENS.CLIENT_PROGRESS)}
+      />
+      <Tab.Screen
+        name={SCREENS.CADDIE}
+        component={CaddieScreen}
+        options={{ tabBarLabel: 'Caddie' }}
       />
       <Tab.Screen
         name={SCREENS.CLIENT_PROFILE}

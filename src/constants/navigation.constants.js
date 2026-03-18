@@ -21,6 +21,8 @@ export const SCREENS = {
   CLIENT_ACTIVITY: 'ClientActivity',
   CLIENT_PROGRESS: 'ClientProgress',
   CLIENT_PROFILE: 'ClientProfile',
+  CADDIE: 'Caddie',
+  MARSHAL: 'Marshal',
 
   // Booking flow
   LOCATION_SELECTION: 'LocationSelection',

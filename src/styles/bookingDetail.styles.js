@@ -92,6 +92,16 @@ export const bookingDetailStyles = StyleSheet.create({
     marginTop: spacing.xl,
     gap: spacing.sm,
   },
+  marshalButton: {
+    borderRadius: borderRadius.md,
+  },
+  marshalButtonContent: {
+    minHeight: 48,
+  },
+  marshalButtonLabel: {
+    ...typography.label,
+    fontSize: 14,
+  },
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -11,7 +11,7 @@ import {
   UIManager,
   Platform,
 } from 'react-native';
-import { Snackbar, IconButton, TouchableRipple } from 'react-native-paper';
+import { Snackbar, IconButton, TouchableRipple, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -45,6 +45,7 @@ import {
   clientDetailInitialState,
   CLIENT_DETAIL_ACTIONS,
 } from '../../reducers/clientDetail.reducer';
+import { buildClientMarshalIntent } from '../../helpers/marshalIntent.helper';
 
 const getDocIcon = (mime) => {
   if (mime.startsWith('application/pdf')) return 'file-document';
@@ -340,6 +341,26 @@ const ClientDetailScreen = ({ route, navigation }) => {
     );
   }, [clientId, loadSectionData]);
 
+  const handleOpenMarshal = useCallback(() => {
+    if (!client) {
+      return;
+    }
+
+    const intent = buildClientMarshalIntent({
+      client,
+      company,
+      upcomingBookings,
+      pastBookings,
+    });
+
+    navigation.navigate(SCREENS.COACH_TABS, {
+      screen: SCREENS.MARSHAL,
+      params: {
+        marshalIntent: intent,
+      },
+    });
+  }, [client, company, upcomingBookings, pastBookings, navigation]);
+
   const handleUnshare = useCallback((sharedMediaId) => {
     // Find the item being removed so we can restore on undo
     const removedItem = sharedMedia.find((m) => m.id === sharedMediaId);
@@ -480,8 +501,19 @@ const ClientDetailScreen = ({ route, navigation }) => {
             <Text style={styles.actionButtonText}>Share Resource</Text>
           </TouchableOpacity>
         </View>
+        <View style={styles.marshalActionWrap}>
+          <Button
+            mode="contained-tonal"
+            icon="robot-outline"
+            onPress={handleOpenMarshal}
+            style={styles.marshalButton}
+            contentStyle={styles.marshalButtonContent}
+            labelStyle={styles.marshalButtonLabel}
+          >
+            Ask Marshal About This Client
+          </Button>
+        </View>
 
-        {/* Activity Feed — collapsible, lazy-loaded */}
         <View style={styles.section}>
           <TouchableOpacity
             style={styles.collapsibleHeader}
