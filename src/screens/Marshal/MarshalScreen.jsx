@@ -1,4 +1,5 @@
 import React, { useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { Pressable, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Icon, Surface, Text } from 'react-native-paper';
@@ -121,6 +122,17 @@ const MarshalScreen = ({ navigation, route }) => {
       </ScrollView>
     </SafeAreaView>
   );
+};
+
+MarshalScreen.propTypes = {
+  navigation: PropTypes.shape({
+    setParams: PropTypes.func,
+  }),
+  route: PropTypes.shape({
+    params: PropTypes.shape({
+      marshalIntent: PropTypes.object,
+    }),
+  }),
 };
 
 export default MarshalScreen;
