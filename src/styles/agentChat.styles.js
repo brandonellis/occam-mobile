@@ -50,6 +50,10 @@ export const agentChatStyles = StyleSheet.create({
   avatarSpacer: {
     width: 28,
   },
+  bubbleContentWrap: {
+    flex: 0,
+    maxWidth: '80%',
+  },
   messageBubble: {
     maxWidth: '80%',
     borderRadius: 20,
@@ -364,9 +368,9 @@ export const agentChatStyles = StyleSheet.create({
     color: colors.textPrimary,
   },
   sendButtonCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
@@ -421,6 +425,7 @@ export const agentChatStyles = StyleSheet.create({
     borderRadius: 20,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -546,7 +551,7 @@ export const agentChatStyles = StyleSheet.create({
   availabilityDayTabCount: {
     ...typography.bodySmall,
     fontSize: 10,
-    color: colors.textTertiary,
+    color: colors.textSecondary,
     textAlign: 'center',
   },
   availabilityDayTabCountActive: {
@@ -578,7 +583,7 @@ export const agentChatStyles = StyleSheet.create({
   availabilitySlotCoach: {
     ...typography.bodySmall,
     fontSize: 10,
-    color: colors.textTertiary,
+    color: colors.textSecondary,
     marginTop: 2,
   },
   availabilityFooter: {

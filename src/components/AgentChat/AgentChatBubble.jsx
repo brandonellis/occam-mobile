@@ -223,7 +223,7 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
           <Text style={styles.avatarText}>{avatarInitial}</Text>
         </View>
       ) : null}
-      <View style={{ flex: 0, maxWidth: '80%' }}>
+      <View style={styles.bubbleContentWrap}>
         <View style={bubbleStyle}>
           {renderCard(message.card)}
           {renderBookingLinkCard(message.bookingLink)}

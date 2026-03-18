@@ -62,9 +62,9 @@ const AgentChatInput = ({
           disabled={!canSend}
         >
           {isLoading ? (
-            <ActivityIndicator size={16} color="#FFFFFF" />
+            <ActivityIndicator size={16} color={colors.textInverse} />
           ) : (
-            <Icon source="arrow-up" size={20} color="#FFFFFF" />
+            <Icon source="arrow-up" size={20} color={colors.textInverse} />
           )}
         </Pressable>
       </View>
