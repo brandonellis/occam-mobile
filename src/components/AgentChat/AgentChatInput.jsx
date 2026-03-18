@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import { Pressable, ScrollView, TextInput, View } from 'react-native';
 import { ActivityIndicator, Icon, Text } from 'react-native-paper';
 import { agentChatStyles as styles } from '../../styles/agentChat.styles';
+import { colors } from '../../theme/colors';
 
 const AgentChatInput = ({
   disabled,
@@ -49,7 +50,7 @@ const AgentChatInput = ({
           value={input}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor="#ADB5BD"
+          placeholderTextColor={colors.disabled}
           editable={!disabled && !isLoading}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}

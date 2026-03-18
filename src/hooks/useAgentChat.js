@@ -99,9 +99,14 @@ const useAgentChat = ({
       logger.warn(`${agentName} mobile message failed:`, error?.message || error);
       const fallback = defaultFallback(agentName, initialSuggestions);
 
+      // Clear booking state on error so stale state doesn't compound failures
+      if (supportsBookingState) {
+        dispatch({ type: AGENT_CHAT_ACTIONS.SET_BOOKING_STATE, payload: null });
+      }
+
       dispatch({
         type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
-        payload: buildMessage('assistant', fallbackMessage || fallback.response),
+        payload: buildMessage('assistant', fallbackMessage || fallback.response, { type: 'error' }),
       });
       dispatch({
         type: AGENT_CHAT_ACTIONS.SET_SUGGESTIONS,
