@@ -33,29 +33,48 @@ const ICON_MAP = {
   default: 'bell',
 };
 
+const PER_PAGE = 25;
+
 const NotificationsScreen = ({ navigation }) => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [lastPage, setLastPage] = useState(1);
   const [error, setError] = useState(null);
   const { refresh: refreshBadge } = useUnreadNotifications();
 
-  const loadNotifications = useCallback(async (showRefresh = false) => {
+  const loadNotifications = useCallback(async ({ showRefresh = false, page = 1, append = false } = {}) => {
     try {
       if (showRefresh) setIsRefreshing(true);
+      else if (append) setIsLoadingMore(true);
       else setIsLoading(true);
 
-      const { data } = await getNotifications();
-      setNotifications(data || []);
+      const result = await getNotifications({ page, per_page: PER_PAGE });
+      const data = result?.data || [];
+      const pagination = result?.pagination;
+
+      setNotifications((prev) => append ? [...prev, ...data] : data);
+      if (pagination) {
+        setCurrentPage(pagination.current_page);
+        setLastPage(pagination.last_page);
+      }
       setError(null);
     } catch (err) {
-      setNotifications([]);
+      if (!append) setNotifications([]);
       setError('Unable to load notifications. Pull down to retry.');
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
+      setIsLoadingMore(false);
     }
   }, []);
+
+  const handleLoadMore = useCallback(() => {
+    if (isLoadingMore || currentPage >= lastPage) return;
+    loadNotifications({ page: currentPage + 1, append: true });
+  }, [isLoadingMore, currentPage, lastPage, loadNotifications]);
 
   useEffect(() => {
     loadNotifications();
@@ -158,12 +177,21 @@ const NotificationsScreen = ({ navigation }) => {
             styles.listContent,
             notifications.length === 0 && { flex: 1 },
           ]}
+          onEndReached={handleLoadMore}
+          onEndReachedThreshold={0.4}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadNotifications(true)}
+              onRefresh={() => loadNotifications({ showRefresh: true })}
               tintColor={colors.primary}
             />
+          }
+          ListFooterComponent={
+            isLoadingMore ? (
+              <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Loading more...</Text>
+              </View>
+            ) : null
           }
           ListEmptyComponent={
             error ? (
