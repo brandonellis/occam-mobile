@@ -128,3 +128,40 @@ export const leaveClassSessionWaitlist = async (classSessionId, clientId) => {
   });
   return response.data;
 };
+
+/**
+ * Create a recurring booking series.
+ * @param {Object} payload - { client_id, service_ids, location_id, start_time, end_time, frequency, occurrences, booking_type, ... }
+ * @returns {Promise<Object>} { series_id, uuid, frequency, created_count, failed_count, bookings, message }
+ */
+export const createRecurringBooking = async (payload) => {
+  const response = await apiClient.post('/bookings/recurring', payload);
+  return response.data;
+};
+
+/**
+ * List recurring booking series for the current user.
+ * @param {Object} [params] - { per_page, page }
+ */
+export const getRecurringSeries = async (params = {}) => {
+  const response = await apiClient.get('/bookings/series', { params });
+  return response.data;
+};
+
+/**
+ * Get details of a recurring booking series.
+ * @param {number} seriesId
+ */
+export const getRecurringSeriesDetail = async (seriesId) => {
+  const response = await apiClient.get(`/bookings/series/${seriesId}`);
+  return response.data;
+};
+
+/**
+ * Cancel a recurring booking series and all its future bookings.
+ * @param {number} seriesId
+ */
+export const cancelRecurringSeries = async (seriesId) => {
+  const response = await apiClient.post(`/bookings/series/${seriesId}/cancel`);
+  return response.data;
+};
