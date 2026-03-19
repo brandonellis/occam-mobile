@@ -65,6 +65,7 @@ export const SCREENS = {
   // Shared stacks
   VIDEO_PLAYER: 'VideoPlayer',
   NOTIFICATIONS: 'Notifications',
+  NOTIFICATION_PREFERENCES: 'NotificationPreferences',
 };
 
 /**

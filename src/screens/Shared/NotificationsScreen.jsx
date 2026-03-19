@@ -152,11 +152,22 @@ const NotificationsScreen = ({ navigation }) => {
     );
   };
 
-  const rightAction = hasUnread ? (
-    <TouchableOpacity style={styles.markAllButton} onPress={handleMarkAllRead}>
-      <Text style={styles.markAllText}>Read All</Text>
-    </TouchableOpacity>
-  ) : undefined;
+  const rightAction = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {hasUnread && (
+        <TouchableOpacity style={styles.markAllButton} onPress={handleMarkAllRead}>
+          <Text style={styles.markAllText}>Read All</Text>
+        </TouchableOpacity>
+      )}
+      <TouchableOpacity
+        style={{ padding: 4, minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' }}
+        onPress={() => navigation.navigate(SCREENS.NOTIFICATION_PREFERENCES)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <MaterialCommunityIcons name="cog-outline" size={22} color={colors.textSecondary} />
+      </TouchableOpacity>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

@@ -15,6 +15,7 @@ import ClientTabNavigator from './ClientTabNavigator';
 import VideoRecordingScreen from '../screens/Coach/VideoRecordingScreen';
 import VideoReviewScreen from '../screens/Coach/VideoReviewScreen';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
+import NotificationPreferencesScreen from '../screens/Shared/NotificationPreferencesScreen';
 import BookingDetailScreen from '../screens/Client/BookingDetailScreen';
 import ClientSelectionScreen from '../screens/Booking/ClientSelectionScreen';
 import ServiceSelectionScreen from '../screens/Booking/ServiceSelectionScreen';
@@ -137,6 +138,11 @@ const RootNavigator = () => {
           <Stack.Screen
             name={SCREENS.NOTIFICATIONS}
             component={NotificationsScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name={SCREENS.NOTIFICATION_PREFERENCES}
+            component={NotificationPreferencesScreen}
             options={{ animation: 'slide_from_right' }}
           />
         </>

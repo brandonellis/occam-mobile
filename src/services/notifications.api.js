@@ -36,3 +36,13 @@ export const getUnreadNotificationCount = async () => {
   const response = await apiClient.get('/notifications', { params: { per_page: 1 } });
   return response.data?.unread_count ?? 0;
 };
+
+export const getNotificationPreferences = async () => {
+  const response = await apiClient.get('/notification-preferences');
+  return response.data;
+};
+
+export const updateNotificationPreferences = async (preferences) => {
+  const response = await apiClient.put('/notification-preferences', { preferences });
+  return response.data;
+};

@@ -151,6 +151,28 @@ export const clientProfileStyles = StyleSheet.create({
     fontSize: 13,
   },
 
+  // ─── Settings Section ──────────────────────────────────────────────────────
+  settingsSection: {
+    marginTop: spacing.xl,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    ...shadows.sm,
+    overflow: 'hidden',
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
+    minHeight: 48,
+  },
+  settingsRowText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+
   // ─── Sign Out ───────────────────────────────────────────────────────────────
   signOutButton: {
     borderWidth: 1.5,

@@ -225,6 +225,19 @@ const ClientProfileScreen = ({ navigation }) => {
           )}
         </View>
 
+        {/* Settings */}
+        <View style={styles.settingsSection}>
+          <TouchableOpacity
+            style={styles.settingsRow}
+            onPress={() => navigation.navigate(SCREENS.NOTIFICATION_PREFERENCES)}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="bell-cog-outline" size={20} color={colors.textSecondary} />
+            <Text style={styles.settingsRowText}>Notification Settings</Text>
+            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
+          </TouchableOpacity>
+        </View>
+
         {/* Sign Out */}
         <TouchableOpacity
           testID="sign-out-button"
