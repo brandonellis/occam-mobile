@@ -55,12 +55,20 @@ export const notificationPreferencesStyles = StyleSheet.create({
     backgroundColor: colors.surface,
     minHeight: 44,
   },
-  eventLabel: {
+  eventLabelContainer: {
     flex: 1,
-    ...typography.bodySmall,
-    color: colors.textPrimary,
     paddingLeft: spacing.sm,
     paddingRight: spacing.xs,
+  },
+  eventLabel: {
+    ...typography.bodySmall,
+    color: colors.textPrimary,
+  },
+  transactionalHint: {
+    ...typography.bodySmall,
+    fontSize: 10,
+    color: colors.textTertiary,
+    marginTop: 1,
   },
   switchCell: {
     width: SWITCH_COL_WIDTH,
