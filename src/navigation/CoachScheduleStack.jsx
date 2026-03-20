@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
 import CoachScheduleScreen from '../screens/Coach/CoachScheduleScreen';
-import BookingScreens from './BookingScreens';
+import { bookingScreens } from './BookingScreens';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,7 +14,7 @@ const CoachScheduleStack = () => {
         name={SCREENS.COACH_SCHEDULE}
         component={CoachScheduleScreen}
       />
-      <BookingScreens Stack={Stack} />
+      {bookingScreens(Stack)}
     </Stack.Navigator>
   );
 };

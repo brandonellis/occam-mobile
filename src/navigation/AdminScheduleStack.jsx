@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
 import AdminScheduleScreen from '../screens/Admin/AdminScheduleScreen';
-import BookingScreens from './BookingScreens';
+import { bookingScreens } from './BookingScreens';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,7 +14,7 @@ const AdminScheduleStack = () => {
         name={SCREENS.ADMIN_SCHEDULE}
         component={AdminScheduleScreen}
       />
-      <BookingScreens Stack={Stack} />
+      {bookingScreens(Stack)}
     </Stack.Navigator>
   );
 };

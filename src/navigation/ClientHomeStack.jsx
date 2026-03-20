@@ -3,7 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
 import ClientHomeScreen from '../screens/Client/ClientHomeScreen';
-import BookingScreens from './BookingScreens';
+import { bookingScreens } from './BookingScreens';
 import MembershipPlansScreen from '../screens/Membership/MembershipPlansScreen';
 import MembershipCheckoutScreen from '../screens/Membership/MembershipCheckoutScreen';
 import PackageListScreen from '../screens/Package/PackageListScreen';
@@ -21,7 +21,7 @@ const ClientHomeStack = () => {
         name={SCREENS.CLIENT_HOME}
         component={ClientHomeScreen}
       />
-      <BookingScreens Stack={Stack} />
+      {bookingScreens(Stack)}
       <Stack.Screen
         name={SCREENS.MEMBERSHIP_PLANS}
         component={MembershipPlansScreen}

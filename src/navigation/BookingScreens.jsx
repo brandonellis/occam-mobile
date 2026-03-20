@@ -10,12 +10,12 @@ import BookingConfirmationScreen from '../screens/Booking/BookingConfirmationScr
 
 /**
  * Shared booking flow screen registrations.
- * Render inside any Stack.Navigator to add the full booking flow.
+ * Call as {bookingScreens(Stack)} inside any Stack.Navigator.
  *
- * @param {{ Stack: object }} props - The Stack navigator from createNativeStackNavigator
+ * @param {object} Stack - The Stack navigator from createNativeStackNavigator
  */
-const BookingScreens = ({ Stack }) => (
-  <>
+export const bookingScreens = (Stack) => (
+  <React.Fragment>
     <Stack.Screen
       name={SCREENS.CLIENT_SELECTION}
       component={ClientSelectionScreen}
@@ -51,7 +51,5 @@ const BookingScreens = ({ Stack }) => (
       component={BookingConfirmationScreen}
       options={{ animation: 'slide_from_bottom' }}
     />
-  </>
+  </React.Fragment>
 );
-
-export default BookingScreens;

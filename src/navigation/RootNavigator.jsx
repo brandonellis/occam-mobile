@@ -17,7 +17,7 @@ import VideoReviewScreen from '../screens/Coach/VideoReviewScreen';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 import NotificationPreferencesScreen from '../screens/Shared/NotificationPreferencesScreen';
 import BookingDetailScreen from '../screens/Client/BookingDetailScreen';
-import BookingScreens from './BookingScreens';
+import { bookingScreens } from './BookingScreens';
 
 const Stack = createNativeStackNavigator();
 
@@ -92,7 +92,7 @@ const RootNavigator = () => {
           />
 
           {/* Booking flow — accessed from Dashboard quick actions */}
-          <BookingScreens Stack={Stack} />
+          {bookingScreens(Stack)}
 
           {/* Notifications — accessed from direct tab screens (Dashboard) */}
           <Stack.Screen
