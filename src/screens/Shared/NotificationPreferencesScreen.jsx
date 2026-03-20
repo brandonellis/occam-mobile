@@ -78,7 +78,7 @@ const NotificationPreferencesScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader title="Notification Settings" navigation={navigation} />
+      <ScreenHeader title="Notification Settings" onBack={() => navigation.goBack()} />
       {loading ? (
         <ListSkeleton count={8} />
       ) : (
