@@ -12,6 +12,11 @@ const PILL_PADDING_V = 4;
 const BAR_MARGIN_H = spacing.lg;
 const BAR_MARGIN_BOTTOM = 8;
 
+// Badge dimensions and offsets — badge is 16px anchored to top-right of 24px icon
+const BADGE_SIZE = 16;
+const BADGE_TOP = -4;    // overlaps 4px above the icon
+const BADGE_RIGHT = -10; // extends 10px past the icon's trailing edge
+
 // Exported so tab navigators can add matching bottom padding to their sceneStyle
 export const TAB_BAR_HEIGHT = 80;
 
@@ -196,11 +201,11 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -10,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    top: BADGE_TOP,
+    right: BADGE_RIGHT,
+    minWidth: BADGE_SIZE,
+    height: BADGE_SIZE,
+    borderRadius: BADGE_SIZE / 2,
     backgroundColor: colors.error,
     alignItems: 'center',
     justifyContent: 'center',
