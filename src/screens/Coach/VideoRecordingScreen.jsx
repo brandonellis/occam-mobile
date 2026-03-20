@@ -22,7 +22,7 @@ const VideoRecordingScreen = ({ navigation }) => {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ['videos'],
         videoMaxDuration: 300,
-        videoQuality: 0,
+        videoQuality: 1,
       });
 
       if (!result.canceled && result.assets?.[0]?.uri) {
