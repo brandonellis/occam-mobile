@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { TouchableRipple } from 'react-native-paper';
+import { TouchableRipple, Button as PaperButton } from 'react-native-paper';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings, cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
@@ -220,21 +220,25 @@ const ClientBookingsScreen = ({ navigation }) => {
             if (withinWindow) return null;
             return (
               <View style={styles.bookingActions}>
-                <TouchableOpacity
-                  style={styles.cancelButton}
+                <PaperButton
+                  mode="text"
+                  textColor={colors.error}
+                  compact
                   onPress={() => handleCancel(item)}
-                  activeOpacity={0.7}
                 >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
+                  Cancel
+                </PaperButton>
               </View>
             );
           })()}
 
           {!isUpcoming && (
             <View style={styles.bookingActions}>
-              <TouchableOpacity
-                style={styles.rebookButton}
+              <PaperButton
+                mode="contained"
+                buttonColor={colors.accent}
+                textColor={colors.textInverse}
+                compact
                 onPress={() => navigation.navigate('HomeTab', {
                   screen: SCREENS.SERVICE_SELECTION,
                   params: {
@@ -246,10 +250,9 @@ const ClientBookingsScreen = ({ navigation }) => {
                     },
                   },
                 })}
-                activeOpacity={0.7}
               >
-                <Text style={styles.rebookButtonText}>Book Again</Text>
-              </TouchableOpacity>
+                Book Again
+              </PaperButton>
             </View>
           )}
         </View>
