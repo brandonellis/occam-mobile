@@ -1,6 +1,6 @@
 import React, { useEffect, useCallback, useState, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
-import { ActivityIndicator } from 'react-native-paper';
+import { ActivityIndicator, Button as PaperButton, List } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
@@ -227,26 +227,25 @@ const ClientProfileScreen = ({ navigation }) => {
 
         {/* Settings */}
         <View style={styles.settingsSection}>
-          <TouchableOpacity
-            style={styles.settingsRow}
+          <List.Item
+            title="Notification Settings"
+            left={(props) => <List.Icon {...props} icon="bell-cog-outline" color={colors.textSecondary} />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" color={colors.textTertiary} />}
             onPress={() => navigation.navigate(SCREENS.NOTIFICATION_PREFERENCES)}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="bell-cog-outline" size={20} color={colors.textSecondary} />
-            <Text style={styles.settingsRowText}>Notification Settings</Text>
-            <MaterialCommunityIcons name="chevron-right" size={20} color={colors.textTertiary} />
-          </TouchableOpacity>
+            style={styles.settingsRow}
+          />
         </View>
 
         {/* Sign Out */}
-        <TouchableOpacity
+        <PaperButton
           testID="sign-out-button"
-          style={styles.signOutButton}
+          mode="text"
+          textColor={colors.error}
           onPress={logout}
-          activeOpacity={0.7}
+          style={styles.signOutButton}
         >
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+          Sign Out
+        </PaperButton>
       </ScrollView>
     </SafeAreaView>
   );
