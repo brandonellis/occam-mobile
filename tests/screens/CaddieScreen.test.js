@@ -123,7 +123,7 @@ describe('CaddieScreen', () => {
     });
 
     await waitFor(() => {
-      expect(getByText('We couldn’t open Marshal right now. Please try again.')).toBeTruthy();
+      expect(getByText('We couldn\'t open Marshal right now. Please try again.')).toBeTruthy();
     });
 
     expect(navigate).not.toHaveBeenCalled();

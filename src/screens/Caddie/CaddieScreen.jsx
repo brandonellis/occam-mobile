@@ -73,8 +73,8 @@ const CaddieScreen = () => {
 
       openMarshalWithIntent(intent);
     } catch (handoffActionError) {
-      logger.warn(‘CaddieScreen: Marshal handoff failed’, handoffActionError?.message || handoffActionError);
-      setHandoffError(‘We couldn’t open Marshal right now. Please try again.’);
+      logger.warn('CaddieScreen: Marshal handoff failed', handoffActionError?.message || handoffActionError);
+      setHandoffError('We couldn\'t open Marshal right now. Please try again.');
     }
   }, [activeRole, canLaunchMarshal, marshalTargetRole, openMarshalWithIntent, switchRole]);
 
@@ -108,7 +108,7 @@ const CaddieScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Conversation</Text>
           <Text style={styles.sectionBody}>
-            Start with something simple like “Find me a lesson this week” or “Show my next booking.”
+            Start with something simple like "Find me a lesson this week" or "Show my next booking."
           </Text>
           <AgentChatMessages
             agentLabel="Caddie"

@@ -261,7 +261,7 @@ const AdminDashboardScreen = ({ navigation }) => {
                   icon="calendar-outline"
                   title={hasPastOnlyBookings ? 'No Upcoming Bookings' : 'No Bookings Today'}
                   message={hasPastOnlyBookings
-                    ? 'All of today’s bookings are already in the past.'
+                    ? 'All of today\'s bookings are already in the past.'
                     : 'You\'re clear for the day. New bookings and schedule updates will appear here.'}
                 />
               ) : (

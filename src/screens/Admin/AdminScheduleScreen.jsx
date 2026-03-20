@@ -453,7 +453,7 @@ const AdminScheduleScreen = ({ navigation }) => {
                     hasActiveFilters
                       ? 'No bookings match the current filters for this day.'
                       : hasPastOnlyBookings
-                        ? 'All of today’s bookings are already in the past.'
+                        ? 'All of today\'s bookings are already in the past.'
                         : 'There are no bookings scheduled for this day.'
                   }
                 />
