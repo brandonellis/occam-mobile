@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
 import RoleSwitcher from '../../components/RoleSwitcher';
 import ServiceUsageCard from '../../components/ServiceUsageCard';
+import EmptyState from '../../components/EmptyState';
 import { globalStyles } from '../../styles/global.styles';
 import { clientProfileStyles as styles } from '../../styles/clientProfile.styles';
 import { getMyMembership } from '../../services/accounts.api';
@@ -110,12 +111,13 @@ const ClientProfileScreen = ({ navigation }) => {
               <Text style={styles.loadingText}>Loading benefits...</Text>
             </View>
           ) : !hasBenefits ? (
-            <View style={styles.emptyBenefits}>
-              <MaterialCommunityIcons name="gift-outline" size={36} color={colors.textTertiary} />
-              <Text style={styles.emptyBenefitsText}>
-                No active membership or packages.
-              </Text>
-            </View>
+            <EmptyState
+              icon="gift-outline"
+              title="No Active Benefits"
+              message="Unlock memberships and packages for the best value on your sessions."
+              actionLabel="Browse Plans"
+              onAction={() => navigation.navigate(SCREENS.MEMBERSHIP_PLANS)}
+            />
           ) : (
             <>
               {/* ─── Membership Allotments ─── */}

@@ -195,7 +195,9 @@ const ClientHomeScreen = ({ navigation }) => {
             <EmptyState
               icon="calendar-outline"
               title="No Upcoming Sessions"
-              message="Book a session to get started."
+              message="Ready to hit the range? Book your next session and keep the momentum going."
+              actionLabel="Book a Session"
+              onAction={() => navigation.navigate(SCREENS.SERVICE_SELECTION, { bookingData: {} })}
             />
           ) : (
             upcomingSessions.slice(0, 5).map((session) => {
