@@ -43,6 +43,7 @@ const LoginScreen = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [focusedField, setFocusedField] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   // Organization search state
   const [orgQuery, setOrgQuery] = useState('');
@@ -114,14 +115,23 @@ const LoginScreen = () => {
 
   const handleOrgQueryChange = useCallback((text) => {
     if (error) clearError();
+    if (fieldErrors.org) setFieldErrors((prev) => ({ ...prev, org: undefined }));
     if (selectedOrg) {
       setSelectedOrg(null);
     }
     setOrgQuery(text);
-  }, [error, clearError, selectedOrg]);
+  }, [error, clearError, selectedOrg, fieldErrors.org]);
 
   const handleLogin = useCallback(async () => {
-    if (!email.trim() || !password.trim() || !selectedOrg) return;
+    const errors = {};
+    if (!selectedOrg) errors.org = 'Please select your organization';
+    if (!email.trim()) errors.email = 'Email is required';
+    if (!password.trim()) errors.password = 'Password is required';
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
     await login(email.trim(), password, selectedOrg.id);
   }, [email, password, selectedOrg, login]);
 
@@ -184,11 +194,12 @@ const LoginScreen = () => {
   }, [selectedOrg, error, clearError, setError, loginWithGoogle]);
 
   const handleFieldChange = useCallback(
-    (setter) => (value) => {
+    (setter, field) => (value) => {
       if (error) clearError();
+      if (fieldErrors[field]) setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
       setter(value);
     },
-    [error, clearError]
+    [error, clearError, fieldErrors]
   );
 
   // Forgot password state
@@ -232,8 +243,6 @@ const LoginScreen = () => {
     if (error) clearError();
   }, [error, clearError]);
 
-  const isFormValid = email.trim() && password.trim() && selectedOrg;
-
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor={colors.primary} />
@@ -264,6 +273,7 @@ const LoginScreen = () => {
                 styles.orgInputRow,
                 focusedField === 'tenant' && styles.inputFocused,
                 selectedOrg && styles.orgInputSelected,
+                fieldErrors.org && styles.inputError,
               ]}>
                 {selectedOrg ? (
                   <MaterialCommunityIcons name="check-circle" size={18} color={colors.success} />
@@ -317,10 +327,13 @@ const LoginScreen = () => {
                 </View>
               )}
 
-              {!selectedOrg && orgQuery.length === 0 && (
+              {!selectedOrg && orgQuery.length === 0 && !fieldErrors.org && (
                 <Text style={styles.fieldHint}>
                   Type your business, academy, or facility name
                 </Text>
+              )}
+              {fieldErrors.org && (
+                <Text style={styles.fieldError}>{fieldErrors.org}</Text>
               )}
             </View>
 
@@ -378,11 +391,12 @@ const LoginScreen = () => {
                     style={[
                       styles.input,
                       focusedField === 'email' && styles.inputFocused,
+                      fieldErrors.email && styles.inputError,
                     ]}
                     placeholder="Enter your email"
                     placeholderTextColor={colors.textInverseDisabled}
                     value={email}
-                    onChangeText={handleFieldChange(setEmail)}
+                    onChangeText={handleFieldChange(setEmail, 'email')}
                     onFocus={() => setFocusedField('email')}
                     onBlur={() => setFocusedField(null)}
                     autoCapitalize="none"
@@ -390,6 +404,9 @@ const LoginScreen = () => {
                     keyboardType="email-address"
                     textContentType="emailAddress"
                   />
+                  {fieldErrors.email && (
+                    <Text style={styles.fieldError}>{fieldErrors.email}</Text>
+                  )}
                 </View>
 
                 <View style={styles.fieldGroup}>
@@ -398,25 +415,29 @@ const LoginScreen = () => {
                     style={[
                       styles.input,
                       focusedField === 'password' && styles.inputFocused,
+                      fieldErrors.password && styles.inputError,
                     ]}
                     placeholder="Enter your password"
                     placeholderTextColor={colors.textInverseDisabled}
                     value={password}
-                    onChangeText={handleFieldChange(setPassword)}
+                    onChangeText={handleFieldChange(setPassword, 'password')}
                     onFocus={() => setFocusedField('password')}
                     onBlur={() => setFocusedField(null)}
                     secureTextEntry
                     textContentType="password"
                   />
+                  {fieldErrors.password && (
+                    <Text style={styles.fieldError}>{fieldErrors.password}</Text>
+                  )}
                 </View>
 
                 <TouchableOpacity
                   style={[
                     styles.loginButton,
-                    (!isFormValid || isLoading) && styles.loginButtonDisabled,
+                    isLoading && styles.loginButtonDisabled,
                   ]}
                   onPress={handleLogin}
-                  disabled={!isFormValid || isLoading}
+                  disabled={isLoading}
                   activeOpacity={0.8}
                 >
                   {isLoading ? (

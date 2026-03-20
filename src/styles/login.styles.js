@@ -60,6 +60,12 @@ export const loginStyles = StyleSheet.create({
   inputError: {
     borderColor: colors.error,
   },
+  fieldError: {
+    ...typography.bodySmall,
+    color: colors.errorSoft,
+    fontSize: 12,
+    marginTop: 4,
+  },
   loginButton: {
     backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
