@@ -34,7 +34,7 @@ export const adminDashboardStyles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: 6,
     borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.whiteOverlay08,
     marginBottom: spacing.sm,
   },
   heroBadgeText: {
@@ -58,7 +58,7 @@ export const adminDashboardStyles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    backgroundColor: colors.whiteOverlay08,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -109,7 +109,7 @@ export const adminDashboardStyles = StyleSheet.create({
     flexDirection: 'row',
     marginTop: spacing.lg,
     borderRadius: borderRadius.md,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    backgroundColor: colors.whiteOverlay06,
     overflow: 'hidden',
   },
   heroMetric: {
@@ -119,7 +119,7 @@ export const adminDashboardStyles = StyleSheet.create({
   },
   heroMetricDivider: {
     borderLeftWidth: 1,
-    borderLeftColor: 'rgba(255,255,255,0.08)',
+    borderLeftColor: colors.whiteOverlay08,
   },
   heroMetricValue: {
     ...typography.h3,

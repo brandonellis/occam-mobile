@@ -69,6 +69,21 @@ export const colors = {
   infoLight: '#F0F9FF',
   errorSoft: '#FF8A8C',
 
-  // Overlay
+  // Overlays — dark
   overlay: 'rgba(0, 0, 0, 0.45)',
+  overlayLight: 'rgba(0, 0, 0, 0.25)',
+  overlayMedium: 'rgba(0, 0, 0, 0.5)',
+  overlayHeavy: 'rgba(0, 0, 0, 0.6)',
+
+  // Overlays — light (for dark backgrounds)
+  whiteOverlay06: 'rgba(255, 255, 255, 0.06)',
+  whiteOverlay08: 'rgba(255, 255, 255, 0.08)',
+  whiteOverlay12: 'rgba(255, 255, 255, 0.12)',
+  whiteOverlay15: 'rgba(255, 255, 255, 0.15)',
+
+  // Status subtle backgrounds
+  warningSubtle: 'rgba(250, 173, 20, 0.08)',
+  infoSubtle: 'rgba(24, 144, 255, 0.08)',
+  successSubtle: 'rgba(52, 199, 89, 0.08)',
+  errorSubtle: 'rgba(255, 77, 79, 0.15)',
 };

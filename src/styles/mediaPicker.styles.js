@@ -165,7 +165,7 @@ export const mediaPickerStyles = StyleSheet.create({
   },
   selectedOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(76, 172, 213, 0.2)',
+    backgroundColor: colors.accentLight,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: borderRadius.md,
