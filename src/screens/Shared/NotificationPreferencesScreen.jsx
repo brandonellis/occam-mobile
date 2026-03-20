@@ -112,6 +112,7 @@ const NotificationPreferencesScreen = ({ navigation }) => {
                     }
                     disabled={saving}
                     color={colors.accent}
+                    style={styles.switch}
                   />
                 </View>
               ))}

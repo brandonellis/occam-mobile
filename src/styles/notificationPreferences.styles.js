@@ -3,7 +3,7 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 
-const SWITCH_COL_WIDTH = 64;
+const SWITCH_COL_WIDTH = 52;
 
 export const notificationPreferencesStyles = StyleSheet.create({
   container: {
@@ -53,7 +53,7 @@ export const notificationPreferencesStyles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.borderLight,
     backgroundColor: colors.surface,
-    minHeight: 52,
+    minHeight: 44,
   },
   eventLabel: {
     flex: 1,
@@ -66,5 +66,8 @@ export const notificationPreferencesStyles = StyleSheet.create({
     width: SWITCH_COL_WIDTH,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  switch: {
+    transform: [{ scale: 0.7 }],
   },
 });
