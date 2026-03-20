@@ -63,6 +63,7 @@ const NotificationPreferencesScreen = ({ navigation }) => {
     setPreferences(updated);
 
     setSaving(true);
+    setSaved(false);
     try {
       await updateNotificationPreferences(updated);
       setSaved(true);

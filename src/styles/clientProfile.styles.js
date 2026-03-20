@@ -112,18 +112,6 @@ export const clientProfileStyles = StyleSheet.create({
     flex: 1,
   },
 
-  // ─── Empty State ────────────────────────────────────────────────────────────
-  emptyBenefits: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-    gap: spacing.sm,
-  },
-  emptyBenefitsText: {
-    ...typography.body,
-    color: colors.textTertiary,
-    textAlign: 'center',
-  },
-
   // ─── Action Buttons ──────────────────────────────────────────────────────────
   actionButtonRow: {
     flexDirection: 'row',
@@ -167,12 +155,6 @@ export const clientProfileStyles = StyleSheet.create({
     gap: spacing.md,
     minHeight: 48,
   },
-  settingsRowText: {
-    ...typography.body,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-
   // ─── Sign Out ───────────────────────────────────────────────────────────────
   signOutButton: {
     borderWidth: 1.5,
@@ -185,11 +167,6 @@ export const clientProfileStyles = StyleSheet.create({
     minHeight: 48,
     marginTop: spacing.xl,
   },
-  signOutText: {
-    ...typography.button,
-    color: colors.error,
-  },
-
   // ─── Loading ────────────────────────────────────────────────────────────────
   loadingRow: {
     flexDirection: 'row',

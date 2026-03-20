@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { View, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Button as PaperButton } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
 import RoleSwitcher from '../../components/RoleSwitcher';
 import { globalStyles } from '../../styles/global.styles';
@@ -26,19 +27,15 @@ const CoachProfileScreen = () => {
 
         <RoleSwitcher />
 
-        <TouchableOpacity
+        <PaperButton
           testID="sign-out-button"
-          style={[
-            globalStyles.buttonSecondary,
-            { marginTop: spacing.xl, borderColor: colors.error },
-          ]}
+          mode="text"
+          textColor={colors.error}
           onPress={logout}
-          activeOpacity={0.7}
+          style={{ marginTop: spacing.xl }}
         >
-          <Text style={[globalStyles.buttonSecondaryText, { color: colors.error }]}>
-            Sign Out
-          </Text>
-        </TouchableOpacity>
+          Sign Out
+        </PaperButton>
       </View>
     </SafeAreaView>
   );

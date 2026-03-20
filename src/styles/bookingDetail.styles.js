@@ -70,23 +70,6 @@ export const bookingDetailStyles = StyleSheet.create({
     color: colors.textTertiary,
     textAlign: 'center',
   },
-  cancelButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    marginHorizontal: spacing.lg,
-    marginTop: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.error,
-  },
-  cancelButtonText: {
-    ...typography.label,
-    color: colors.error,
-    fontSize: 14,
-  },
   actionGroup: {
     marginHorizontal: spacing.lg,
     marginTop: spacing.xl,
@@ -112,10 +95,5 @@ export const bookingDetailStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.accent,
     backgroundColor: colors.accentSubtle,
-  },
-  editButtonText: {
-    ...typography.label,
-    color: colors.accentDark,
-    fontSize: 14,
   },
 });

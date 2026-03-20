@@ -475,7 +475,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         onClose={() => confirmCancelBooking(navigation)}
       />
       {(() => {
-        const steps = getBookingSteps({ service, isCoach });
+        const steps = getBookingSteps({ service, hasMultipleLocations: bookingData.hasMultipleLocations, isCoach });
         return <BookingStepIndicator currentStep={getBookingStepIndex(SCREENS.TIME_SLOT_SELECTION, steps)} totalSteps={steps.length} />;
       })()}
 

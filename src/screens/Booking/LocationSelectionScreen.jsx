@@ -19,7 +19,7 @@ const LocationSelectionScreen = ({ route, navigation }) => {
 
   const handleSelectLocation = useCallback(
     (location) => {
-      const updatedData = { ...bookingData, location };
+      const updatedData = { ...bookingData, location, hasMultipleLocations: true };
       const { screen, params } = getNextBookingScreen(updatedData, isCoach, user);
       navigation.navigate(screen, params);
     },

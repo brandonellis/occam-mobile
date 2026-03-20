@@ -3,7 +3,7 @@ import { isClassLike } from './normalizers.helper';
 
 /**
  * Compute the ordered list of booking flow steps for a given service configuration.
- * Returns { steps: string[], totalSteps: number }.
+ * Returns string[] — the ordered screen names.
  * Each screen can call getBookingStepIndex(screenName, steps) to find its position.
  */
 export const getBookingSteps = ({ service, hasMultipleLocations = false, isCoach = false }) => {

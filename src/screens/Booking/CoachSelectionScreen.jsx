@@ -121,7 +121,7 @@ const CoachSelectionScreen = ({ route, navigation }) => {
         />
       )}
       {!rebooking && (() => {
-        const steps = getBookingSteps({ service });
+        const steps = getBookingSteps({ service, hasMultipleLocations: bookingData.hasMultipleLocations });
         return <BookingStepIndicator currentStep={getBookingStepIndex(SCREENS.COACH_SELECTION, steps)} totalSteps={steps.length} />;
       })()}
 

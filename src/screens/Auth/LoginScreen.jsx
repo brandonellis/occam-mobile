@@ -115,12 +115,15 @@ const LoginScreen = () => {
 
   const handleOrgQueryChange = useCallback((text) => {
     if (error) clearError();
-    if (fieldErrors.org) setFieldErrors((prev) => ({ ...prev, org: undefined }));
+    setFieldErrors((prev) => {
+      if (prev.org) return { ...prev, org: undefined };
+      return prev;
+    });
     if (selectedOrg) {
       setSelectedOrg(null);
     }
     setOrgQuery(text);
-  }, [error, clearError, selectedOrg, fieldErrors.org]);
+  }, [error, clearError, selectedOrg]);
 
   const handleLogin = useCallback(async () => {
     const errors = {};
@@ -196,10 +199,13 @@ const LoginScreen = () => {
   const handleFieldChange = useCallback(
     (setter, field) => (value) => {
       if (error) clearError();
-      if (fieldErrors[field]) setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+      setFieldErrors((prev) => {
+        if (prev[field]) return { ...prev, [field]: undefined };
+        return prev;
+      });
       setter(value);
     },
-    [error, clearError, fieldErrors]
+    [error, clearError]
   );
 
   // Forgot password state
@@ -298,7 +304,7 @@ const LoginScreen = () => {
                   <ActivityIndicator size="small" color={colors.accent} />
                 )}
                 {selectedOrg && (
-                  <TouchableOpacity onPress={handleClearOrg} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <TouchableOpacity onPress={handleClearOrg} hitSlop={{ top: 13, bottom: 13, left: 13, right: 13 }}>
                     <MaterialCommunityIcons name="close-circle" size={18} color={colors.textInverseSubdued} />
                   </TouchableOpacity>
                 )}

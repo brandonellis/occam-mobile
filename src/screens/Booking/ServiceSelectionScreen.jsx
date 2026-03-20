@@ -14,7 +14,7 @@ import { isMembershipActive, buildMembershipAllotments } from '../../helpers/mem
 import { resolveLocationAndRoute } from '../../helpers/booking.helper';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import { isClassLike } from '../../helpers/normalizers.helper';
-import BookingStepIndicator from '../../components/BookingStepIndicator';
+
 import AuthenticatedImage from '../../components/AuthenticatedImage';
 import { getServiceImageUrl } from '../../helpers/media.helper';
 import useAuth from '../../hooks/useAuth';
@@ -200,7 +200,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
           onClose={() => confirmCancelBooking(navigation)}
         />
       )}
-      {!rebooking && <BookingStepIndicator currentStep={1} totalSteps={3} />}
+
 
       {(state.isLoading || rebooking) ? (
         <ListSkeleton count={5} />
