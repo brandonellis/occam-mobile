@@ -76,6 +76,7 @@ const LoginScreen = () => {
     if (orgQuery.length < 2 || selectedOrg) {
       setOrgResults([]);
       setShowResults(false);
+      setIsSearching(false);
       return;
     }
 
