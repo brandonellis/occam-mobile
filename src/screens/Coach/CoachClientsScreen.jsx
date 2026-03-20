@@ -218,8 +218,8 @@ const CoachClientsScreen = ({ navigation }) => {
               title={search ? 'No Results' : 'No Clients Yet'}
               message={
                 search
-                  ? `No clients match "${search}".`
-                  : 'Your clients will appear here once they book sessions.'
+                  ? `No clients match "${search}". Try a different name or email.`
+                  : 'Once clients book sessions with you, they\'ll show up here automatically.'
               }
             />
           }
