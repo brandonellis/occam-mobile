@@ -6,6 +6,7 @@ import { colors } from '../theme/colors';
 import { useBadges } from '../context/BadgeContext';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius, shadows } from '../theme/spacing';
+import { SCREENS } from '../constants/navigation.constants';
 
 const PILL_PADDING_H = 6;
 const PILL_PADDING_V = 4;
@@ -128,15 +129,22 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
                     </View>
                   )}
                 </View>
-                <Text
-                  style={[
-                    styles.label,
-                    isFocused ? styles.labelFocused : styles.labelUnfocused,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {label}
-                </Text>
+                <View style={styles.labelRow}>
+                  <Text
+                    style={[
+                      styles.label,
+                      isFocused ? styles.labelFocused : styles.labelUnfocused,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {label}
+                  </Text>
+                  {route.name === SCREENS.CADDIE && (
+                    <View style={styles.betaTag}>
+                      <Text style={styles.betaTagText}>BETA</Text>
+                    </View>
+                  )}
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -232,6 +240,23 @@ const styles = StyleSheet.create({
   labelUnfocused: {
     color: colors.textInverseMuted,
     fontWeight: '500',
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  betaTag: {
+    backgroundColor: colors.accent,
+    borderRadius: 3,
+    paddingHorizontal: 3,
+    paddingVertical: 0.5,
+  },
+  betaTagText: {
+    color: colors.textInverse,
+    fontSize: 6,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });
 
