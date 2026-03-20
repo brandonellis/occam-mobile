@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     ...shadows.lg,
     // Extra shadow for the floating effect
     ...(Platform.OS === 'ios' ? {
-      shadowColor: '#000',
+      shadowColor: colors.black,
       shadowOffset: { width: 0, height: 8 },
       shadowOpacity: 0.25,
       shadowRadius: 24,
