@@ -6,6 +6,7 @@ import { agentChatStyles as styles } from '../../styles/agentChat.styles';
 import { colors } from '../../theme/colors';
 import { formatEligibilityLabel } from '../../helpers/agentChat.helper';
 import AvailabilityCard from './AvailabilityCard';
+import FormattedResponseText from './FormattedResponseText';
 
 const ACTION_LABELS = {
   create_booking: 'Create Booking',
@@ -248,7 +249,11 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
               onHandoffAction={onHandoffAction}
             />
           ) : null}
-          <Text style={isUser ? styles.userText : styles.assistantText}>{message.text}</Text>
+          {isUser ? (
+            <Text style={styles.userText}>{message.text}</Text>
+          ) : (
+            <FormattedResponseText text={message.text} style={styles.assistantText} />
+          )}
           {message.type === 'confirmation' && Array.isArray(message.pendingActions) ? (
             <View style={styles.confirmationList}>
               {message.pendingActions.map((action) => (
