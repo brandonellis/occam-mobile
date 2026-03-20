@@ -26,9 +26,9 @@ import { SCREENS } from '../constants/navigation.constants';
  *     ├─ AdminTabs  (Tab navigator)
  *     │    ├─ AdminDashboard
  *     │    ├─ ScheduleTab (AdminScheduleStack)
- *     │    ├─ ClientsTab (CoachClientsStack)
+ *     │    ├─ ClientsTab (AdminClientsStack)
  *     │    ├─ Marshal
- *     │    └─ CoachProfile
+ *     │    └─ AdminProfile
  *     ├─ BookingDetail
  *     ├─ Notifications
  *     └─ ... (booking flow, video screens)
@@ -90,7 +90,14 @@ const linking = {
               [SCREENS.ADMIN_SCHEDULE]: 'admin/schedule',
             },
           },
+          ClientsTab: {
+            screens: {
+              [SCREENS.ADMIN_CLIENTS]: 'admin/clients',
+              [SCREENS.CLIENT_DETAIL]: 'admin/clients/:clientId',
+            },
+          },
           [SCREENS.MARSHAL]: 'admin/marshal',
+          [SCREENS.ADMIN_PROFILE]: 'admin/profile',
         },
       },
 
