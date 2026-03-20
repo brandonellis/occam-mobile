@@ -20,6 +20,8 @@ import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import { colors } from '../../theme';
 import { COACH_ROLES } from '../../constants/auth.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
+import { getBookingSteps, getBookingStepIndex } from '../../helpers/booking.helper';
+import BookingStepIndicator from '../../components/BookingStepIndicator';
 import { isStaffBookingRole } from '../../helpers/bookingEdit.helper';
 import logger from '../../helpers/logger.helper';
 import PromoCodeInput from '../../components/PromoCodeInput';
@@ -1005,6 +1007,10 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         onBack={() => navigation.goBack()}
         onClose={() => confirmCancelBooking(navigation)}
       />
+      {!isEditMode && (() => {
+        const steps = getBookingSteps({ service, isCoach: COACH_ROLES.includes(activeRole) });
+        return <BookingStepIndicator currentStep={steps.length} totalSteps={steps.length} />;
+      })()}
 
       <ScrollView contentContainerStyle={[styles.scrollContent, { paddingTop: 8 }]}>
         {/* Client (shown only for coach booking) */}

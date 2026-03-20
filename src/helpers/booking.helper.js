@@ -1,6 +1,30 @@
 import { SCREENS } from '../constants/navigation.constants';
 import { isClassLike } from './normalizers.helper';
 
+/**
+ * Compute the ordered list of booking flow steps for a given service configuration.
+ * Returns { steps: string[], totalSteps: number }.
+ * Each screen can call getBookingStepIndex(screenName, steps) to find its position.
+ */
+export const getBookingSteps = ({ service, hasMultipleLocations = false, isCoach = false }) => {
+  const steps = [SCREENS.SERVICE_SELECTION];
+  if (hasMultipleLocations) steps.push(SCREENS.LOCATION_SELECTION);
+  if (service?.is_variable_duration && service?.allowed_durations?.length > 0) {
+    steps.push(SCREENS.DURATION_SELECTION);
+  }
+  if (service?.requires_coach && !isCoach && !isClassLike(service)) {
+    steps.push(SCREENS.COACH_SELECTION);
+  }
+  steps.push(SCREENS.TIME_SLOT_SELECTION);
+  steps.push(SCREENS.BOOKING_CONFIRMATION);
+  return steps;
+};
+
+export const getBookingStepIndex = (screenName, steps) => {
+  const idx = steps.indexOf(screenName);
+  return idx >= 0 ? idx + 1 : null;
+};
+
 export const getSessionCoaches = (booking) => {
   if (Array.isArray(booking?.coaches) && booking.coaches.length > 0) {
     return booking.coaches;
