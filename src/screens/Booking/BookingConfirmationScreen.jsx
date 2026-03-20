@@ -1226,7 +1226,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
               <View style={styles.summaryFeesRow}>
                 <View style={styles.confirmRow}>
                   <View style={styles.summaryFeesInner}>
-                    <Text style={styles.summaryLabel}>Taxes and Fees</Text>
+                    <Text style={styles.summaryLabel}>Processing Fee ({summary.platformFeePercent}%)</Text>
                     <TouchableOpacity
                       onPress={() => setFeeBreakdownVisible((v) => !v)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

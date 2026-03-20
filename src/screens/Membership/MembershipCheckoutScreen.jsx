@@ -281,7 +281,7 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
           </View>
 
           <View style={styles.checkoutSummaryRow}>
-            <Text style={styles.checkoutSummaryLabel}>Taxes and Fees</Text>
+            <Text style={styles.checkoutSummaryLabel}>Processing Fee ({Math.round(platformFeeRate * 100)}%)</Text>
             <Text style={styles.checkoutSummaryValue}>
               {formatCurrency(platformFee)}
             </Text>
