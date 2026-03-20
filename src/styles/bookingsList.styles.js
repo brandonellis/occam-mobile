@@ -49,14 +49,14 @@ export const bookingsListStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
-    paddingVertical: 6,
+    paddingVertical: spacing.xs,
     gap: spacing.sm,
     backgroundColor: colors.white,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
   },
   filterChip: {
-    height: 28,
+    minHeight: 44,
     justifyContent: 'center',
     paddingHorizontal: spacing.md,
     borderRadius: borderRadius.full,
@@ -147,7 +147,7 @@ export const bookingsListStyles = StyleSheet.create({
     backgroundColor: colors.errorLight,
   },
   statusCompleted: {
-    backgroundColor: colors.background,
+    backgroundColor: colors.gray200,
   },
   statusText: {
     ...typography.labelSmall,
