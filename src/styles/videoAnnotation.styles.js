@@ -222,6 +222,12 @@ export const videoAnnotationStyles = StyleSheet.create({
     maxHeight: 80,
     minHeight: 40,
   },
+  charCounter: {
+    ...typography.caption,
+    color: colors.textTertiary,
+    textAlign: 'right',
+    marginTop: spacing.xs,
+  },
   commentActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',

@@ -582,6 +582,7 @@ const VideoAnnotationContent = ({ initialSource, uploadId, videoUrl, videoTitle,
               multiline
               maxLength={2000}
             />
+            <Text style={styles.charCounter}>{comment.length}/2000</Text>
             <View style={styles.commentActions}>
               <TouchableOpacity
                 onPress={handleCancelAnnotation}
