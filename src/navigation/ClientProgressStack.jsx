@@ -14,6 +14,7 @@ const ClientProgressStack = () => {
       <Stack.Screen
         name={SCREENS.CLIENT_PROGRESS}
         component={ClientProgressScreen}
+        options={{ gestureEnabled: false }}
       />
       <Stack.Screen
         name={SCREENS.PROGRESS_REPORT_DETAIL}

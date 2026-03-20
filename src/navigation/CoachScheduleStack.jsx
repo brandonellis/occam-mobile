@@ -13,6 +13,7 @@ const CoachScheduleStack = () => {
       <Stack.Screen
         name={SCREENS.COACH_SCHEDULE}
         component={CoachScheduleScreen}
+        options={{ gestureEnabled: false }}
       />
       {bookingScreens(Stack)}
     </Stack.Navigator>

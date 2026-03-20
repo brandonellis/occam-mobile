@@ -159,7 +159,9 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
 
           <TouchableOpacity
             style={[styles.purchaseButton, successStyles.doneButton]}
-            onPress={() => navigation.popToTop()}
+            onPress={() => {
+              navigation.getParent()?.navigate('ClientProfile');
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.purchaseButtonText}>Done</Text>

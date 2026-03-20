@@ -20,6 +20,7 @@ const ClientHomeStack = () => {
       <Stack.Screen
         name={SCREENS.CLIENT_HOME}
         component={ClientHomeScreen}
+        options={{ gestureEnabled: false }}
       />
       {bookingScreens(Stack)}
       <Stack.Screen

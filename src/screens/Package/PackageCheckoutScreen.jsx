@@ -110,8 +110,13 @@ const PackageCheckoutScreen = ({ route, navigation }) => {
       }
 
       // PHASE 3: Handle payment confirmation
-      if (result.status === 'requires_action' && result.client_secret) {
-        // 3D Secure (SCA) required — confirm on-device
+      if (result.status === 'succeeded') {
+        // Saved-card off-session payment already succeeded
+        setLoadingMessage('Finalizing purchase...');
+        await handlePackagePaymentSuccess(result.payment_intent_id);
+      } else if (result.client_secret) {
+        // New card: requires client-side confirmation (requires_confirmation)
+        // or 3D Secure / SCA (requires_action)
         setLoadingMessage('Confirming payment...');
         const { error: confirmError, paymentIntent } = await confirmPayment(result.client_secret, {
           paymentMethodType: 'Card',
@@ -119,11 +124,13 @@ const PackageCheckoutScreen = ({ route, navigation }) => {
         if (confirmError) {
           throw new Error(confirmError.message || 'Payment confirmation failed.');
         }
+        if (paymentIntent?.status !== 'Succeeded') {
+          throw new Error('Payment was not completed. Please try again.');
+        }
         setLoadingMessage('Finalizing purchase...');
         await handlePackagePaymentSuccess(paymentIntent?.id || result.payment_intent_id);
-      } else if (result.status === 'succeeded') {
-        setLoadingMessage('Finalizing purchase...');
-        await handlePackagePaymentSuccess(result.payment_intent_id);
+      } else {
+        throw new Error('Unexpected payment state. Please try again.');
       }
 
       setShowSuccess(true);
@@ -171,7 +178,9 @@ const PackageCheckoutScreen = ({ route, navigation }) => {
 
           <TouchableOpacity
             style={[styles.purchaseButton, successStyles.doneButton]}
-            onPress={() => navigation.popToTop()}
+            onPress={() => {
+              navigation.getParent()?.navigate('ClientProfile');
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.purchaseButtonText}>Done</Text>

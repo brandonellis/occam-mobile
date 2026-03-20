@@ -55,8 +55,8 @@ const ClientHomeScreen = ({ navigation }) => {
 
   const checkMembership = useCallback(async () => {
     try {
-      const data = await getMyMembership();
-      setHasMembership(isMembershipActive(data));
+      const result = await getMyMembership();
+      setHasMembership(isMembershipActive(result?.data || result));
     } catch {
       // Non-critical — default to showing the button
     }

@@ -13,6 +13,7 @@ const AdminScheduleStack = () => {
       <Stack.Screen
         name={SCREENS.ADMIN_SCHEDULE}
         component={AdminScheduleScreen}
+        options={{ gestureEnabled: false }}
       />
       {bookingScreens(Stack)}
     </Stack.Navigator>

@@ -21,6 +21,7 @@ const AdminClientsStack = () => {
       <Stack.Screen
         name={SCREENS.ADMIN_CLIENTS}
         component={CoachClientsScreen}
+        options={{ gestureEnabled: false }}
       />
       <Stack.Screen
         name={SCREENS.CLIENT_DETAIL}

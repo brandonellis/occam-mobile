@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator } from 'react-native-paper';
-import { View } from 'react-native';
+import { View, BackHandler, Platform } from 'react-native';
 import OfflineBanner from '../components/OfflineBanner';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import useAuth from '../hooks/useAuth';
 import usePushNotifications from '../hooks/usePushNotifications';
+import { navigationRef } from '../helpers/navigation.helper';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
 import { styles } from '../styles/rootNavigator.styles';
@@ -22,7 +23,7 @@ import { bookingScreens } from './BookingScreens';
 const Stack = createNativeStackNavigator();
 
 const RootNavigator = () => {
-  const { isLoading, isAuthenticated, activeRole } = useAuth();
+  const { isLoading, isAuthenticated, activeRole, previousRole, switchRole } = useAuth();
   const { registerToken } = usePushNotifications();
 
   useEffect(() => {
@@ -30,6 +31,22 @@ const RootNavigator = () => {
       registerToken();
     }
   }, [isAuthenticated, registerToken]);
+
+  // Android: switch back to previous role when pressing hardware back at the root
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !isAuthenticated || !previousRole) return;
+
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => {
+      const canGoBack = navigationRef.current?.canGoBack();
+      if (!canGoBack && previousRole) {
+        switchRole(previousRole);
+        return true;
+      }
+      return false;
+    });
+
+    return () => handler.remove();
+  }, [isAuthenticated, previousRole, switchRole]);
 
   if (isLoading) {
     return (
@@ -59,16 +76,19 @@ const RootNavigator = () => {
             <Stack.Screen
               name={SCREENS.ADMIN_TABS}
               component={AdminTabNavigator}
+              options={{ gestureEnabled: false }}
             />
           ) : isCoach ? (
             <Stack.Screen
               name={SCREENS.COACH_TABS}
               component={CoachTabNavigator}
+              options={{ gestureEnabled: false }}
             />
           ) : (
             <Stack.Screen
               name={SCREENS.CLIENT_TABS}
               component={ClientTabNavigator}
+              options={{ gestureEnabled: false }}
             />
           )}
 
