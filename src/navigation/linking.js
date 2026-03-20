@@ -45,7 +45,9 @@ const linking = {
             screens: {
               [SCREENS.CLIENT_HOME]: 'home',
               [SCREENS.MEMBERSHIP_PLANS]: 'memberships',
+              [SCREENS.MEMBERSHIP_CHECKOUT]: 'memberships/checkout',
               [SCREENS.PACKAGE_LIST]: 'packages',
+              [SCREENS.PACKAGE_CHECKOUT]: 'packages/checkout',
             },
           },
           [SCREENS.CLIENT_BOOKINGS]: 'bookings',
@@ -74,6 +76,8 @@ const linking = {
             screens: {
               [SCREENS.COACH_CLIENTS]: 'coach/clients',
               [SCREENS.CLIENT_DETAIL]: 'coach/clients/:clientId',
+              [SCREENS.VIDEO_RECORDING]: 'coach/video/record',
+              [SCREENS.VIDEO_REVIEW]: 'coach/video/review',
             },
           },
           [SCREENS.MARSHAL]: 'marshal',
@@ -104,6 +108,9 @@ const linking = {
       // ----- Root-level stack screens -----
       [SCREENS.BOOKING_DETAIL]: 'bookings/:bookingId',
       [SCREENS.NOTIFICATIONS]: 'notifications',
+      [SCREENS.NOTIFICATION_PREFERENCES]: 'notifications/preferences',
+      [SCREENS.VIDEO_RECORDING]: 'video/record',
+      [SCREENS.VIDEO_REVIEW]: 'video/review',
     },
   },
 };
