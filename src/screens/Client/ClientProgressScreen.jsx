@@ -75,14 +75,14 @@ const ResourceCard = ({ resource, navigation, clientId }) => {
                 resizeMode="cover"
               />
               <View style={styles.resourcePlayOverlay}>
-                <MaterialCommunityIcons name="play-circle" size={56} color="rgba(255,255,255,0.9)" />
+                <MaterialCommunityIcons name="play-circle" size={56} color={colors.textInverse} />
               </View>
             </View>
           ) : (
             <View style={styles.resourceVideoPlaceholder}>
               <MaterialCommunityIcons name="video" size={32} color={colors.textTertiary} />
               <View style={styles.resourcePlayOverlay}>
-                <MaterialCommunityIcons name="play-circle" size={56} color="rgba(255,255,255,0.7)" />
+                <MaterialCommunityIcons name="play-circle" size={56} color={colors.textInverseSecondary} />
               </View>
             </View>
           )}

@@ -59,7 +59,7 @@ export const activityFeedStyles = StyleSheet.create({
     color: colors.textInverse,
   },
   filterPillBadge: {
-    backgroundColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: colors.textInverseDisabled,
     borderRadius: 8,
     minWidth: 16,
     height: 16,
@@ -273,7 +273,7 @@ export const activityFeedStyles = StyleSheet.create({
   },
   mediaOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: colors.overlayDark30,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: borderRadius.md,
@@ -514,7 +514,7 @@ export const activityFeedStyles = StyleSheet.create({
   // ── Dropdown overlay ───────────────────────────────────
   dropdownOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: colors.overlayDark30,
     justifyContent: 'flex-end',
   },
   dropdownSheet: {
@@ -616,7 +616,7 @@ export const activityFeedStyles = StyleSheet.create({
     right: 12,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: colors.overlayHeavy,
     borderRadius: 16,
     paddingHorizontal: 10,
     paddingVertical: 5,

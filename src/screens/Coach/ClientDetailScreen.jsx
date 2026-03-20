@@ -93,14 +93,14 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
                 resizeMode="cover"
               />
               <View style={styles.sharedMediaPlayOverlay}>
-                <MaterialCommunityIcons name="play-circle" size={48} color="rgba(255,255,255,0.9)" />
+                <MaterialCommunityIcons name="play-circle" size={48} color={colors.textInverse} />
               </View>
             </View>
           ) : (
             <View style={styles.sharedMediaVideoPlaceholder}>
               <MaterialCommunityIcons name="video" size={28} color={colors.textTertiary} />
               <View style={styles.sharedMediaPlayOverlay}>
-                <MaterialCommunityIcons name="play-circle" size={48} color="rgba(255,255,255,0.7)" />
+                <MaterialCommunityIcons name="play-circle" size={48} color={colors.textInverseSecondary} />
               </View>
             </View>
           )}

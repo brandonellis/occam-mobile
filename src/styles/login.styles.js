@@ -31,19 +31,19 @@ export const loginStyles = StyleSheet.create({
   },
   fieldHint: {
     ...typography.bodySmall,
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: colors.textInverseHint,
     fontSize: 12,
     marginTop: 4,
   },
   label: {
     ...typography.label,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: colors.textInverseSecondary,
     fontSize: 13,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.whiteOverlay08,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.whiteOverlay15,
     borderRadius: borderRadius.md,
     paddingHorizontal: spacing.xl,
     paddingVertical: 18,
@@ -55,7 +55,7 @@ export const loginStyles = StyleSheet.create({
   },
   inputFocused: {
     borderColor: colors.accent,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: colors.whiteOverlay12,
   },
   inputError: {
     borderColor: colors.error,
@@ -84,7 +84,7 @@ export const loginStyles = StyleSheet.create({
   },
   forgotPasswordText: {
     ...typography.body,
-    color: 'rgba(255, 255, 255, 0.6)',
+    color: colors.textInverseMuted,
     fontSize: 14,
   },
   // Organization search field
@@ -94,8 +94,8 @@ export const loginStyles = StyleSheet.create({
     gap: 8,
   },
   orgInputSelected: {
-    borderColor: 'rgba(52, 199, 89, 0.4)',
-    backgroundColor: 'rgba(52, 199, 89, 0.08)',
+    borderColor: colors.successBorder,
+    backgroundColor: colors.successSubtle,
   },
   orgTextInput: {
     flex: 1,
@@ -112,9 +112,9 @@ export const loginStyles = StyleSheet.create({
     top: '100%',
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(33, 37, 41, 0.98)',
+    backgroundColor: colors.dropdownSurface,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.whiteOverlay15,
     borderRadius: borderRadius.md,
     marginTop: 4,
     overflow: 'hidden',
@@ -127,13 +127,13 @@ export const loginStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: colors.whiteOverlay06,
   },
   orgResultIcon: {
     width: 32,
     height: 32,
     borderRadius: 8,
-    backgroundColor: 'rgba(76, 172, 213, 0.15)',
+    backgroundColor: colors.accentLight,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.sm,
@@ -148,7 +148,7 @@ export const loginStyles = StyleSheet.create({
   },
   orgResultDomain: {
     ...typography.bodySmall,
-    color: 'rgba(255, 255, 255, 0.45)',
+    color: colors.textInverseSubdued,
     fontSize: 12,
     marginTop: 1,
   },
@@ -161,11 +161,11 @@ export const loginStyles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: colors.whiteOverlay15,
   },
   dividerText: {
     ...typography.bodySmall,
-    color: 'rgba(255, 255, 255, 0.4)',
+    color: colors.textInverseHint,
     fontSize: 13,
     paddingHorizontal: spacing.md,
   },
@@ -196,14 +196,14 @@ export const loginStyles = StyleSheet.create({
   },
   googleHint: {
     ...typography.bodySmall,
-    color: 'rgba(255, 255, 255, 0.35)',
+    color: colors.textInverseDisabled,
     fontSize: 12,
     textAlign: 'center',
   },
   errorContainer: {
-    backgroundColor: 'rgba(255, 77, 79, 0.15)',
+    backgroundColor: colors.errorSubtle,
     borderWidth: 1,
-    borderColor: 'rgba(255, 77, 79, 0.3)',
+    borderColor: colors.errorBorder,
     borderRadius: borderRadius.sm,
     padding: spacing.md,
     marginBottom: spacing.sm,
@@ -216,7 +216,7 @@ export const loginStyles = StyleSheet.create({
   },
   forgotPasswordDescription: {
     ...typography.body,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: colors.textInverseSecondary,
     fontSize: 14,
     marginBottom: 16,
     lineHeight: 20,

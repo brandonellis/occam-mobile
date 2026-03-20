@@ -1,3 +1,5 @@
+import { colors } from '../theme/colors';
+
 export const ACTIVITY_TYPES = {
   ALL: 'all',
   ACTIVITY: 'activity',
@@ -11,25 +13,25 @@ export const ACTIVITY_TYPE_CONFIG = {
     label: 'Activities',
     singular: 'Activity',
     icon: 'flask-outline',
-    color: '#59D8DB',
+    color: colors.aqua,
   },
   [ACTIVITY_TYPES.BOOKING]: {
     label: 'Bookings',
     singular: 'Booking',
     icon: 'calendar-outline',
-    color: '#4CACD5',
+    color: colors.accent,
   },
   [ACTIVITY_TYPES.RESOURCE]: {
     label: 'Resources',
     singular: 'Resource',
     icon: 'share-variant-outline',
-    color: '#C7B8EA',
+    color: colors.lavenderMist,
   },
   [ACTIVITY_TYPES.REPORT]: {
     label: 'Reports',
     singular: 'Report',
     icon: 'chart-line',
-    color: '#FFD2A6',
+    color: colors.peachGlow,
   },
 };
 
