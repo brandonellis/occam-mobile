@@ -246,24 +246,25 @@ const BookingDetailScreen = ({ navigation, route }) => {
               </Button>
             )}
             {canEdit && (
-              <TouchableOpacity
-                style={styles.editButton}
+              <Button
+                mode="outlined"
+                icon="pencil-outline"
+                textColor={colors.accentDark}
                 onPress={handleEdit}
-                activeOpacity={0.7}
+                style={styles.editButton}
               >
-                <MaterialCommunityIcons name="pencil-outline" size={18} color={colors.accentDark} />
-                <Text style={styles.editButtonText}>Edit Booking</Text>
-              </TouchableOpacity>
+                Edit Booking
+              </Button>
             )}
             {canCancel && (
-              <TouchableOpacity
-                style={styles.cancelButton}
+              <Button
+                mode="text"
+                icon="close-circle-outline"
+                textColor={colors.error}
                 onPress={handleCancel}
-                activeOpacity={0.7}
               >
-                <MaterialCommunityIcons name="close-circle-outline" size={18} color={colors.error} />
-                <Text style={styles.cancelButtonText}>Cancel Booking</Text>
-              </TouchableOpacity>
+                Cancel Booking
+              </Button>
             )}
           </View>
         )}
