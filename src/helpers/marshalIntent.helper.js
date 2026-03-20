@@ -24,7 +24,8 @@ export const buildBookingMarshalIntent = ({ booking, company }) => {
   const serviceName = getSessionServiceName(booking);
   const coachNames = getSessionCoachNames(booking) || 'Unassigned';
   const resourceNames = getSessionResourceNames(booking) || 'None assigned';
-  const locationName = booking?.location?.name || 'Unknown location';
+  // Show endpoint returns flat location_name; index returns nested location.name
+  const locationName = booking?.location?.name || booking?.location_name || 'Unknown location';
   const bookingDate = booking?.start_time ? formatDateInTz(booking.start_time, company, 'long') : 'Unknown date';
   const startTime = booking?.start_time ? formatTimeInTz(booking.start_time, company) : 'Unknown time';
   const endTime = booking?.end_time ? formatTimeInTz(booking.end_time, company) : '';

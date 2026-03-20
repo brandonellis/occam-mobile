@@ -235,7 +235,7 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
           <Text style={styles.avatarText}>{avatarInitial}</Text>
         </View>
       ) : null}
-      <View style={styles.bubbleContentWrap}>
+      <View style={[styles.bubbleContentWrap, !isUser && styles.assistantBubbleContentWrap]}>
         <View style={bubbleStyle}>
           {renderCard(message.card)}
           {renderBookingLinkCard(message.bookingLink)}
@@ -251,7 +251,7 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
           ) : null}
           {isUser ? (
             <Text style={styles.userText}>{message.text}</Text>
-          ) : (
+          ) : message.type === 'handoff' ? null : (
             <FormattedResponseText text={message.text} style={styles.assistantText} />
           )}
           {message.type === 'confirmation' && Array.isArray(message.pendingActions) ? (

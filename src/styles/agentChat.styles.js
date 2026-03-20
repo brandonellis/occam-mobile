@@ -51,8 +51,10 @@ export const agentChatStyles = StyleSheet.create({
     width: 28,
   },
   bubbleContentWrap: {
-    flex: 0,
     maxWidth: '85%',
+  },
+  assistantBubbleContentWrap: {
+    flex: 1,
   },
   messageBubble: {
     borderRadius: 20,
