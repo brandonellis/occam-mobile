@@ -17,7 +17,7 @@ const INITIAL_MESSAGES = [
 
 const useCaddie = () => useAgentChat({
   agentName: ‘Caddie’,
-  fallbackMessage: ‘I’m having trouble reaching the live booking assistant right now. Please try again in a moment, or ask about lessons, availability, your next booking, memberships, or packages.’,
+  fallbackMessage: "I’m having trouble reaching the live booking assistant right now. Please try again in a moment, or ask about lessons, availability, your next booking, memberships, or packages.",
   initialMessages: INITIAL_MESSAGES,
   initialSuggestions: INITIAL_SUGGESTIONS,
   sendMessageApi: sendCaddieMessage,
