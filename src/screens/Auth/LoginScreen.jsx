@@ -268,12 +268,12 @@ const LoginScreen = () => {
                 {selectedOrg ? (
                   <MaterialCommunityIcons name="check-circle" size={18} color={colors.success} />
                 ) : (
-                  <MaterialCommunityIcons name="magnify" size={16} color="rgba(255,255,255,0.4)" />
+                  <MaterialCommunityIcons name="magnify" size={16} color={colors.textInverseHint} />
                 )}
                 <TextInput
                   style={styles.orgTextInput}
                   placeholder="Search your organization..."
-                  placeholderTextColor="rgba(255,255,255,0.3)"
+                  placeholderTextColor={colors.textInverseDisabled}
                   value={orgQuery}
                   onChangeText={handleOrgQueryChange}
                   onFocus={() => setFocusedField('tenant')}
@@ -289,7 +289,7 @@ const LoginScreen = () => {
                 )}
                 {selectedOrg && (
                   <TouchableOpacity onPress={handleClearOrg} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-                    <MaterialCommunityIcons name="close-circle" size={18} color="rgba(255,255,255,0.5)" />
+                    <MaterialCommunityIcons name="close-circle" size={18} color={colors.textInverseSubdued} />
                   </TouchableOpacity>
                 )}
               </View>
@@ -338,7 +338,7 @@ const LoginScreen = () => {
                       focusedField === 'resetEmail' && styles.inputFocused,
                     ]}
                     placeholder="Enter your email"
-                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    placeholderTextColor={colors.textInverseDisabled}
                     value={resetEmail}
                     onChangeText={setResetEmail}
                     onFocus={() => setFocusedField('resetEmail')}
@@ -380,7 +380,7 @@ const LoginScreen = () => {
                       focusedField === 'email' && styles.inputFocused,
                     ]}
                     placeholder="Enter your email"
-                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    placeholderTextColor={colors.textInverseDisabled}
                     value={email}
                     onChangeText={handleFieldChange(setEmail)}
                     onFocus={() => setFocusedField('email')}
@@ -400,7 +400,7 @@ const LoginScreen = () => {
                       focusedField === 'password' && styles.inputFocused,
                     ]}
                     placeholder="Enter your password"
-                    placeholderTextColor="rgba(255,255,255,0.3)"
+                    placeholderTextColor={colors.textInverseDisabled}
                     value={password}
                     onChangeText={handleFieldChange(setPassword)}
                     onFocus={() => setFocusedField('password')}

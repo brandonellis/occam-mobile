@@ -211,7 +211,7 @@ export const clientDetailStyles = StyleSheet.create({
     bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    backgroundColor: colors.overlayDark30,
   },
   sharedMediaDocPlaceholder: {
     width: '100%',

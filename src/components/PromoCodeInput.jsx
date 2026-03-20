@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   appliedChip: {
-    backgroundColor: colors.successLight || '#e6f7e6',
+    backgroundColor: colors.successLight,
   },
   appliedChipText: {
     fontWeight: '600',

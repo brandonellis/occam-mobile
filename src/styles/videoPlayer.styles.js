@@ -62,7 +62,7 @@ export const videoPlayerStyles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: colors.whiteOverlay15,
     marginTop: spacing.sm,
   },
   retryText: {
@@ -73,7 +73,7 @@ export const videoPlayerStyles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.overlayDark40,
   },
 
   // Video container (fixed height when annotations are shown)
