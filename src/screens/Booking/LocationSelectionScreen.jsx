@@ -5,9 +5,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ScreenHeader from '../../components/ScreenHeader';
 import EmptyState from '../../components/EmptyState';
 import { bookingStyles as styles } from '../../styles/booking.styles';
-import { getNextBookingScreen } from '../../helpers/booking.helper';
+import { getNextBookingScreen, getBookingSteps, getBookingStepIndex } from '../../helpers/booking.helper';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
+import BookingStepIndicator from '../../components/BookingStepIndicator';
 import useAuth from '../../hooks/useAuth';
+import { SCREENS } from '../../constants/navigation.constants';
 import { COACH_ROLES } from '../../constants/auth.constants';
 
 const LocationSelectionScreen = ({ route, navigation }) => {
@@ -31,6 +33,10 @@ const LocationSelectionScreen = ({ route, navigation }) => {
         onBack={() => navigation.goBack()}
         onClose={() => confirmCancelBooking(navigation)}
       />
+      {(() => {
+        const steps = getBookingSteps({ service: bookingData.service, hasMultipleLocations: true, isCoach });
+        return <BookingStepIndicator currentStep={getBookingStepIndex(SCREENS.LOCATION_SELECTION, steps)} totalSteps={steps.length} />;
+      })()}
 
       <ScrollView contentContainerStyle={styles.scrollContent} testID="location-selection-list">
         {bookingData.service && (

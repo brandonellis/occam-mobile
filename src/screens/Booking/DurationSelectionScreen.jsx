@@ -8,6 +8,8 @@ import { formatDuration } from '../../constants/booking.constants';
 import { calculateEffectivePrice, formatCurrency } from '../../helpers/pricing.helper';
 import { SCREENS } from '../../constants/navigation.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
+import { getBookingSteps, getBookingStepIndex } from '../../helpers/booking.helper';
+import BookingStepIndicator from '../../components/BookingStepIndicator';
 import useAuth from '../../hooks/useAuth';
 import { COACH_ROLES } from '../../constants/auth.constants';
 
@@ -54,6 +56,10 @@ const DurationSelectionScreen = ({ route, navigation }) => {
         onBack={() => navigation.goBack()}
         onClose={() => confirmCancelBooking(navigation)}
       />
+      {(() => {
+        const steps = getBookingSteps({ service, isCoach });
+        return <BookingStepIndicator currentStep={getBookingStepIndex(SCREENS.DURATION_SELECTION, steps)} totalSteps={steps.length} />;
+      })()}
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.sectionHeader}>

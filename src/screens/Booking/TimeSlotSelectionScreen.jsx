@@ -13,6 +13,8 @@ import { buildClassSessionGroups } from '../../helpers/classSession.helper';
 import { colors, spacing } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
+import { getBookingSteps, getBookingStepIndex } from '../../helpers/booking.helper';
+import BookingStepIndicator from '../../components/BookingStepIndicator';
 import { COACH_ROLES } from '../../constants/auth.constants';
 import dayjs, { getEffectiveTimezone } from '../../utils/dayjs';
 import { generateDateRangeInTz, getFutureDateKey } from '../../helpers/timezone.helper';
@@ -472,6 +474,10 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         onBack={() => navigation.goBack()}
         onClose={() => confirmCancelBooking(navigation)}
       />
+      {(() => {
+        const steps = getBookingSteps({ service, isCoach });
+        return <BookingStepIndicator currentStep={getBookingStepIndex(SCREENS.TIME_SLOT_SELECTION, steps)} totalSteps={steps.length} />;
+      })()}
 
       <FlatList
         data={dates}

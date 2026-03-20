@@ -12,6 +12,8 @@ import { getAllowedCoachesForService } from '../../services/accounts.api';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
+import { getBookingSteps, getBookingStepIndex } from '../../helpers/booking.helper';
+import BookingStepIndicator from '../../components/BookingStepIndicator';
 import logger from '../../helpers/logger.helper';
 
 const CoachSelectionScreen = ({ route, navigation }) => {
@@ -118,6 +120,10 @@ const CoachSelectionScreen = ({ route, navigation }) => {
           onClose={() => confirmCancelBooking(navigation)}
         />
       )}
+      {!rebooking && (() => {
+        const steps = getBookingSteps({ service });
+        return <BookingStepIndicator currentStep={getBookingStepIndex(SCREENS.COACH_SELECTION, steps)} totalSteps={steps.length} />;
+      })()}
 
       {(state.isLoading || rebooking) ? (
         <ListSkeleton count={4} />
