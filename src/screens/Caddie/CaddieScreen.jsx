@@ -1,7 +1,8 @@
-import React, { useCallback, useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import React, { useCallback, useRef, useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Surface, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AgentChatInput from '../../components/AgentChat/AgentChatInput';
 import AgentChatMessages from '../../components/AgentChat/AgentChatMessages';
 import useCaddie from '../../hooks/useCaddie';
@@ -9,8 +10,10 @@ import useAuth from '../../hooks/useAuth';
 import { ADMIN_SHELL_ROLES, COACH_ROLES, ROLES } from '../../constants/auth.constants';
 import { SCREENS } from '../../constants/navigation.constants';
 import { navigate } from '../../helpers/navigation.helper';
+import { buildBookingDataFromLink } from '../../helpers/booking.helper';
 import { buildMarshalIntentFromHandoff } from '../../helpers/marshalIntent.helper';
 import { caddieStyles as styles } from '../../styles/caddie.styles';
+import { colors } from '../../theme';
 import { logger } from '../../helpers/logger.helper';
 
 const CaddieScreen = () => {
@@ -73,8 +76,8 @@ const CaddieScreen = () => {
 
       openMarshalWithIntent(intent);
     } catch (handoffActionError) {
-      logger.warn('CaddieScreen: Marshal handoff failed', handoffActionError?.message || handoffActionError);
-      setHandoffError('We couldn\'t open Marshal right now. Please try again.');
+      logger.warn("CaddieScreen: Marshal handoff failed", handoffActionError?.message || handoffActionError);
+      setHandoffError("We couldn't open Marshal right now. Please try again.");
     }
   }, [activeRole, canLaunchMarshal, marshalTargetRole, openMarshalWithIntent, switchRole]);
 
@@ -94,47 +97,77 @@ const CaddieScreen = () => {
     sendMessage(prompt, { slotContext });
   }, [sendMessage]);
 
+  const handleBookingLinkPress = useCallback((bookingLink) => {
+    const bookingData = buildBookingDataFromLink(bookingLink);
+    if (!bookingData) {
+      logger.warn('CaddieScreen: booking link missing required IDs');
+      return;
+    }
+    navigate(SCREENS.BOOKING_CONFIRMATION, { bookingData });
+  }, []);
+
+  const scrollRef = useRef(null);
+
+  const handleFocusInput = useCallback(() => {
+    setTimeout(() => {
+      scrollRef.current?.scrollToEnd?.({ animated: true });
+    }, 300);
+  }, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
-        <Surface style={styles.heroCard} elevation={1}>
-          <Text style={styles.heroEyebrow}>Client booking concierge</Text>
-          <Text style={styles.heroTitle}>Caddie</Text>
-          <Text style={styles.heroBody}>
-            Ask for availability, upcoming bookings, memberships, or the best next step for your practice schedule.
-          </Text>
-        </Surface>
+      <KeyboardAvoidingView
+        style={styles.keyboardAvoid}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      >
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
+          <Surface style={styles.heroCard} elevation={1}>
+            <MaterialCommunityIcons name="golf" size={32} color={colors.aquaLight} style={styles.heroIcon} />
+            <Text style={styles.heroEyebrow}>Client booking concierge</Text>
+            <Text style={styles.heroTitle}>Caddie</Text>
+            <Text style={styles.heroBody}>
+              Ask for availability, upcoming bookings, memberships, or the best next step for your practice schedule.
+            </Text>
+          </Surface>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Conversation</Text>
-          <Text style={styles.sectionBody}>
-            Start with something simple like "Find me a lesson this week" or "Show my next booking."
-          </Text>
-          <AgentChatMessages
-            agentLabel="Caddie"
-            isLoading={isLoading}
-            loadingLabel="Caddie is checking options…"
-            messages={messages}
-            onHandoffAction={canLaunchMarshal ? handleHandoffAction : undefined}
-            onSlotSelect={handleSlotSelect}
-            handoffActionLabel="Open in Marshal"
-          />
-          <AgentChatInput
-            error={combinedError}
-            input={input}
-            isLoading={isLoading}
-            onChangeText={handleChangeText}
-            onSelectSuggestion={selectSuggestion}
-            onSend={sendCurrentMessage}
-            placeholder="Ask Caddie about lessons, bookings, or memberships…"
-            suggestions={suggestions}
-          />
-        </View>
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Conversation</Text>
+            <Text style={styles.sectionBody}>
+              Start with something simple like "Find me a lesson this week" or "Show my next booking."
+            </Text>
+            <AgentChatMessages
+              agentLabel="Caddie"
+              isLoading={isLoading}
+              loadingLabel="Caddie is checking options…"
+              messages={messages}
+              onHandoffAction={canLaunchMarshal ? handleHandoffAction : undefined}
+              onSlotSelect={handleSlotSelect}
+              onBookingLinkPress={handleBookingLinkPress}
+              handoffActionLabel="Open in Marshal"
+            />
+            <AgentChatInput
+              error={combinedError}
+              input={input}
+              isLoading={isLoading}
+              onChangeText={handleChangeText}
+              onSelectSuggestion={selectSuggestion}
+              onSend={sendCurrentMessage}
+              onFocus={handleFocusInput}
+              placeholder="Ask Caddie about lessons, bookings, or memberships…"
+              suggestions={suggestions}
+            />
+          </View>
 
-        <Button mode="text" onPress={handleResetConversation}>
-          Reset conversation
-        </Button>
-      </ScrollView>
+          <Button mode="text" onPress={handleResetConversation}>
+            Reset conversation
+          </Button>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };

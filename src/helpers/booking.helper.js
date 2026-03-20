@@ -3,7 +3,7 @@ import { isClassLike } from './normalizers.helper';
 
 /**
  * Compute the ordered list of booking flow steps for a given service configuration.
- * Returns { steps: string[], totalSteps: number }.
+ * Returns string[] — the ordered screen names.
  * Each screen can call getBookingStepIndex(screenName, steps) to find its position.
  */
 export const getBookingSteps = ({ service, hasMultipleLocations = false, isCoach = false }) => {
@@ -190,4 +190,47 @@ export const resolveLocationAndRoute = ({ bookingData, allLocations, isCoach, us
   // No locations — proceed anyway
   const { screen, params } = getNextBookingScreen(updatedData, isCoach, user);
   return { resolved: true, bookingData: updatedData, screen, params };
+};
+
+/**
+ * Transform a Caddie booking-link response into the bookingData shape
+ * expected by BookingConfirmationScreen.
+ *
+ * @param {Object} bookingLink - The booking link object from GenerateBookingLinkTool
+ * @returns {{ bookingData: Object } | null} null if required IDs are missing
+ */
+export const buildBookingDataFromLink = (bookingLink) => {
+  if (!bookingLink) return null;
+
+  const serviceId = bookingLink.service_id ?? null;
+  const locationId = bookingLink.location_id ?? null;
+  const coachId = bookingLink.coach_id ?? null;
+
+  if (!serviceId || !locationId) return null;
+
+  const priceCents = bookingLink.price_cents ?? null;
+
+  return {
+    service: {
+      id: serviceId,
+      name: bookingLink.service || 'Service',
+      duration_minutes: bookingLink.duration_minutes || 60,
+      price: priceCents != null ? priceCents / 100 : null,
+      price_cents: priceCents,
+    },
+    location: {
+      id: locationId,
+      name: bookingLink.location || 'Location',
+    },
+    coach: coachId ? {
+      id: coachId,
+      first_name: bookingLink.coach || 'Coach',
+      last_name: '',
+    } : null,
+    timeSlot: {
+      start_time: bookingLink.start_time,
+      end_time: bookingLink.end_time || null,
+    },
+    date: bookingLink.date,
+  };
 };

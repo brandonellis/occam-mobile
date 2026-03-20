@@ -5,7 +5,7 @@ import { colors } from '../theme/colors';
 import CustomTabBar from '../components/CustomTabBar';
 import AdminDashboardScreen from '../screens/Admin/AdminDashboardScreen';
 import AdminScheduleStack from './AdminScheduleStack';
-import CoachClientsStack from './CoachClientsStack';
+import AdminClientsStack from './AdminClientsStack';
 import CoachProfileScreen from '../screens/Coach/CoachProfileScreen';
 import MarshalScreen from '../screens/Marshal/MarshalScreen';
 import { createTabResetListener } from '../helpers/navigation.helper';
@@ -17,7 +17,7 @@ const TAB_ICONS = {
   ScheduleTab: { focused: 'calendar', unfocused: 'calendar-outline' },
   ClientsTab: { focused: 'account-group', unfocused: 'account-group-outline' },
   [SCREENS.MARSHAL]: { focused: 'robot', unfocused: 'robot-outline' },
-  [SCREENS.COACH_PROFILE]: { focused: 'account-circle', unfocused: 'account-circle-outline' },
+  [SCREENS.ADMIN_PROFILE]: { focused: 'account-circle', unfocused: 'account-circle-outline' },
 };
 
 const AdminTabNavigator = () => {
@@ -47,9 +47,9 @@ const AdminTabNavigator = () => {
       />
       <Tab.Screen
         name="ClientsTab"
-        component={CoachClientsStack}
+        component={AdminClientsStack}
         options={{ tabBarLabel: 'Clients' }}
-        listeners={createTabResetListener('ClientsTab', SCREENS.COACH_CLIENTS)}
+        listeners={createTabResetListener('ClientsTab', SCREENS.ADMIN_CLIENTS)}
       />
       <Tab.Screen
         name={SCREENS.MARSHAL}
@@ -57,7 +57,7 @@ const AdminTabNavigator = () => {
         options={{ tabBarLabel: 'Marshal' }}
       />
       <Tab.Screen
-        name={SCREENS.COACH_PROFILE}
+        name={SCREENS.ADMIN_PROFILE}
         component={CoachProfileScreen}
         options={{ tabBarLabel: 'Profile' }}
       />

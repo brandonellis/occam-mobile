@@ -32,6 +32,18 @@ const CHANNELS = [
   { key: 'email', label: 'Email' },
 ];
 
+// Transactional emails cannot be opted out of (legal/compliance requirement).
+const TRANSACTIONAL_EVENTS = new Set([
+  'booking_confirmed',
+  'booking_cancelled',
+  'booking_payment_requested',
+  'booking_reminder',
+  'class_cancelled',
+  'membership_welcome',
+  'membership_cancelled',
+  'membership_renewal_reminder',
+]);
+
 const NotificationPreferencesScreen = ({ navigation }) => {
   const [preferences, setPreferences] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,6 +75,7 @@ const NotificationPreferencesScreen = ({ navigation }) => {
     setPreferences(updated);
 
     setSaving(true);
+    setSaved(false);
     try {
       await updateNotificationPreferences(updated);
       setSaved(true);
@@ -77,7 +90,7 @@ const NotificationPreferencesScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader title="Notification Settings" navigation={navigation} />
+      <ScreenHeader title="Notification Settings" onBack={() => navigation.goBack()} />
       {loading ? (
         <ListSkeleton count={8} />
       ) : (
@@ -99,21 +112,31 @@ const NotificationPreferencesScreen = ({ navigation }) => {
           {/* Preference rows */}
           {preferences.map((pref) => (
             <View key={pref.event_type} style={styles.row}>
-              <Text style={styles.eventLabel}>
-                {EVENT_LABELS[pref.event_type] || pref.event_type}
-              </Text>
-              {CHANNELS.map((ch) => (
-                <View key={ch.key} style={styles.switchCell}>
-                  <Switch
-                    value={pref[ch.key]}
-                    onValueChange={(val) =>
-                      handleToggle(pref.event_type, ch.key, val)
-                    }
-                    disabled={saving}
-                    color={colors.accent}
-                  />
-                </View>
-              ))}
+              <View style={styles.eventLabelContainer}>
+                <Text style={styles.eventLabel}>
+                  {EVENT_LABELS[pref.event_type] || pref.event_type}
+                </Text>
+                {TRANSACTIONAL_EVENTS.has(pref.event_type) && (
+                  <Text style={styles.transactionalHint}>Required email</Text>
+                )}
+              </View>
+              {CHANNELS.map((ch) => {
+                const isLockedOn =
+                  ch.key === 'email' && TRANSACTIONAL_EVENTS.has(pref.event_type);
+                return (
+                  <View key={ch.key} style={styles.switchCell}>
+                    <Switch
+                      value={isLockedOn ? true : pref[ch.key]}
+                      onValueChange={(val) =>
+                        handleToggle(pref.event_type, ch.key, val)
+                      }
+                      disabled={saving || isLockedOn}
+                      color={colors.accent}
+                      style={styles.switch}
+                    />
+                  </View>
+                );
+              })}
             </View>
           ))}
         </ScrollView>

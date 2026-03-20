@@ -6,6 +6,8 @@ import { IconButton, TouchableRipple } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
 import { getBookings } from '../../services/bookings.api';
+import { getMyMembership } from '../../services/accounts.api';
+import { isMembershipActive } from '../../helpers/membership.helper';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
 import { DashboardSkeleton } from '../../components/SkeletonLoader';
@@ -22,6 +24,7 @@ const ClientHomeScreen = ({ navigation }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [hasMembership, setHasMembership] = useState(false);
   const { unreadCount } = useUnreadNotifications();
 
   const todayKey = useMemo(() => getTodayKey(company), [company]);
@@ -50,13 +53,23 @@ const ClientHomeScreen = ({ navigation }) => {
     }
   }, [user?.id, todayKey, futureKey]);
 
+  const checkMembership = useCallback(async () => {
+    try {
+      const result = await getMyMembership();
+      setHasMembership(isMembershipActive(result?.data || result));
+    } catch (err) {
+      logger.warn('Failed to check membership:', err?.message || err);
+    }
+  }, []);
+
   // Refetch every time the screen comes into focus (e.g. after booking)
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadBookings();
+      checkMembership();
     });
     return unsubscribe;
-  }, [navigation, loadBookings]);
+  }, [navigation, loadBookings, checkMembership]);
 
   // Filter to only upcoming sessions using native Date (Hermes-safe)
   const nowMs = Date.now();
@@ -151,23 +164,25 @@ const ClientHomeScreen = ({ navigation }) => {
             <TouchableOpacity
               style={styles.quickActionButton}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate('ProgressTab', { screen: SCREENS.CLIENT_PROGRESS, params: { initialTab: 'resources' } })}
+              onPress={() => navigation.navigate('ActivityTab', { screen: SCREENS.CLIENT_PROGRESS, params: { initialTab: 'resources' } })}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.lavenderMistLight }]}>
                 <MaterialCommunityIcons name="play-circle-outline" size={18} color={colors.twilightPurple} />
               </View>
               <Text style={styles.quickActionLabel} numberOfLines={1}>My Resources</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.quickActionButton}
-              activeOpacity={0.7}
-              onPress={() => navigation.navigate(SCREENS.MEMBERSHIP_PLANS)}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: colors.successLight }]}>
-                <MaterialCommunityIcons name="credit-card-outline" size={18} color={colors.success} />
-              </View>
-              <Text style={styles.quickActionLabel} numberOfLines={1}>Membership</Text>
-            </TouchableOpacity>
+            {!hasMembership && (
+              <TouchableOpacity
+                style={styles.quickActionButton}
+                activeOpacity={0.7}
+                onPress={() => navigation.navigate(SCREENS.MEMBERSHIP_PLANS)}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: colors.successLight }]}>
+                  <MaterialCommunityIcons name="credit-card-outline" size={18} color={colors.success} />
+                </View>
+                <Text style={styles.quickActionLabel} numberOfLines={1}>Membership</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
               style={styles.quickActionButton}
               activeOpacity={0.7}

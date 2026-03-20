@@ -7,6 +7,9 @@ import { navigate } from '../../src/helpers/navigation.helper';
 import { ROLES } from '../../src/constants/auth.constants';
 import { SCREENS } from '../../src/constants/navigation.constants';
 
+jest.mock('@expo/vector-icons', () => ({
+  MaterialCommunityIcons: 'MaterialCommunityIcons',
+}));
 jest.mock('../../src/hooks/useCaddie', () => jest.fn());
 jest.mock('../../src/hooks/useAuth', () => jest.fn());
 jest.mock('../../src/helpers/navigation.helper', () => ({

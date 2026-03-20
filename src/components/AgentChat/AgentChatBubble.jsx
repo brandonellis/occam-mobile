@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
-import { Linking, Pressable, View } from 'react-native';
+import { Pressable, View } from 'react-native';
 import { Button, Divider, Icon, Surface, Text } from 'react-native-paper';
 import { agentChatStyles as styles } from '../../styles/agentChat.styles';
 import { colors } from '../../theme/colors';
 import { formatEligibilityLabel } from '../../helpers/agentChat.helper';
 import AvailabilityCard from './AvailabilityCard';
+import FormattedResponseText from './FormattedResponseText';
 
 const ACTION_LABELS = {
   create_booking: 'Create Booking',
@@ -104,7 +105,7 @@ const renderCard = (card) => {
   return null;
 };
 
-const renderBookingLinkCard = (bookingLink) => {
+const renderBookingLinkCard = (bookingLink, onBookingLinkPress) => {
   if (!bookingLink?.booking_url) {
     return null;
   }
@@ -127,9 +128,8 @@ const renderBookingLinkCard = (bookingLink) => {
         <Text style={styles.bookingEligibility}>{eligibilityLabel}</Text>
       ) : null}
       <Button mode="contained" compact style={styles.bookingButton} onPress={() => {
-          const url = bookingLink.booking_url;
-          if (url && (url.startsWith('https://') || url.startsWith('/'))) {
-            Linking.openURL(url);
+          if (onBookingLinkPress) {
+            onBookingLinkPress(bookingLink);
           }
         }}>
         Continue to booking
@@ -216,7 +216,7 @@ HandoffCard.propTypes = {
   onHandoffAction: PropTypes.func,
 };
 
-const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction, onHandoffAction, handoffActionLabel, onSlotSelect }) => {
+const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction, onHandoffAction, handoffActionLabel, onSlotSelect, onBookingLinkPress }) => {
   const isUser = message.sender === 'user';
   const isActionResult = message.type === 'action_result';
   const bubbleStyle = [
@@ -234,10 +234,10 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
           <Text style={styles.avatarText}>{avatarInitial}</Text>
         </View>
       ) : null}
-      <View style={styles.bubbleContentWrap}>
+      <View style={[styles.bubbleContentWrap, !isUser && styles.assistantBubbleContentWrap]}>
         <View style={bubbleStyle}>
           {renderCard(message.card)}
-          {renderBookingLinkCard(message.bookingLink)}
+          {renderBookingLinkCard(message.bookingLink, onBookingLinkPress)}
           {message.availability ? (
             <AvailabilityCard availability={message.availability} onSlotSelect={onSlotSelect} />
           ) : null}
@@ -248,7 +248,11 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
               onHandoffAction={onHandoffAction}
             />
           ) : null}
-          <Text style={isUser ? styles.userText : styles.assistantText}>{message.text}</Text>
+          {isUser ? (
+            <Text style={styles.userText}>{message.text}</Text>
+          ) : message.type === 'handoff' ? null : (
+            <FormattedResponseText text={message.text} style={styles.assistantText} />
+          )}
           {message.type === 'confirmation' && Array.isArray(message.pendingActions) ? (
             <View style={styles.confirmationList}>
               {message.pendingActions.map((action) => (
@@ -326,11 +330,18 @@ AgentChatBubble.propTypes = {
     bookingLink: PropTypes.shape({
       booking_url: PropTypes.string,
       service: PropTypes.string,
+      service_id: PropTypes.number,
       location: PropTypes.string,
+      location_id: PropTypes.number,
       coach: PropTypes.string,
+      coach_id: PropTypes.number,
       date: PropTypes.string,
       time: PropTypes.string,
+      start_time: PropTypes.string,
+      end_time: PropTypes.string,
+      duration_minutes: PropTypes.number,
       price: PropTypes.string,
+      price_cents: PropTypes.number,
       eligibility: PropTypes.shape({
         source: PropTypes.string,
         remaining: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
@@ -349,6 +360,7 @@ AgentChatBubble.propTypes = {
   onDeclineAction: PropTypes.func,
   onHandoffAction: PropTypes.func,
   onSlotSelect: PropTypes.func,
+  onBookingLinkPress: PropTypes.func,
   handoffActionLabel: PropTypes.string,
 };
 
@@ -358,6 +370,7 @@ AgentChatBubble.defaultProps = {
   onDeclineAction: undefined,
   onHandoffAction: undefined,
   onSlotSelect: undefined,
+  onBookingLinkPress: undefined,
   handoffActionLabel: 'Open in Marshal',
 };
 

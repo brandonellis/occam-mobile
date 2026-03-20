@@ -61,6 +61,13 @@ export const videoReviewStyles = StyleSheet.create({
     minHeight: 48,
   },
 
+  charCounter: {
+    ...typography.caption,
+    color: colors.textInverseHint,
+    textAlign: 'right',
+    marginTop: spacing.xs,
+  },
+
   // Upload progress
   progressSection: {
     marginBottom: spacing.xl,

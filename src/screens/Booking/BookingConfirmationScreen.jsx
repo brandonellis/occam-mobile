@@ -1008,7 +1008,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         onClose={() => confirmCancelBooking(navigation)}
       />
       {!isEditMode && (() => {
-        const steps = getBookingSteps({ service, isCoach: COACH_ROLES.includes(activeRole) });
+        const steps = getBookingSteps({ service, hasMultipleLocations: bookingData?.hasMultipleLocations, isCoach: COACH_ROLES.includes(activeRole) });
         return <BookingStepIndicator currentStep={steps.length} totalSteps={steps.length} />;
       })()}
 
@@ -1226,7 +1226,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
               <View style={styles.summaryFeesRow}>
                 <View style={styles.confirmRow}>
                   <View style={styles.summaryFeesInner}>
-                    <Text style={styles.summaryLabel}>Taxes and Fees</Text>
+                    <Text style={styles.summaryLabel}>Processing Fee ({summary.platformFeePercent}%)</Text>
                     <TouchableOpacity
                       onPress={() => setFeeBreakdownVisible((v) => !v)}
                       hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

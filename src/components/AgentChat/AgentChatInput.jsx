@@ -11,6 +11,7 @@ const AgentChatInput = ({
   input,
   isLoading,
   onChangeText,
+  onFocus,
   onSelectSuggestion,
   onSend,
   placeholder,
@@ -52,12 +53,14 @@ const AgentChatInput = ({
           onChangeText={onChangeText}
           placeholder={placeholder}
           disabled={disabled || isLoading}
-          onFocus={() => setIsFocused(true)}
+          onFocus={() => { setIsFocused(true); onFocus?.(); }}
           onBlur={() => setIsFocused(false)}
           style={styles.composerInput}
           contentStyle={styles.composerInputContent}
           underlineColor="transparent"
           activeUnderlineColor="transparent"
+          cursorColor={colors.accent}
+          selectionColor={colors.accentLight}
           dense
         />
         <Pressable
@@ -83,6 +86,7 @@ AgentChatInput.propTypes = {
   input: PropTypes.string.isRequired,
   isLoading: PropTypes.bool,
   onChangeText: PropTypes.func.isRequired,
+  onFocus: PropTypes.func,
   onSelectSuggestion: PropTypes.func.isRequired,
   onSend: PropTypes.func.isRequired,
   placeholder: PropTypes.string,
@@ -93,6 +97,7 @@ AgentChatInput.defaultProps = {
   disabled: false,
   error: null,
   isLoading: false,
+  onFocus: undefined,
   placeholder: 'Ask a question…',
   suggestions: [],
 };

@@ -167,10 +167,19 @@ const AdminScheduleScreen = ({ navigation }) => {
 
   const dateStrip = useMemo(() => buildDateStrip(selectedDateKey, todayKey), [selectedDateKey, todayKey]);
 
+  const maxDateKey = useMemo(() => shiftDateKey(todayKey, 90), [todayKey]);
+  const canGoBack = selectedDateKey > todayKey;
+  const canGoForward = selectedDateKey < maxDateKey;
+
   const shiftDate = useCallback((offset) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-    setSelectedDateKey((prev) => shiftDateKey(prev, offset));
-  }, []);
+    setSelectedDateKey((prev) => {
+      const next = shiftDateKey(prev, offset);
+      if (next < todayKey) return todayKey;
+      if (next > maxDateKey) return maxDateKey;
+      return next;
+    });
+  }, [todayKey, maxDateKey]);
 
   const filteredBookings = useMemo(() => {
     const now = Date.now();
@@ -324,8 +333,9 @@ const AdminScheduleScreen = ({ navigation }) => {
         <IconButton
           icon="chevron-left"
           size={20}
-          iconColor={colors.primary}
+          iconColor={canGoBack ? colors.primary : colors.gray300}
           onPress={() => shiftDate(-1)}
+          disabled={!canGoBack}
           style={styles.navIconButton}
         />
         <FlatList
@@ -342,8 +352,9 @@ const AdminScheduleScreen = ({ navigation }) => {
         <IconButton
           icon="chevron-right"
           size={20}
-          iconColor={colors.primary}
+          iconColor={canGoForward ? colors.primary : colors.gray300}
           onPress={() => shiftDate(1)}
+          disabled={!canGoForward}
           style={styles.navIconButton}
         />
       </View>
@@ -453,7 +464,7 @@ const AdminScheduleScreen = ({ navigation }) => {
                     hasActiveFilters
                       ? 'No bookings match the current filters for this day.'
                       : hasPastOnlyBookings
-                        ? 'All of today\'s bookings are already in the past.'
+                        ? "All of today's bookings are already in the past."
                         : 'There are no bookings scheduled for this day.'
                   }
                 />

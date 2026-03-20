@@ -174,24 +174,4 @@ export const bookingsListStyles = StyleSheet.create({
     borderTopColor: colors.borderLight,
     gap: spacing.md,
   },
-  cancelButton: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-  },
-  cancelButtonText: {
-    ...typography.label,
-    color: colors.error,
-    fontSize: 13,
-  },
-  rebookButton: {
-    backgroundColor: colors.accent,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.sm,
-  },
-  rebookButtonText: {
-    ...typography.label,
-    color: colors.textInverse,
-    fontSize: 13,
-  },
 });

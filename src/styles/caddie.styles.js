@@ -8,6 +8,9 @@ export const caddieStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  keyboardAvoid: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
@@ -19,6 +22,9 @@ export const caddieStyles = StyleSheet.create({
     padding: spacing.xl,
     marginBottom: spacing.lg,
     ...shadows.md,
+  },
+  heroIcon: {
+    marginBottom: spacing.sm,
   },
   heroEyebrow: {
     ...typography.labelSmall,

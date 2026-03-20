@@ -1,10 +1,11 @@
 import React, { useEffect } from 'react';
 import { ActivityIndicator } from 'react-native-paper';
-import { View } from 'react-native';
+import { View, BackHandler, Platform } from 'react-native';
 import OfflineBanner from '../components/OfflineBanner';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import useAuth from '../hooks/useAuth';
 import usePushNotifications from '../hooks/usePushNotifications';
+import { navigationRef } from '../helpers/navigation.helper';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
 import { styles } from '../styles/rootNavigator.styles';
@@ -17,18 +18,12 @@ import VideoReviewScreen from '../screens/Coach/VideoReviewScreen';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 import NotificationPreferencesScreen from '../screens/Shared/NotificationPreferencesScreen';
 import BookingDetailScreen from '../screens/Client/BookingDetailScreen';
-import ClientSelectionScreen from '../screens/Booking/ClientSelectionScreen';
-import ServiceSelectionScreen from '../screens/Booking/ServiceSelectionScreen';
-import LocationSelectionScreen from '../screens/Booking/LocationSelectionScreen';
-import DurationSelectionScreen from '../screens/Booking/DurationSelectionScreen';
-import CoachSelectionScreen from '../screens/Booking/CoachSelectionScreen';
-import TimeSlotSelectionScreen from '../screens/Booking/TimeSlotSelectionScreen';
-import BookingConfirmationScreen from '../screens/Booking/BookingConfirmationScreen';
+import { bookingScreens } from './BookingScreens';
 
 const Stack = createNativeStackNavigator();
 
 const RootNavigator = () => {
-  const { isLoading, isAuthenticated, activeRole } = useAuth();
+  const { isLoading, isAuthenticated, activeRole, previousRole, switchRole } = useAuth();
   const { registerToken } = usePushNotifications();
 
   useEffect(() => {
@@ -36,6 +31,22 @@ const RootNavigator = () => {
       registerToken();
     }
   }, [isAuthenticated, registerToken]);
+
+  // Android: switch back to previous role when pressing hardware back at the root
+  useEffect(() => {
+    if (Platform.OS !== 'android' || !isAuthenticated || !previousRole) return;
+
+    const handler = BackHandler.addEventListener('hardwareBackPress', () => {
+      const canGoBack = navigationRef.current?.canGoBack();
+      if (!canGoBack && previousRole) {
+        switchRole(previousRole);
+        return true;
+      }
+      return false;
+    });
+
+    return () => handler.remove();
+  }, [isAuthenticated, previousRole, switchRole]);
 
   if (isLoading) {
     return (
@@ -65,16 +76,19 @@ const RootNavigator = () => {
             <Stack.Screen
               name={SCREENS.ADMIN_TABS}
               component={AdminTabNavigator}
+              options={{ gestureEnabled: false }}
             />
           ) : isCoach ? (
             <Stack.Screen
               name={SCREENS.COACH_TABS}
               component={CoachTabNavigator}
+              options={{ gestureEnabled: false }}
             />
           ) : (
             <Stack.Screen
               name={SCREENS.CLIENT_TABS}
               component={ClientTabNavigator}
+              options={{ gestureEnabled: false }}
             />
           )}
 
@@ -98,47 +112,13 @@ const RootNavigator = () => {
           />
 
           {/* Booking flow — accessed from Dashboard quick actions */}
-          <Stack.Screen
-            name={SCREENS.CLIENT_SELECTION}
-            component={ClientSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.SERVICE_SELECTION}
-            component={ServiceSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.LOCATION_SELECTION}
-            component={LocationSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.DURATION_SELECTION}
-            component={DurationSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.COACH_SELECTION}
-            component={CoachSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.TIME_SLOT_SELECTION}
-            component={TimeSlotSelectionScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
-          <Stack.Screen
-            name={SCREENS.BOOKING_CONFIRMATION}
-            component={BookingConfirmationScreen}
-            options={{ animation: 'slide_from_right' }}
-          />
+          {bookingScreens(Stack)}
 
           {/* Notifications — accessed from direct tab screens (Dashboard) */}
           <Stack.Screen
             name={SCREENS.NOTIFICATIONS}
             component={NotificationsScreen}
-            options={{ animation: 'slide_from_right' }}
+            options={{ animation: 'slide_from_bottom' }}
           />
           <Stack.Screen
             name={SCREENS.NOTIFICATION_PREFERENCES}

@@ -52,6 +52,7 @@ const LoginScreen = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const searchTimer = useRef(null);
+  const abortRef = useRef(null);
 
   // Load last selected organization on mount
   useEffect(() => {
@@ -69,32 +70,44 @@ const LoginScreen = () => {
     loadLastOrg();
   }, []);
 
-  // Debounced search
+  // Debounced search with request cancellation
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (abortRef.current) abortRef.current.abort();
 
     if (orgQuery.length < 2 || selectedOrg) {
       setOrgResults([]);
       setShowResults(false);
+      setIsSearching(false);
       return;
     }
 
     setIsSearching(true);
     searchTimer.current = setTimeout(async () => {
+      const controller = new AbortController();
+      abortRef.current = controller;
       try {
-        const results = await searchTenants(orgQuery);
-        setOrgResults(results);
-        setShowResults(results.length > 0);
+        const results = await searchTenants(orgQuery, controller.signal);
+        if (!controller.signal.aborted) {
+          setOrgResults(results);
+          setShowResults(results.length > 0);
+        }
       } catch {
-        setOrgResults([]);
-        setShowResults(false);
+        if (!controller.signal.aborted) {
+          setOrgResults([]);
+          setShowResults(false);
+        }
       } finally {
-        setIsSearching(false);
+        if (!controller.signal.aborted) {
+          setIsSearching(false);
+        }
       }
     }, 400);
 
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
+      if (abortRef.current) abortRef.current.abort();
+      setIsSearching(false);
     };
   }, [orgQuery, selectedOrg]);
 
@@ -115,7 +128,10 @@ const LoginScreen = () => {
 
   const handleOrgQueryChange = useCallback((text) => {
     if (error) clearError();
-    if (fieldErrors.org) setFieldErrors((prev) => ({ ...prev, org: undefined }));
+    setFieldErrors((prev) => {
+      if (prev.org) return { ...prev, org: undefined };
+      return prev;
+    });
     if (selectedOrg) {
       setSelectedOrg(null);
     }
@@ -196,7 +212,10 @@ const LoginScreen = () => {
   const handleFieldChange = useCallback(
     (setter, field) => (value) => {
       if (error) clearError();
-      if (fieldErrors[field]) setFieldErrors((prev) => ({ ...prev, [field]: undefined }));
+      setFieldErrors((prev) => {
+        if (prev[field]) return { ...prev, [field]: undefined };
+        return prev;
+      });
       setter(value);
     },
     [error, clearError, fieldErrors]
@@ -298,7 +317,7 @@ const LoginScreen = () => {
                   <ActivityIndicator size="small" color={colors.accent} />
                 )}
                 {selectedOrg && (
-                  <TouchableOpacity onPress={handleClearOrg} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                  <TouchableOpacity onPress={handleClearOrg} hitSlop={{ top: 13, bottom: 13, left: 13, right: 13 }}>
                     <MaterialCommunityIcons name="close-circle" size={18} color={colors.textInverseSubdued} />
                   </TouchableOpacity>
                 )}

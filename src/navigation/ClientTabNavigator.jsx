@@ -5,7 +5,6 @@ import { colors } from '../theme/colors';
 import CustomTabBar from '../components/CustomTabBar';
 import ClientHomeStack from './ClientHomeStack';
 import ClientBookingsScreen from '../screens/Client/ClientBookingsScreen';
-import ClientActivityFeedScreen from '../screens/Client/ClientActivityFeedScreen';
 import ClientProgressStack from './ClientProgressStack';
 import ClientProfileScreen from '../screens/Client/ClientProfileScreen';
 import CaddieScreen from '../screens/Caddie/CaddieScreen';
@@ -18,8 +17,7 @@ const Tab = createBottomTabNavigator();
 const TAB_ICONS = {
   HomeTab: { focused: 'home', unfocused: 'home-outline' },
   [SCREENS.CLIENT_BOOKINGS]: { focused: 'calendar', unfocused: 'calendar-outline' },
-  [SCREENS.CLIENT_ACTIVITY]: { focused: 'pulse', unfocused: 'pulse' },
-  ProgressTab: { focused: 'trending-up', unfocused: 'trending-up' },
+  ActivityTab: { focused: 'pulse', unfocused: 'pulse' },
   [SCREENS.CADDIE]: { focused: 'robot', unfocused: 'robot-outline' },
   [SCREENS.CLIENT_PROFILE]: { focused: 'account-circle', unfocused: 'account-circle-outline' },
 };
@@ -27,7 +25,7 @@ const TAB_ICONS = {
 const ClientTabNavigator = () => {
   const { unreadCount, clearBadge } = useActivityBadge();
 
-  const badgeValue = useMemo(() => ({ [SCREENS.CLIENT_ACTIVITY]: unreadCount }), [unreadCount]);
+  const badgeValue = useMemo(() => ({ ActivityTab: unreadCount }), [unreadCount]);
 
   return (
     <BadgeProvider value={badgeValue}>
@@ -55,20 +53,22 @@ const ClientTabNavigator = () => {
         options={{ tabBarLabel: 'Bookings' }}
       />
       <Tab.Screen
-        name={SCREENS.CLIENT_ACTIVITY}
-        component={ClientActivityFeedScreen}
-        options={{ tabBarLabel: 'Activity' }}
-        listeners={{
-          tabPress: () => {
-            clearBadge();
-          },
-        }}
-      />
-      <Tab.Screen
-        name="ProgressTab"
+        name="ActivityTab"
         component={ClientProgressStack}
-        options={{ tabBarLabel: 'Progress' }}
-        listeners={createTabResetListener('ProgressTab', SCREENS.CLIENT_PROGRESS)}
+        options={{ tabBarLabel: 'Activity' }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            clearBadge();
+            // Reset to root screen if nested (same logic as createTabResetListener)
+            const state = navigation.getState();
+            const tabRoute = state.routes.find((r) => r.name === 'ActivityTab');
+            const isNested = tabRoute?.state?.routes?.length > 1;
+            if (isNested) {
+              e.preventDefault();
+              navigation.navigate('ActivityTab', { screen: SCREENS.CLIENT_PROGRESS });
+            }
+          },
+        })}
       />
       <Tab.Screen
         name={SCREENS.CADDIE}

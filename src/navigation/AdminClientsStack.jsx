@@ -15,11 +15,11 @@ import VideoPlayerScreen from '../screens/Shared/VideoPlayerScreen';
 
 const Stack = createNativeStackNavigator();
 
-const CoachClientsStack = () => {
+const AdminClientsStack = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
       <Stack.Screen
-        name={SCREENS.COACH_CLIENTS}
+        name={SCREENS.ADMIN_CLIENTS}
         component={CoachClientsScreen}
         options={{ gestureEnabled: false }}
       />
@@ -72,4 +72,4 @@ const CoachClientsStack = () => {
   );
 };
 
-export default CoachClientsStack;
+export default AdminClientsStack;

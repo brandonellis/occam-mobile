@@ -24,9 +24,10 @@ import { SCREENS } from '../../constants/navigation.constants';
 import { colors } from '../../theme';
 import { resolveMediaUrl } from '../../helpers/media.helper';
 import AuthImage from '../../components/AuthImage';
+import { ActivityFeedContent } from './ClientActivityFeedScreen';
 import logger from '../../helpers/logger.helper';
 
-const TABS = { CURRICULUM: 'curriculum', REPORTS: 'reports', RESOURCES: 'resources' };
+const TABS = { FEED: 'feed', CURRICULUM: 'curriculum', REPORTS: 'reports', RESOURCES: 'resources' };
 
 const getDocumentIcon = (mime) => {
   if (mime.startsWith('application/pdf')) return 'file-document';
@@ -132,7 +133,7 @@ const ClientProgressScreen = () => {
   const clientId = user?.id;
 
   const [activeTab, setActiveTab] = useState(
-    route.params?.initialTab || TABS.CURRICULUM
+    route.params?.initialTab || TABS.FEED
   );
 
   // Switch tab on every focus when initialTab param is provided
@@ -160,7 +161,7 @@ const ClientProgressScreen = () => {
   }, []);
 
   const loadData = useCallback(async (showRefresh = false) => {
-    if (!clientId) {
+    if (!clientId || activeTab === TABS.FEED) {
       setIsLoading(false);
       return;
     }
@@ -451,11 +452,12 @@ const ClientProgressScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Progress</Text>
+        <Text style={styles.headerTitle}>Activity</Text>
       </View>
 
       <View style={styles.tabBar}>
         {[
+          { key: TABS.FEED, label: 'Feed' },
           { key: TABS.CURRICULUM, label: 'Curriculum' },
           { key: TABS.REPORTS, label: 'Reports' },
           { key: TABS.RESOURCES, label: 'Resources' },
@@ -478,7 +480,9 @@ const ClientProgressScreen = () => {
         ))}
       </View>
 
-      {isLoading ? (
+      {activeTab === TABS.FEED ? (
+        <ActivityFeedContent />
+      ) : isLoading ? (
         <ListSkeleton count={4} />
       ) : (
         <ScrollView

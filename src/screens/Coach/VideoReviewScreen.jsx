@@ -197,7 +197,9 @@ const VideoReviewScreen = ({ route, navigation }) => {
               autoCapitalize="words"
               autoCorrect={false}
               editable={!isUploading}
+              maxLength={120}
             />
+            <Text style={styles.charCounter}>{title.length}/120</Text>
           </View>
 
           {/* Upload progress */}

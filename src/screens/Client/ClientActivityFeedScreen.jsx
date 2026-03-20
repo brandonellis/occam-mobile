@@ -7,8 +7,8 @@ import {
   ScrollView,
   TouchableOpacity,
   ActivityIndicator,
-  Modal,
 } from 'react-native';
+import { Portal, Modal as PaperModal, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
@@ -34,8 +34,8 @@ import {
 import { feedReducer, feedInitialState, FEED_ACTIONS } from '../../reducers/activityFeed.reducer';
 import { colors } from '../../theme';
 
-// ── Main Screen ──────────────────────────────────────────
-const ClientActivityFeedScreen = () => {
+// ── Feed content (reusable, no SafeAreaView / header) ────
+export const ActivityFeedContent = () => {
   const { user, company } = useAuth();
   const [state, dispatch] = useReducer(feedReducer, feedInitialState);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -212,12 +212,7 @@ const ClientActivityFeedScreen = () => {
   }, [state.loadingMore, state.loading, state.page, state.lastPage, handleLoadMore]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Activity</Text>
-      </View>
-
+    <>
       {/* ── Unified filter toolbar ── */}
       <View style={styles.filterToolbar}>
         <FilterPill
@@ -278,80 +273,78 @@ const ClientActivityFeedScreen = () => {
       ) : null}
 
       {/* ── Type picker bottom sheet ── */}
-      <Modal visible={typeSheetVisible} transparent animationType="slide" onRequestClose={() => setTypeSheetVisible(false)}>
-        <TouchableOpacity style={styles.dropdownOverlay} activeOpacity={1} onPress={() => setTypeSheetVisible(false)}>
-          <View style={styles.dropdownSheet}>
-            <View style={styles.dropdownHandle} />
-            <Text style={styles.dropdownTitle}>Filter by Type</Text>
-            <ScrollView>
-              {TYPE_FILTER_OPTIONS.map((option) => {
-                const isActive = state.activeFilter === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[styles.dropdownOption, isActive && styles.dropdownOptionActive]}
-                    onPress={() => { dispatch({ type: FEED_ACTIONS.SET_TYPE_FILTER, payload: option.value }); setTypeSheetVisible(false); }}
-                    activeOpacity={0.7}
-                  >
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <MaterialCommunityIcons name={option.icon} size={18} color={isActive ? colors.accent : colors.textSecondary} style={{ marginRight: 12 }} />
-                      <Text style={[styles.dropdownOptionText, isActive && styles.dropdownOptionTextActive]}>
-                        {option.label}
-                      </Text>
-                    </View>
-                    {isActive ? <MaterialCommunityIcons name="check-circle" size={20} color={colors.accent} /> : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
-
-      {/* ── Date picker bottom sheet ── */}
-      <Modal visible={dateSheetVisible} transparent animationType="slide" onRequestClose={() => setDateSheetVisible(false)}>
-        <TouchableOpacity style={styles.dropdownOverlay} activeOpacity={1} onPress={() => setDateSheetVisible(false)}>
-          <View style={styles.dropdownSheet}>
-            <View style={styles.dropdownHandle} />
-            <Text style={styles.dropdownTitle}>Filter by Date</Text>
-            <ScrollView>
-              {DATE_FILTER_OPTIONS.map((option) => {
-                const isActive = state.dateFilter === option.value;
-                return (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={[styles.dropdownOption, isActive && styles.dropdownOptionActive]}
-                    onPress={() => handleDateFilterChange(option.value)}
-                    activeOpacity={0.7}
-                  >
+      <Portal>
+        <PaperModal visible={typeSheetVisible} onDismiss={() => setTypeSheetVisible(false)} contentContainerStyle={styles.dropdownSheet}>
+          <View style={styles.dropdownHandle} />
+          <Text style={styles.dropdownTitle}>Filter by Type</Text>
+          <ScrollView>
+            {TYPE_FILTER_OPTIONS.map((option) => {
+              const isActive = state.activeFilter === option.value;
+              return (
+                <TouchableRipple
+                  key={option.value}
+                  style={[styles.dropdownOption, isActive && styles.dropdownOptionActive]}
+                  onPress={() => { dispatch({ type: FEED_ACTIONS.SET_TYPE_FILTER, payload: option.value }); setTypeSheetVisible(false); }}
+                  borderless
+                >
+                  <View style={styles.dropdownOptionRow}>
+                    <MaterialCommunityIcons name={option.icon} size={18} color={isActive ? colors.accent : colors.textSecondary} style={styles.dropdownOptionIcon} />
                     <Text style={[styles.dropdownOptionText, isActive && styles.dropdownOptionTextActive]}>
                       {option.label}
                     </Text>
-                    {isActive ? <MaterialCommunityIcons name="check-circle" size={20} color={colors.accent} /> : null}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </TouchableOpacity>
-      </Modal>
+                    {isActive ? <MaterialCommunityIcons name="check-circle" size={20} color={colors.accent} style={styles.dropdownCheckIcon} /> : null}
+                  </View>
+                </TouchableRipple>
+              );
+            })}
+          </ScrollView>
+        </PaperModal>
+      </Portal>
+
+      {/* ── Date picker bottom sheet ── */}
+      <Portal>
+        <PaperModal visible={dateSheetVisible} onDismiss={() => setDateSheetVisible(false)} contentContainerStyle={styles.dropdownSheet}>
+          <View style={styles.dropdownHandle} />
+          <Text style={styles.dropdownTitle}>Filter by Date</Text>
+          <ScrollView>
+            {DATE_FILTER_OPTIONS.map((option) => {
+              const isActive = state.dateFilter === option.value;
+              return (
+                <TouchableRipple
+                  key={option.value}
+                  style={[styles.dropdownOption, isActive && styles.dropdownOptionActive]}
+                  onPress={() => handleDateFilterChange(option.value)}
+                  borderless
+                >
+                  <View style={styles.dropdownOptionRow}>
+                    <Text style={[styles.dropdownOptionText, isActive && styles.dropdownOptionTextActive]}>
+                      {option.label}
+                    </Text>
+                    {isActive ? <MaterialCommunityIcons name="check-circle" size={20} color={colors.accent} style={styles.dropdownCheckIcon} /> : null}
+                  </View>
+                </TouchableRipple>
+              );
+            })}
+          </ScrollView>
+        </PaperModal>
+      </Portal>
 
       {/* ── Tag picker bottom sheet ── */}
-      <Modal visible={tagSheetVisible} transparent animationType="slide" onRequestClose={() => setTagSheetVisible(false)}>
-        <TouchableOpacity style={styles.dropdownOverlay} activeOpacity={1} onPress={() => setTagSheetVisible(false)}>
-          <View style={styles.dropdownSheet}>
-            <View style={styles.dropdownHandle} />
-            <Text style={styles.dropdownTitle}>Filter by Tags</Text>
-            <ScrollView>
-              {allTags.map((tag) => {
-                const isActive = state.selectedTagIds.includes(tag.id);
-                return (
-                  <TouchableOpacity
-                    key={tag.id}
-                    style={[styles.dropdownOption, isActive && styles.dropdownOptionActive]}
-                    onPress={() => handleTagToggle(tag.id)}
-                    activeOpacity={0.7}
-                  >
+      <Portal>
+        <PaperModal visible={tagSheetVisible} onDismiss={() => setTagSheetVisible(false)} contentContainerStyle={styles.dropdownSheet}>
+          <View style={styles.dropdownHandle} />
+          <Text style={styles.dropdownTitle}>Filter by Tags</Text>
+          <ScrollView>
+            {allTags.map((tag) => {
+              const isActive = state.selectedTagIds.includes(tag.id);
+              return (
+                <TouchableRipple
+                  key={tag.id}
+                  style={[styles.dropdownOption, isActive && styles.dropdownOptionActive]}
+                  onPress={() => handleTagToggle(tag.id)}
+                  borderless
+                >
+                  <View style={styles.dropdownOptionRow}>
                     <Text style={[styles.dropdownOptionText, isActive && styles.dropdownOptionTextActive]}>
                       {tag.name}
                     </Text>
@@ -360,22 +353,22 @@ const ClientActivityFeedScreen = () => {
                       size={20}
                       color={isActive ? colors.accent : colors.gray300}
                     />
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            {state.selectedTagIds.length > 0 ? (
-              <TouchableOpacity
-                style={styles.sheetDoneButton}
-                onPress={() => setTagSheetVisible(false)}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.sheetDoneButtonText}>Done</Text>
-              </TouchableOpacity>
-            ) : null}
-          </View>
-        </TouchableOpacity>
-      </Modal>
+                  </View>
+                </TouchableRipple>
+              );
+            })}
+          </ScrollView>
+          {state.selectedTagIds.length > 0 ? (
+            <TouchableOpacity
+              style={styles.sheetDoneButton}
+              onPress={() => setTagSheetVisible(false)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.sheetDoneButtonText}>Done</Text>
+            </TouchableOpacity>
+          ) : null}
+        </PaperModal>
+      </Portal>
 
       {/* Content */}
       {state.loading && !state.refreshing ? (
@@ -435,6 +428,18 @@ const ClientActivityFeedScreen = () => {
         visible={detailVisible}
         onClose={handleCloseDetail}
       />
+    </>
+  );
+};
+
+// ── Full-screen wrapper (standalone use) ─────────────────
+const ClientActivityFeedScreen = () => {
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Activity</Text>
+      </View>
+      <ActivityFeedContent />
     </SafeAreaView>
   );
 };

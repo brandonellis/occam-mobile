@@ -6,6 +6,8 @@ export const SCREENS = {
   ADMIN_TABS: 'AdminTabs',
   ADMIN_DASHBOARD: 'AdminDashboard',
   ADMIN_SCHEDULE: 'AdminSchedule',
+  ADMIN_CLIENTS: 'AdminClients',
+  ADMIN_PROFILE: 'AdminProfile',
 
   // Coach tabs
   COACH_TABS: 'CoachTabs',

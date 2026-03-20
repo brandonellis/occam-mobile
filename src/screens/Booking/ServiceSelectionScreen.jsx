@@ -202,6 +202,7 @@ const ServiceSelectionScreen = ({ route, navigation }) => {
       )}
       {!rebooking && <BookingStepIndicator currentStep={1} totalSteps={3} />}
 
+
       {(state.isLoading || rebooking) ? (
         <ListSkeleton count={5} />
       ) : state.error ? (

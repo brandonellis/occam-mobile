@@ -1,7 +1,8 @@
-import React, { useEffect, useCallback, useState, useMemo } from 'react';
+import React, { useEffect, useCallback, useState, useMemo, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { ActivityIndicator, Button as PaperButton, List } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import useAuth from '../../hooks/useAuth';
 import RoleSwitcher from '../../components/RoleSwitcher';
@@ -26,9 +27,9 @@ const ClientProfileScreen = ({ navigation }) => {
   const [benefitsLoading, setBenefitsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const loadBenefits = useCallback(async (showRefresh = false) => {
-    if (showRefresh) setRefreshing(true);
-    else setBenefitsLoading(true);
+  const loadBenefits = useCallback(async ({ refresh = false, silent = false } = {}) => {
+    if (refresh) setRefreshing(true);
+    else if (!silent) setBenefitsLoading(true);
 
     const [membershipResult, packagesResult] = await Promise.allSettled([
       getMyMembership(),
@@ -56,9 +57,20 @@ const ClientProfileScreen = ({ navigation }) => {
     setRefreshing(false);
   }, []);
 
-  useEffect(() => {
-    loadBenefits();
-  }, [loadBenefits]);
+  // Track initial load — skip silent refetch on first mount since loadBenefits
+  // already shows a loading state. On subsequent focus events (e.g. returning
+  // from package purchase), refetch silently so updated data appears.
+  const hasMounted = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (!hasMounted.current) {
+        hasMounted.current = true;
+        loadBenefits();
+      } else {
+        loadBenefits({ silent: true });
+      }
+    }, [loadBenefits])
+  );
 
   const activePackages = useMemo(
     () => packages.filter((cp) => cp.status === 'active'),
@@ -83,7 +95,7 @@ const ClientProfileScreen = ({ navigation }) => {
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
-            onRefresh={() => loadBenefits(true)}
+            onRefresh={() => loadBenefits({ refresh: true })}
             tintColor={colors.primary}
           />
         }
@@ -116,7 +128,7 @@ const ClientProfileScreen = ({ navigation }) => {
               title="No Active Benefits"
               message="Unlock memberships and packages for the best value on your sessions."
               actionLabel="Browse Plans"
-              onAction={() => navigation.navigate(SCREENS.MEMBERSHIP_PLANS)}
+              onAction={() => navigation.navigate('HomeTab', { screen: SCREENS.MEMBERSHIP_PLANS })}
             />
           ) : (
             <>
@@ -207,7 +219,7 @@ const ClientProfileScreen = ({ navigation }) => {
                 {membership && !isPaused && membershipStatus?.status !== 'expired' && membershipStatus?.status !== 'inactive' && (
                   <TouchableOpacity
                     style={styles.actionButton}
-                    onPress={() => navigation.navigate(SCREENS.MEMBERSHIP_PLANS)}
+                    onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.MEMBERSHIP_PLANS })}
                     activeOpacity={0.8}
                   >
                     <MaterialCommunityIcons name="arrow-up-bold-outline" size={16} color={colors.accent} />
@@ -216,7 +228,7 @@ const ClientProfileScreen = ({ navigation }) => {
                 )}
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => navigation.navigate(SCREENS.PACKAGE_LIST)}
+                  onPress={() => navigation.navigate('HomeTab', { screen: SCREENS.PACKAGE_LIST })}
                   activeOpacity={0.8}
                 >
                   <MaterialCommunityIcons name="package-variant" size={16} color={colors.accent} />

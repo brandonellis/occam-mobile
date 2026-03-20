@@ -36,6 +36,7 @@ const AgentChatMessages = ({
   onDeclineAction,
   onHandoffAction,
   onSlotSelect,
+  onBookingLinkPress,
   handoffActionLabel,
 }) => {
   const scrollRef = useRef(null);
@@ -64,6 +65,7 @@ const AgentChatMessages = ({
             onDeclineAction={onDeclineAction}
             onHandoffAction={onHandoffAction}
             onSlotSelect={onSlotSelect}
+            onBookingLinkPress={onBookingLinkPress}
             handoffActionLabel={handoffActionLabel}
           />
         ))}
@@ -90,6 +92,7 @@ AgentChatMessages.propTypes = {
   onDeclineAction: PropTypes.func,
   onHandoffAction: PropTypes.func,
   onSlotSelect: PropTypes.func,
+  onBookingLinkPress: PropTypes.func,
   handoffActionLabel: PropTypes.string,
   messages: PropTypes.arrayOf(PropTypes.shape({
     id: PropTypes.string.isRequired,
@@ -106,6 +109,7 @@ AgentChatMessages.defaultProps = {
   onDeclineAction: undefined,
   onHandoffAction: undefined,
   onSlotSelect: undefined,
+  onBookingLinkPress: undefined,
   handoffActionLabel: 'Open in Marshal',
 };
 

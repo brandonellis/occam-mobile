@@ -6,11 +6,17 @@ import { colors } from '../theme/colors';
 import { useBadges } from '../context/BadgeContext';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius, shadows } from '../theme/spacing';
+import { SCREENS } from '../constants/navigation.constants';
 
-const PILL_PADDING_H = 6;
-const PILL_PADDING_V = 4;
+const PILL_PADDING_H = 2;
+const PILL_PADDING_V = 2;
 const BAR_MARGIN_H = spacing.lg;
 const BAR_MARGIN_BOTTOM = 8;
+
+// Badge dimensions and offsets — badge is 16px anchored to top-right of 24px icon
+const BADGE_SIZE = 16;
+const BADGE_TOP = -4;    // overlaps 4px above the icon
+const BADGE_RIGHT = -10; // extends 10px past the icon's trailing edge
 
 // Exported so tab navigators can add matching bottom padding to their sceneStyle
 export const TAB_BAR_HEIGHT = 80;
@@ -123,15 +129,22 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
                     </View>
                   )}
                 </View>
-                <Text
-                  style={[
-                    styles.label,
-                    isFocused ? styles.labelFocused : styles.labelUnfocused,
-                  ]}
-                  numberOfLines={1}
-                >
-                  {label}
-                </Text>
+                <View style={styles.labelRow}>
+                  <Text
+                    style={[
+                      styles.label,
+                      isFocused ? styles.labelFocused : styles.labelUnfocused,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {label}
+                  </Text>
+                  {route.name === SCREENS.CADDIE && (
+                    <View style={styles.betaTag}>
+                      <Text style={styles.betaTagText}>BETA</Text>
+                    </View>
+                  )}
+                </View>
               </TouchableOpacity>
             );
           })}
@@ -196,11 +209,11 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: -4,
-    right: -10,
-    minWidth: 16,
-    height: 16,
-    borderRadius: 8,
+    top: BADGE_TOP,
+    right: BADGE_RIGHT,
+    minWidth: BADGE_SIZE,
+    height: BADGE_SIZE,
+    borderRadius: BADGE_SIZE / 2,
     backgroundColor: colors.error,
     alignItems: 'center',
     justifyContent: 'center',
@@ -227,6 +240,23 @@ const styles = StyleSheet.create({
   labelUnfocused: {
     color: colors.textInverseMuted,
     fontWeight: '500',
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  betaTag: {
+    backgroundColor: colors.accent,
+    borderRadius: 3,
+    paddingHorizontal: 3,
+    paddingVertical: 0.5,
+  },
+  betaTagText: {
+    color: colors.textInverse,
+    fontSize: 6,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });
 

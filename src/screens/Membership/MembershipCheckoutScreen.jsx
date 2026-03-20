@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { SCREENS } from '../../constants/navigation.constants';
 import { CardField, useStripe, useConfirmPayment } from '@stripe/stripe-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
 import { membershipStyles as styles } from '../../styles/membership.styles';
@@ -159,7 +160,9 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
 
           <TouchableOpacity
             style={[styles.purchaseButton, successStyles.doneButton]}
-            onPress={() => navigation.popToTop()}
+            onPress={() => {
+              navigation.getParent()?.navigate(SCREENS.CLIENT_PROFILE);
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.purchaseButtonText}>Done</Text>
@@ -281,7 +284,7 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
           </View>
 
           <View style={styles.checkoutSummaryRow}>
-            <Text style={styles.checkoutSummaryLabel}>Taxes and Fees</Text>
+            <Text style={styles.checkoutSummaryLabel}>Processing Fee ({Math.round(platformFeeRate * 100)}%)</Text>
             <Text style={styles.checkoutSummaryValue}>
               {formatCurrency(platformFee)}
             </Text>

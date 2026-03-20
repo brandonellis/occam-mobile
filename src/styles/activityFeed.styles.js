@@ -511,18 +511,17 @@ export const activityFeedStyles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // ── Dropdown overlay ───────────────────────────────────
-  dropdownOverlay: {
-    flex: 1,
-    backgroundColor: colors.overlayDark30,
-    justifyContent: 'flex-end',
-  },
+  // ── Dropdown sheet (Paper Modal) ────────────────────────
   dropdownSheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: borderRadius.xl,
     borderTopRightRadius: borderRadius.xl,
     maxHeight: '60%',
     paddingBottom: spacing.xxxl,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
   dropdownHandle: {
     width: 36,
@@ -540,11 +539,19 @@ export const activityFeedStyles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   dropdownOption: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  dropdownOptionRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+  },
+  dropdownOptionIcon: {
+    marginRight: spacing.md,
+  },
+  dropdownCheckIcon: {
+    marginLeft: 'auto',
   },
   dropdownOptionActive: {
     backgroundColor: colors.accentSubtle,

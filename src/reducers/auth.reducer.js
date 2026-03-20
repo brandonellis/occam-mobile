@@ -16,6 +16,7 @@ export const initialAuthState = {
   user: null,
   role: null,
   activeRole: null,
+  previousRole: null,
   company: null,
   error: null,
 };
@@ -73,6 +74,7 @@ export const authReducer = (state, action) => {
     case AUTH_ACTIONS.SWITCH_ROLE:
       return {
         ...state,
+        previousRole: state.activeRole,
         activeRole: action.payload,
       };
 

@@ -57,7 +57,7 @@ const DurationSelectionScreen = ({ route, navigation }) => {
         onClose={() => confirmCancelBooking(navigation)}
       />
       {(() => {
-        const steps = getBookingSteps({ service, isCoach });
+        const steps = getBookingSteps({ service, hasMultipleLocations: bookingData.hasMultipleLocations, isCoach });
         return <BookingStepIndicator currentStep={getBookingStepIndex(SCREENS.DURATION_SELECTION, steps)} totalSteps={steps.length} />;
       })()}
 
