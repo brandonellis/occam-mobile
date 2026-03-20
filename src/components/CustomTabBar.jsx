@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     top: PILL_PADDING_V,
     bottom: PILL_PADDING_V,
     borderRadius: borderRadius.full,
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    backgroundColor: colors.whiteOverlay12,
   },
   tabRow: {
     flexDirection: 'row',

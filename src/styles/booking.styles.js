@@ -517,7 +517,7 @@ export const bookingStyles = StyleSheet.create({
     fontSize: 11,
   },
   allotmentNoMembership: {
-    backgroundColor: 'rgba(250, 173, 20, 0.08)',
+    backgroundColor: colors.warningSubtle,
     borderRadius: borderRadius.md,
     padding: spacing.md,
   },
@@ -527,7 +527,7 @@ export const bookingStyles = StyleSheet.create({
     fontSize: 13,
   },
   allotmentWarningBanner: {
-    backgroundColor: 'rgba(250, 173, 20, 0.08)',
+    backgroundColor: colors.warningSubtle,
     borderRadius: borderRadius.md,
     padding: spacing.md,
     marginTop: spacing.sm,
@@ -615,7 +615,7 @@ export const bookingStyles = StyleSheet.create({
     marginLeft: 8,
   },
   paymentDisabledBanner: {
-    backgroundColor: 'rgba(24, 144, 255, 0.08)',
+    backgroundColor: colors.infoSubtle,
     borderRadius: borderRadius.md,
     padding: spacing.md,
   },
@@ -645,12 +645,12 @@ export const bookingStyles = StyleSheet.create({
   classSlotWaitlist: {
     borderColor: colors.info,
     borderWidth: 1,
-    backgroundColor: 'rgba(24, 144, 255, 0.06)',
+    backgroundColor: colors.infoSubtle,
   },
   classSlotAttending: {
     borderColor: colors.success,
     borderWidth: 1,
-    backgroundColor: 'rgba(82, 196, 26, 0.06)',
+    backgroundColor: colors.successSubtle,
     opacity: 0.7,
   },
   classSlotSubtext: {
@@ -746,7 +746,7 @@ export const bookingStyles = StyleSheet.create({
   },
   savedCardItemSelected: {
     borderColor: colors.accent,
-    backgroundColor: 'rgba(76, 172, 213, 0.08)',
+    backgroundColor: colors.accentSubtle,
   },
   savedCardInfo: {
     flexDirection: 'row',

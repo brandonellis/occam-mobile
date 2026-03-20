@@ -291,7 +291,7 @@ export const membershipStyles = StyleSheet.create({
     fontSize: 12,
   },
   checkoutPaymentsDisabledBanner: {
-    backgroundColor: 'rgba(24, 144, 255, 0.08)',
+    backgroundColor: colors.infoSubtle,
     borderRadius: borderRadius.md,
     padding: spacing.md,
   },
