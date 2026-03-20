@@ -13,8 +13,7 @@ import { SCREENS } from '../constants/navigation.constants';
  *     ├─ ClientTabs  (Tab navigator)
  *     │    ├─ HomeTab (ClientHomeStack)
  *     │    ├─ ClientBookings
- *     │    ├─ ClientActivity
- *     │    ├─ ProgressTab (ClientProgressStack)
+ *     │    ├─ ActivityTab (ClientProgressStack — feed + progress sub-tabs)
  *     │    ├─ Caddie
  *     │    └─ ClientProfile
  *     ├─ CoachTabs  (Tab navigator)
@@ -51,11 +50,10 @@ const linking = {
             },
           },
           [SCREENS.CLIENT_BOOKINGS]: 'bookings',
-          [SCREENS.CLIENT_ACTIVITY]: 'activity',
-          ProgressTab: {
+          ActivityTab: {
             screens: {
-              [SCREENS.CLIENT_PROGRESS]: 'progress',
-              [SCREENS.PROGRESS_REPORT_DETAIL]: 'progress/:reportId',
+              [SCREENS.CLIENT_PROGRESS]: 'activity',
+              [SCREENS.PROGRESS_REPORT_DETAIL]: 'activity/report/:reportId',
             },
           },
           [SCREENS.CADDIE]: 'caddie',

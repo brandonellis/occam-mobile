@@ -164,7 +164,7 @@ const ClientHomeScreen = ({ navigation }) => {
             <TouchableOpacity
               style={styles.quickActionButton}
               activeOpacity={0.7}
-              onPress={() => navigation.navigate('ProgressTab', { screen: SCREENS.CLIENT_PROGRESS, params: { initialTab: 'resources' } })}
+              onPress={() => navigation.navigate('ActivityTab', { screen: SCREENS.CLIENT_PROGRESS, params: { initialTab: 'resources' } })}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: colors.lavenderMistLight }]}>
                 <MaterialCommunityIcons name="play-circle-outline" size={18} color={colors.twilightPurple} />

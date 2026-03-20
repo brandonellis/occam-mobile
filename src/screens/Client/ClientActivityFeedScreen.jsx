@@ -34,8 +34,8 @@ import {
 import { feedReducer, feedInitialState, FEED_ACTIONS } from '../../reducers/activityFeed.reducer';
 import { colors } from '../../theme';
 
-// ── Main Screen ──────────────────────────────────────────
-const ClientActivityFeedScreen = () => {
+// ── Feed content (reusable, no SafeAreaView / header) ────
+export const ActivityFeedContent = () => {
   const { user, company } = useAuth();
   const [state, dispatch] = useReducer(feedReducer, feedInitialState);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -212,12 +212,7 @@ const ClientActivityFeedScreen = () => {
   }, [state.loadingMore, state.loading, state.page, state.lastPage, handleLoadMore]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Activity</Text>
-      </View>
-
+    <>
       {/* ── Unified filter toolbar ── */}
       <View style={styles.filterToolbar}>
         <FilterPill
@@ -433,6 +428,18 @@ const ClientActivityFeedScreen = () => {
         visible={detailVisible}
         onClose={handleCloseDetail}
       />
+    </>
+  );
+};
+
+// ── Full-screen wrapper (standalone use) ─────────────────
+const ClientActivityFeedScreen = () => {
+  return (
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Activity</Text>
+      </View>
+      <ActivityFeedContent />
     </SafeAreaView>
   );
 };
