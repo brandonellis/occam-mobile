@@ -96,6 +96,48 @@ const CaddieScreen = () => {
     sendMessage(prompt, { slotContext });
   }, [sendMessage]);
 
+  const handleBookingLinkPress = useCallback((bookingLink) => {
+    if (!bookingLink) return;
+
+    // Parse IDs from the booking_link (first-class fields or URL params)
+    const serviceId = bookingLink.service_id || null;
+    const locationId = bookingLink.location_id || null;
+    const coachId = bookingLink.coach_id || null;
+
+    if (!serviceId || !locationId) {
+      logger.warn('CaddieScreen: booking link missing required IDs');
+      return;
+    }
+
+    const priceCents = bookingLink.price_cents || null;
+
+    const bookingData = {
+      service: {
+        id: serviceId,
+        name: bookingLink.service || 'Service',
+        duration_minutes: bookingLink.duration_minutes || 60,
+        price: priceCents != null ? priceCents / 100 : null,
+        price_cents: priceCents,
+      },
+      location: {
+        id: locationId,
+        name: bookingLink.location || 'Location',
+      },
+      coach: coachId ? {
+        id: coachId,
+        first_name: bookingLink.coach || 'Coach',
+        last_name: '',
+      } : null,
+      timeSlot: {
+        start_time: bookingLink.start_time,
+        end_time: bookingLink.end_time || null,
+      },
+      date: bookingLink.date,
+    };
+
+    navigate(SCREENS.BOOKING_CONFIRMATION, { bookingData });
+  }, []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -120,6 +162,7 @@ const CaddieScreen = () => {
             messages={messages}
             onHandoffAction={canLaunchMarshal ? handleHandoffAction : undefined}
             onSlotSelect={handleSlotSelect}
+            onBookingLinkPress={handleBookingLinkPress}
             handoffActionLabel="Open in Marshal"
           />
           <AgentChatInput
