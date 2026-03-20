@@ -52,6 +52,7 @@ const LoginScreen = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
   const searchTimer = useRef(null);
+  const abortRef = useRef(null);
 
   // Load last selected organization on mount
   useEffect(() => {
@@ -69,9 +70,10 @@ const LoginScreen = () => {
     loadLastOrg();
   }, []);
 
-  // Debounced search
+  // Debounced search with request cancellation
   useEffect(() => {
     if (searchTimer.current) clearTimeout(searchTimer.current);
+    if (abortRef.current) abortRef.current.abort();
 
     if (orgQuery.length < 2 || selectedOrg) {
       setOrgResults([]);
@@ -82,20 +84,30 @@ const LoginScreen = () => {
 
     setIsSearching(true);
     searchTimer.current = setTimeout(async () => {
+      const controller = new AbortController();
+      abortRef.current = controller;
       try {
-        const results = await searchTenants(orgQuery);
-        setOrgResults(results);
-        setShowResults(results.length > 0);
+        const results = await searchTenants(orgQuery, controller.signal);
+        if (!controller.signal.aborted) {
+          setOrgResults(results);
+          setShowResults(results.length > 0);
+        }
       } catch {
-        setOrgResults([]);
-        setShowResults(false);
+        if (!controller.signal.aborted) {
+          setOrgResults([]);
+          setShowResults(false);
+        }
       } finally {
-        setIsSearching(false);
+        if (!controller.signal.aborted) {
+          setIsSearching(false);
+        }
       }
     }, 400);
 
     return () => {
       if (searchTimer.current) clearTimeout(searchTimer.current);
+      if (abortRef.current) abortRef.current.abort();
+      setIsSearching(false);
     };
   }, [orgQuery, selectedOrg]);
 

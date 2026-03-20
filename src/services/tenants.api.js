@@ -6,9 +6,10 @@ import { centralClient } from './apiClient';
  * @param {string} query - Search term (min 2 chars)
  * @returns {Promise<Array<{id: string, name: string, domain: string}>>}
  */
-export const searchTenants = async (query) => {
+export const searchTenants = async (query, signal) => {
   const response = await centralClient.get('/tenants/lookup', {
     params: { q: query },
+    signal,
   });
   return response.data;
 };
