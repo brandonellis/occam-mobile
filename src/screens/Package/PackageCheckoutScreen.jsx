@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { SCREENS } from '../../constants/navigation.constants';
 import { CardField, useStripe, useConfirmPayment } from '@stripe/stripe-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
 import { packageStyles as styles } from '../../styles/packages.styles';
@@ -179,7 +180,7 @@ const PackageCheckoutScreen = ({ route, navigation }) => {
           <TouchableOpacity
             style={[styles.purchaseButton, successStyles.doneButton]}
             onPress={() => {
-              navigation.getParent()?.navigate('ClientProfile');
+              navigation.getParent()?.navigate(SCREENS.CLIENT_PROFILE);
             }}
             activeOpacity={0.8}
           >

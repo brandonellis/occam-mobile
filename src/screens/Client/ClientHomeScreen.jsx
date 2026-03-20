@@ -57,8 +57,8 @@ const ClientHomeScreen = ({ navigation }) => {
     try {
       const result = await getMyMembership();
       setHasMembership(isMembershipActive(result?.data || result));
-    } catch {
-      // Non-critical — default to showing the button
+    } catch (err) {
+      logger.warn('Failed to check membership:', err?.message || err);
     }
   }, []);
 

@@ -10,6 +10,7 @@ import useAuth from '../../hooks/useAuth';
 import { ADMIN_SHELL_ROLES, COACH_ROLES, ROLES } from '../../constants/auth.constants';
 import { SCREENS } from '../../constants/navigation.constants';
 import { navigate } from '../../helpers/navigation.helper';
+import { buildBookingDataFromLink } from '../../helpers/booking.helper';
 import { buildMarshalIntentFromHandoff } from '../../helpers/marshalIntent.helper';
 import { caddieStyles as styles } from '../../styles/caddie.styles';
 import { colors } from '../../theme';
@@ -97,44 +98,11 @@ const CaddieScreen = () => {
   }, [sendMessage]);
 
   const handleBookingLinkPress = useCallback((bookingLink) => {
-    if (!bookingLink) return;
-
-    // Parse IDs from the booking_link (first-class fields or URL params)
-    const serviceId = bookingLink.service_id || null;
-    const locationId = bookingLink.location_id || null;
-    const coachId = bookingLink.coach_id || null;
-
-    if (!serviceId || !locationId) {
+    const bookingData = buildBookingDataFromLink(bookingLink);
+    if (!bookingData) {
       logger.warn('CaddieScreen: booking link missing required IDs');
       return;
     }
-
-    const priceCents = bookingLink.price_cents || null;
-
-    const bookingData = {
-      service: {
-        id: serviceId,
-        name: bookingLink.service || 'Service',
-        duration_minutes: bookingLink.duration_minutes || 60,
-        price: priceCents != null ? priceCents / 100 : null,
-        price_cents: priceCents,
-      },
-      location: {
-        id: locationId,
-        name: bookingLink.location || 'Location',
-      },
-      coach: coachId ? {
-        id: coachId,
-        first_name: bookingLink.coach || 'Coach',
-        last_name: '',
-      } : null,
-      timeSlot: {
-        start_time: bookingLink.start_time,
-        end_time: bookingLink.end_time || null,
-      },
-      date: bookingLink.date,
-    };
-
     navigate(SCREENS.BOOKING_CONFIRMATION, { bookingData });
   }, []);
 
@@ -149,9 +117,8 @@ const CaddieScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={styles.keyboardAvoid}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <ScrollView
           ref={scrollRef}

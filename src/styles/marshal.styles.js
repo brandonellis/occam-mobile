@@ -8,6 +8,9 @@ export const marshalStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  keyboardAvoid: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
