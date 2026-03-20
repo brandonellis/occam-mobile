@@ -3,6 +3,8 @@ import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 
+const SWITCH_COL_WIDTH = 64;
+
 export const notificationPreferencesStyles = StyleSheet.create({
   container: {
     flex: 1,
@@ -21,7 +23,7 @@ export const notificationPreferencesStyles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
@@ -33,9 +35,10 @@ export const notificationPreferencesStyles = StyleSheet.create({
     color: colors.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    paddingLeft: spacing.sm,
   },
   headerChannelLabel: {
-    width: 56,
+    width: SWITCH_COL_WIDTH,
     textAlign: 'center',
     ...typography.labelSmall,
     color: colors.textSecondary,
@@ -45,19 +48,23 @@ export const notificationPreferencesStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 14,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.borderLight,
     backgroundColor: colors.surface,
+    minHeight: 52,
   },
   eventLabel: {
     flex: 1,
-    ...typography.body,
+    ...typography.bodySmall,
     color: colors.textPrimary,
+    paddingLeft: spacing.sm,
+    paddingRight: spacing.xs,
   },
   switchCell: {
-    width: 56,
+    width: SWITCH_COL_WIDTH,
     alignItems: 'center',
+    justifyContent: 'center',
   },
 });
