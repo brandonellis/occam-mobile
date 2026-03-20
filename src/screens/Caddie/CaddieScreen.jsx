@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Surface, Text } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AgentChatInput from '../../components/AgentChat/AgentChatInput';
 import AgentChatMessages from '../../components/AgentChat/AgentChatMessages';
 import useCaddie from '../../hooks/useCaddie';
@@ -11,6 +12,7 @@ import { SCREENS } from '../../constants/navigation.constants';
 import { navigate } from '../../helpers/navigation.helper';
 import { buildMarshalIntentFromHandoff } from '../../helpers/marshalIntent.helper';
 import { caddieStyles as styles } from '../../styles/caddie.styles';
+import { colors } from '../../theme';
 import { logger } from '../../helpers/logger.helper';
 
 const CaddieScreen = () => {
@@ -98,6 +100,7 @@ const CaddieScreen = () => {
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <Surface style={styles.heroCard} elevation={1}>
+          <MaterialCommunityIcons name="golf" size={32} color={colors.aquaLight} style={styles.heroIcon} />
           <Text style={styles.heroEyebrow}>Client booking concierge</Text>
           <Text style={styles.heroTitle}>Caddie</Text>
           <Text style={styles.heroBody}>

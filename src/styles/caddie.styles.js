@@ -20,6 +20,9 @@ export const caddieStyles = StyleSheet.create({
     marginBottom: spacing.lg,
     ...shadows.md,
   },
+  heroIcon: {
+    marginBottom: spacing.sm,
+  },
   heroEyebrow: {
     ...typography.labelSmall,
     color: colors.aquaLight,
