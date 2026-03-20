@@ -8,8 +8,8 @@ import { typography } from '../theme/typography';
 import { spacing, borderRadius, shadows } from '../theme/spacing';
 import { SCREENS } from '../constants/navigation.constants';
 
-const PILL_PADDING_H = 6;
-const PILL_PADDING_V = 4;
+const PILL_PADDING_H = 2;
+const PILL_PADDING_V = 2;
 const BAR_MARGIN_H = spacing.lg;
 const BAR_MARGIN_BOTTOM = 8;
 
