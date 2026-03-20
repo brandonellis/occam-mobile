@@ -75,8 +75,8 @@ const CaddieScreen = () => {
 
       openMarshalWithIntent(intent);
     } catch (handoffActionError) {
-      logger.warn(‘CaddieScreen: Marshal handoff failed’, handoffActionError?.message || handoffActionError);
-      setHandoffError(‘We couldn’t open Marshal right now. Please try again.’);
+      logger.warn("CaddieScreen: Marshal handoff failed", handoffActionError?.message || handoffActionError);
+      setHandoffError("We couldn't open Marshal right now. Please try again.");
     }
   }, [activeRole, canLaunchMarshal, marshalTargetRole, openMarshalWithIntent, switchRole]);
 
