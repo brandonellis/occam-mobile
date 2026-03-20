@@ -60,7 +60,7 @@ const ClientHomeStack = () => {
       <Stack.Screen
         name={SCREENS.BOOKING_CONFIRMATION}
         component={BookingConfirmationScreen}
-        options={{ animation: 'slide_from_right' }}
+        options={{ animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name={SCREENS.MEMBERSHIP_PLANS}
@@ -70,7 +70,7 @@ const ClientHomeStack = () => {
       <Stack.Screen
         name={SCREENS.MEMBERSHIP_CHECKOUT}
         component={MembershipCheckoutScreen}
-        options={{ animation: 'slide_from_right' }}
+        options={{ animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name={SCREENS.PACKAGE_LIST}
@@ -80,7 +80,7 @@ const ClientHomeStack = () => {
       <Stack.Screen
         name={SCREENS.PACKAGE_CHECKOUT}
         component={PackageCheckoutScreen}
-        options={{ animation: 'slide_from_right' }}
+        options={{ animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name={SCREENS.PROGRESS_REPORT_DETAIL}
@@ -90,7 +90,7 @@ const ClientHomeStack = () => {
       <Stack.Screen
         name={SCREENS.NOTIFICATIONS}
         component={NotificationsScreen}
-        options={{ animation: 'slide_from_right' }}
+        options={{ animation: 'slide_from_bottom' }}
       />
       <Stack.Screen
         name={SCREENS.VIDEO_PLAYER}

@@ -53,7 +53,7 @@ const AdminScheduleStack = () => {
       <Stack.Screen
         name={SCREENS.BOOKING_CONFIRMATION}
         component={BookingConfirmationScreen}
-        options={{ animation: 'slide_from_right' }}
+        options={{ animation: 'slide_from_bottom' }}
       />
     </Stack.Navigator>
   );
