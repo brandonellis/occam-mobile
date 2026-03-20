@@ -37,6 +37,7 @@ const NotificationPreferencesScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [saved, setSaved] = useState(false);
 
   const fetchPreferences = useCallback(async () => {
     setLoading(true);
@@ -64,6 +65,7 @@ const NotificationPreferencesScreen = ({ navigation }) => {
     setSaving(true);
     try {
       await updateNotificationPreferences(updated);
+      setSaved(true);
     } catch (err) {
       logger.warn('Failed to save notification preference:', err?.message);
       setError('Failed to save preference');
@@ -118,7 +120,14 @@ const NotificationPreferencesScreen = ({ navigation }) => {
       )}
 
       <Snackbar
-        visible={!!error}
+        visible={saved}
+        onDismiss={() => setSaved(false)}
+        duration={2000}
+      >
+        Preferences saved
+      </Snackbar>
+      <Snackbar
+        visible={!!error && !saved}
         onDismiss={() => setError(null)}
         duration={3000}
         action={{ label: 'Retry', onPress: fetchPreferences }}
