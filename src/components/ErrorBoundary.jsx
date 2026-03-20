@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Platform } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { reportFrontendError } from '../services/errorReporting.api';
-import { colors } from '../theme';
+import { colors, spacing } from '../theme';
 import logger from '../helpers/logger.helper';
 
 class ErrorBoundary extends React.Component {
@@ -42,25 +42,25 @@ class ErrorBoundary extends React.Component {
           flex: 1,
           justifyContent: 'center',
           alignItems: 'center',
-          padding: 32,
+          padding: spacing.xxl,
           backgroundColor: colors.background,
         }}>
           <Text
             variant="headlineMedium"
-            style={{ color: colors.textPrimary, marginBottom: 12, textAlign: 'center' }}
+            style={{ color: colors.textPrimary, marginBottom: spacing.md, textAlign: 'center' }}
           >
             Something went wrong
           </Text>
           <Text
             variant="bodyMedium"
-            style={{ color: colors.textSecondary, marginBottom: 24, textAlign: 'center' }}
+            style={{ color: colors.textSecondary, marginBottom: spacing.xl, textAlign: 'center' }}
           >
             An unexpected error occurred. The error has been reported to our team.
           </Text>
           {__DEV__ && this.state.error && (
             <Text
               variant="bodySmall"
-              style={{ color: colors.error, marginBottom: 24, textAlign: 'center' }}
+              style={{ color: colors.error, marginBottom: spacing.xl, textAlign: 'center' }}
             >
               {this.state.error.toString()}
             </Text>
