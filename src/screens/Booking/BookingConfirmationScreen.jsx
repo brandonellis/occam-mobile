@@ -8,7 +8,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { formatDuration } from '../../constants/booking.constants';
-import { createBooking, updateBooking, cancelBooking, getBooking } from '../../services/bookings.api';
+import { createBooking, updateBooking, cancelBooking, getBooking, getResources } from '../../services/bookings.api';
 import { createServicePayment, handlePaymentSuccess, getClientPaymentMethods } from '../../services/billing.api';
 import { getCurrentClientMembership } from '../../services/accounts.api';
 import { getMyBookingBenefits } from '../../services/packages.api';
@@ -28,7 +28,7 @@ import PromoCodeInput from '../../components/PromoCodeInput';
 
 const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const { bookingData = {} } = route.params || {};
-  const { service, coach, location, client, date, timeSlot, selectedResource } = bookingData;
+  const { service, coach, location, client, date, timeSlot, selectedResource: initialResource } = bookingData;
   const { user, activeRole, company } = useAuth();
   const { confirmPayment } = useConfirmPayment();
   const { platformFeeRate, feeDescription, paymentsEnabled, connectAccount, loading: ecommerceLoading } = ecommerceConfig;
@@ -54,6 +54,26 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const [savedMethodsLoading, setSavedMethodsLoading] = useState(false);
   const [selectedSavedMethodId, setSelectedSavedMethodId] = useState(null);
   const [paymentMode, setPaymentMode] = useState('card'); // 'card' | 'saved'
+
+  // Resource auto-resolution for Caddie flow (service requires resource but none was provided)
+  const [selectedResource, setSelectedResource] = useState(initialResource || null);
+  useEffect(() => {
+    if (selectedResource?.id || !service?.requires_resource || !location?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await getResources({ location_id: location.id, is_active: true });
+        if (cancelled) return;
+        const resources = data?.data || data || [];
+        if (resources.length > 0) {
+          setSelectedResource({ id: resources[0].id, name: resources[0].name });
+        }
+      } catch (err) {
+        logger.warn('Failed to auto-resolve resource for booking:', err.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [service?.requires_resource, location?.id, selectedResource?.id]);
 
   // Promo code state
   const [appliedPromo, setAppliedPromo] = useState(null);
@@ -340,7 +360,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     }
 
     return payload;
-  }, [clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes]);
+  }, [clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource]);
 
   const buildUpdatePayload = useCallback(() => {
     const payload = {
