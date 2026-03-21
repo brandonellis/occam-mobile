@@ -6,6 +6,7 @@ export const AGENT_CHAT_ACTIONS = {
   SET_INPUT: 'SET_INPUT',
   SET_LOADING: 'SET_LOADING',
   SET_SUGGESTIONS: 'SET_SUGGESTIONS',
+  UPDATE_MESSAGE: 'UPDATE_MESSAGE',
 };
 
 export const createInitialAgentChatState = ({ messages = [], suggestions = [] } = {}) => ({
@@ -55,6 +56,13 @@ export const agentChatReducer = (state, action) => {
       return {
         ...state,
         suggestions: action.payload,
+      };
+    case AGENT_CHAT_ACTIONS.UPDATE_MESSAGE:
+      return {
+        ...state,
+        messages: state.messages.map((m) =>
+          m.id === action.payload.id ? { ...m, ...action.payload.updates } : m
+        ),
       };
     default:
       return state;

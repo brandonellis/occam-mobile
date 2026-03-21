@@ -1,7 +1,7 @@
 const ENV = {
   development: {
-    centralUrl: 'http://10.0.2.115/api/central',
-    baseDomain: '10.0.2.115',
+    centralUrl: 'http://10.0.0.13/api/central',
+    baseDomain: '10.0.0.13',
     protocol: 'http',
     useHeaderTenancy: true,
     stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',

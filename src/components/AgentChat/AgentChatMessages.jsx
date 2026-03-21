@@ -41,12 +41,13 @@ const AgentChatMessages = ({
 }) => {
   const scrollRef = useRef(null);
 
+  const lastMessageText = messages[messages.length - 1]?.text;
   useEffect(() => {
     const timer = setTimeout(() => {
       scrollRef.current?.scrollToEnd?.({ animated: true });
     }, 100);
     return () => clearTimeout(timer);
-  }, [messages.length, isLoading]);
+  }, [messages.length, isLoading, lastMessageText]);
 
   return (
     <View style={styles.messagesPanel}>
@@ -69,7 +70,7 @@ const AgentChatMessages = ({
             handoffActionLabel={handoffActionLabel}
           />
         ))}
-        {isLoading ? (
+        {isLoading && !messages.some((m) => m.streaming && m.text) ? (
           <View style={styles.loadingWrap}>
             <View style={styles.loadingDots}>
               <TypingDot delay={0} />

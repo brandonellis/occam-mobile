@@ -90,6 +90,7 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null } = {}) => {
     initialSuggestions: INITIAL_SUGGESTIONS,
     sendMessageApi: sendMarshalMessage,
     fallbackMessage: 'Marshal couldn\u2019t complete that request right now. Try rephrasing the question or check back in a moment.',
+    supportsStreaming: true,
     transformResponse: transformMarshalResponse,
   });
 

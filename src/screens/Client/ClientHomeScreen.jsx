@@ -31,11 +31,12 @@ const ClientHomeScreen = ({ navigation }) => {
   const futureKey = useMemo(() => getFutureDateKey(company, 30), [company]);
 
   const loadBookings = useCallback(async (showRefresh = false) => {
+    if (!user?.id) return;
     try {
       if (showRefresh) setIsRefreshing(true);
       else setIsLoading(true);
       const { data } = await getBookings({
-        client_id: user?.id,
+        client_id: user.id,
         start_date: todayKey,
         end_date: futureKey,
       });

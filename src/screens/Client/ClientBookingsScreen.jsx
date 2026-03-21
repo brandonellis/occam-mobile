@@ -69,8 +69,8 @@ const ClientBookingsScreen = ({ navigation }) => {
   }, [company?.timezone, dateFilter, activeTab]);
 
   const loadBookings = useCallback(async (showRefresh = false) => {
-    if (!company?.timezone) {
-      // Wait for company data before loading — prevents UTC fallback
+    if (!company?.timezone || !user?.id) {
+      // Wait for company + user data before loading
       return;
     }
     try {
@@ -79,7 +79,7 @@ const ClientBookingsScreen = ({ navigation }) => {
 
       const nowMs = Date.now();
 
-      const params = { client_id: user?.id, per_page: 50, ...dateRange };
+      const params = { client_id: user.id, per_page: 50, ...dateRange };
       const { data } = await getBookings(params);
       const all = data || [];
 
