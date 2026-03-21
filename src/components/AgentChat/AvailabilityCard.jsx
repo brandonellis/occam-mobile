@@ -32,6 +32,7 @@ const formatDayLabel = (dateStr) => {
 const AvailabilityCard = ({ availability, onSlotSelect }) => {
   const [activeDayIndex, setActiveDayIndex] = useState(0);
   const [showAll, setShowAll] = useState(false);
+  const [selectedSlotTime, setSelectedSlotTime] = useState(null);
 
   const days = useMemo(() => {
     if (availability.days?.length) {
@@ -57,6 +58,7 @@ const AvailabilityCard = ({ availability, onSlotSelect }) => {
 
   const handleSlotPress = (slot) => {
     if (!onSlotSelect) return;
+    setSelectedSlotTime(slot.start_time);
 
     const coachNames = (slot.available_coaches || []).join(', ');
     const dateLabel = activeDay.date
@@ -122,12 +124,13 @@ const AvailabilityCard = ({ availability, onSlotSelect }) => {
         {visibleSlots.map((slot, index) => {
           const timeLabel = formatSlotTime(slot);
           const coachName = (slot.available_coaches || [])[0] || null;
+          const isSelected = !!selectedSlotTime && slot.start_time === selectedSlotTime;
           return (
             <Pressable
               key={`${slot.start_time}-${index}`}
               style={({ pressed }) => [
                 styles.availabilitySlot,
-                pressed && styles.availabilitySlotPressed,
+                (pressed || isSelected) && styles.availabilitySlotPressed,
               ]}
               onPress={() => handleSlotPress(slot)}
             >

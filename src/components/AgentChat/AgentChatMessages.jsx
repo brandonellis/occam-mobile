@@ -43,13 +43,20 @@ const AgentChatMessages = ({
 }) => {
   const scrollRef = useRef(null);
 
-  const lastMessageText = messages[messages.length - 1]?.text;
+  const lastMessage = messages[messages.length - 1];
+  const lastMessageText = lastMessage?.text;
+  // Also scroll when the last message gains a booking link or availability
+  // (these are added after the streaming placeholder is already in the array)
+  const scrollKey = lastMessage?.bookingLink?.booking_url
+    || lastMessage?.availability?.service?.id
+    || '';
+
   useEffect(() => {
     const timer = setTimeout(() => {
       scrollRef.current?.scrollToEnd?.({ animated: true });
     }, 100);
     return () => clearTimeout(timer);
-  }, [messages.length, isLoading, lastMessageText]);
+  }, [messages.length, isLoading, lastMessageText, scrollKey]);
 
   return (
     <View style={styles.messagesPanel}>

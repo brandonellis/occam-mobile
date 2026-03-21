@@ -14,6 +14,7 @@ import { navigate, navigationRef } from '../../helpers/navigation.helper';
 import { buildBookingDataFromLink } from '../../helpers/booking.helper';
 import { buildMarshalIntentFromHandoff } from '../../helpers/marshalIntent.helper';
 import useMarshalIntent from '../../hooks/useMarshalIntent';
+import { AGENT_CHAT_ACTIONS } from '../../reducers/agentChat.reducer';
 import { caddieStyles as styles } from '../../styles/caddie.styles';
 import { colors } from '../../theme';
 import logger from '../../helpers/logger.helper';
@@ -36,6 +37,7 @@ const CaddieScreen = () => {
     sendMessage,
     setInput,
     suggestions,
+    dispatch,
   } = useCaddie();
 
   useFocusEffect(useCallback(() => { runHealthCheck(); }, [runHealthCheck]));
@@ -106,8 +108,10 @@ const CaddieScreen = () => {
   }, [resetConversation]);
 
   const handleSlotSelect = useCallback((prompt, slotContext) => {
+    // Clear any prior booking state so the backend treats this as a fresh slot selection
+    dispatch({ type: AGENT_CHAT_ACTIONS.SET_BOOKING_STATE, payload: null });
     sendMessage(prompt, { slotContext });
-  }, [sendMessage]);
+  }, [dispatch, sendMessage]);
 
   const handleBookingLinkPress = useCallback((bookingLink) => {
     const bookingData = buildBookingDataFromLink(bookingLink);
