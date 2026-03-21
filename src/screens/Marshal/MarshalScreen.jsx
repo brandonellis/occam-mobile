@@ -20,15 +20,19 @@ const INSIGHT_ACCENT_COLORS = [
 
 const MarshalScreen = ({ navigation, route }) => {
   const { activeRole } = useAuth();
+  // Only depend on entity ID params, not marshalIntent (which changes frequently)
+  const routeParams = route?.params;
   const screenContext = useMemo(
-    () => buildMarshalScreenContext(route?.name, route?.params),
-    [route?.name, route?.params],
+    () => buildMarshalScreenContext(route?.name, routeParams),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [route?.name, routeParams?.clientId, routeParams?.bookingId, routeParams?.serviceId,
+     routeParams?.coachId, routeParams?.locationId, routeParams?.resourceId, routeParams?.classSessionId],
   );
   const handleIntentConsumed = useCallback(() => {
-    if (navigation?.setParams && route?.params?.marshalIntent) {
+    if (navigation?.setParams) {
       navigation.setParams({ marshalIntent: null });
     }
-  }, [navigation, route?.params?.marshalIntent]);
+  }, [navigation]);
   const {
     confirmAction,
     declineAction,

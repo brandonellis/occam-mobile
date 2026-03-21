@@ -77,10 +77,7 @@ const AdminDashboardScreen = ({ navigation }) => {
 
   const handleAskMarshal = useCallback((insightType, insightData) => {
     const intent = buildInsightMarshalIntent({ insightType, data: insightData });
-    navigation.navigate(SCREENS.ADMIN_TABS, {
-      screen: SCREENS.MARSHAL,
-      params: { marshalIntent: intent },
-    });
+    navigation.navigate(SCREENS.MARSHAL, { marshalIntent: intent });
   }, [navigation]);
 
   const todayKey = getTodayKey(company);

@@ -198,6 +198,8 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null, screenConte
   const [insights, setInsights] = useState(INITIAL_INSIGHTS);
   const [isRefreshingInsights, setIsRefreshingInsights] = useState(false);
   const consumedIntentRef = useRef(null);
+  const onIntentConsumedRef = useRef(onIntentConsumed);
+  onIntentConsumedRef.current = onIntentConsumed;
 
   // ── Marshal-specific: action confirmation ──
 
@@ -341,6 +343,10 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null, screenConte
 
   // ── Marshal-specific: intent consumption (Caddie → Marshal handoff) ──
 
+  // Keep a ref to sendMessage so the intent effect doesn't re-fire on every message change
+  const sendMessageRef = useRef(sendMessage);
+  sendMessageRef.current = sendMessage;
+
   useEffect(() => {
     const intent = normalizeIntent(initialIntent);
     const intentKey = intent?.id || intent?.message || intent?.handoff?.prompt || null;
@@ -363,13 +369,14 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null, screenConte
     }
 
     if (intent?.message) {
-      sendMessage(intent.message, {
+      sendMessageRef.current(intent.message, {
         displayText: intent?.handoff?.summary || intent?.handoff?.title || intent.message,
       });
     }
 
-    onIntentConsumed?.();
-  }, [initialIntent, chat.isLoading, chat.isRestoring, onIntentConsumed, sendMessage, dispatch]);
+    onIntentConsumedRef.current?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialIntent, chat.isLoading, chat.isRestoring, dispatch]);
 
   return {
     ...chat,
