@@ -41,14 +41,14 @@ export default function App() {
         <ErrorBoundary>
           <AuthProvider>
             <MarshalIntentProvider>
-            <StripeConnectProvider>
-              <NavigationContainer ref={navigationRef} theme={navigationTheme} linking={linking} fallback={<LinkingFallback />}>
-                <NotificationBadgeProvider>
-                  <StatusBar style="dark" />
-                  <RootNavigator />
-                </NotificationBadgeProvider>
-              </NavigationContainer>
-            </StripeConnectProvider>
+              <StripeConnectProvider>
+                <NavigationContainer ref={navigationRef} theme={navigationTheme} linking={linking} fallback={<LinkingFallback />}>
+                  <NotificationBadgeProvider>
+                    <StatusBar style="dark" />
+                    <RootNavigator />
+                  </NotificationBadgeProvider>
+                </NavigationContainer>
+              </StripeConnectProvider>
             </MarshalIntentProvider>
           </AuthProvider>
         </ErrorBoundary>

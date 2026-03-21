@@ -76,6 +76,9 @@ const CaddieScreen = () => {
           } else if (retries < 10) {
             retries++;
             requestAnimationFrame(tryNavigate);
+          } else {
+            logger.warn('CaddieScreen: navigation not ready after role switch, aborting handoff');
+            setHandoffError("We couldn't open Marshal right now. Please try again.");
           }
         };
         requestAnimationFrame(tryNavigate);

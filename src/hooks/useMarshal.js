@@ -342,7 +342,10 @@ const useMarshal = ({ screenContext = null } = {}) => {
 
   const handleIncomingIntent = useCallback((rawIntent) => {
     const intent = normalizeIntent(rawIntent);
-    if (!intent?.message) return;
+    if (!intent?.message) {
+      if (rawIntent) logger.log('Marshal: ignoring intent without message');
+      return;
+    }
 
     if (intent?.handoff) {
       dispatch({

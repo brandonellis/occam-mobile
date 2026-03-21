@@ -12,6 +12,7 @@ import useMarshalIntent from '../../hooks/useMarshalIntent';
 import { buildMarshalScreenContext } from '../../helpers/marshalContext.helper';
 import { agentChatStyles as chatStyles } from '../../styles/agentChat.styles';
 import { marshalStyles as styles } from '../../styles/marshal.styles';
+import logger from '../../helpers/logger.helper';
 
 const INSIGHT_ACCENT_COLORS = [
   chatStyles.insightCardAccentBlue,
@@ -55,7 +56,10 @@ const MarshalScreen = ({ route }) => {
   // Consume pending intent on focus (handles normal tab navigation)
   useFocusEffect(useCallback(() => {
     runHealthCheck();
-    if (isRestoring) return;
+    if (isRestoring) {
+      logger.log('Marshal: deferring intent consume until restore completes');
+      return;
+    }
     const intent = consumeIntent();
     if (intent) handleIncomingIntent(intent);
   }, [consumeIntent, handleIncomingIntent, isRestoring, runHealthCheck]));
