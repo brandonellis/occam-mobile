@@ -210,6 +210,8 @@ export const buildBookingDataFromLink = (bookingLink) => {
 
   const priceCents = bookingLink.price_cents ?? null;
 
+  const resourceId = bookingLink.resource_id ?? null;
+
   return {
     service: {
       id: serviceId,
@@ -227,6 +229,12 @@ export const buildBookingDataFromLink = (bookingLink) => {
       first_name: bookingLink.coach || 'Coach',
       last_name: '',
     } : null,
+    ...(resourceId ? {
+      selectedResource: {
+        id: resourceId,
+        name: bookingLink.resource_name || 'Resource',
+      },
+    } : {}),
     timeSlot: {
       start_time: bookingLink.start_time,
       end_time: bookingLink.end_time || null,
