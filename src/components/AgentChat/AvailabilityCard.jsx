@@ -105,7 +105,7 @@ const AvailabilityCard = ({ availability, onSlotSelect }) => {
                 <Pressable
                   key={day.date || index}
                   style={[styles.availabilityDayTab, isActive && styles.availabilityDayTabActive]}
-                  onPress={() => { setActiveDayIndex(index); setShowAll(false); }}
+                  onPress={() => { setActiveDayIndex(index); setShowAll(false); setSelectedSlotTime(null); }}
                 >
                   <Text style={[styles.availabilityDayTabText, isActive && styles.availabilityDayTabTextActive]}>
                     {weekday} {dayNum}
