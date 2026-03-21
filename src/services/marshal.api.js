@@ -1,7 +1,5 @@
 import apiClient from './apiClient';
-import { getToken, getTenantId } from '../helpers/storage.helper';
-import { getTenantApiUrl } from '../config';
-import { streamSSE } from '../helpers/sse.helper';
+import { sendStreamingRequest } from '../helpers/streaming.helper';
 import logger from '../helpers/logger.helper';
 
 /**
@@ -18,8 +16,22 @@ export const sendMarshalMessage = async (message, history = [], { onToken, onCar
 
   // ── Attempt SSE streaming first ──
   try {
-    return await sendMarshalMessageStreaming(body, { onToken, onCard });
+    const finalResult = await sendStreamingRequest('/marshal/chat/stream', body, {
+      token: (data) => { if (data.text && onToken) onToken(data.text); },
+      card: (data) => { if (data.card && onCard) onCard(data.card); },
+    });
+
+    return {
+      response: finalResult.response || '',
+      suggested_actions: finalResult.suggested_actions || [],
+      pending_actions: finalResult.pending_actions || [],
+      card: finalResult.card || null,
+    };
   } catch (streamError) {
+    // Only fall back for network/streaming errors, not auth or server errors
+    if (streamError?.message?.includes('401') || streamError?.message?.includes('403')) {
+      throw streamError;
+    }
     logger.warn('Marshal streaming failed, falling back to non-streaming:', streamError?.message);
   }
 
@@ -32,44 +44,6 @@ export const sendMarshalMessage = async (message, history = [], { onToken, onCar
     suggested_actions: result?.suggested_actions || [],
     pending_actions: result?.pending_actions || [],
     card: result?.card || null,
-  };
-};
-
-/**
- * Internal: SSE streaming implementation using XMLHttpRequest (React Native compatible).
- */
-const sendMarshalMessageStreaming = async (body, { onToken, onCard } = {}) => {
-  const token = await getToken();
-  if (!token) {
-    throw new Error('Authentication token is required');
-  }
-
-  const tenantId = await getTenantId();
-  const baseUrl = tenantId ? getTenantApiUrl(tenantId) : '';
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-    Accept: 'text/event-stream',
-    'X-Requested-With': 'XMLHttpRequest',
-  };
-  if (tenantId) {
-    headers['X-Tenant'] = tenantId;
-  }
-
-  const finalResult = await streamSSE(
-    `${baseUrl}/marshal/chat/stream`,
-    { headers, body: JSON.stringify(body), timeout: 60000 },
-    {
-      token: (data) => { if (data.text && onToken) onToken(data.text); },
-      card: (data) => { if (data.card && onCard) onCard(data.card); },
-    },
-  );
-
-  return {
-    response: finalResult.response || '',
-    suggested_actions: finalResult.suggested_actions || [],
-    pending_actions: finalResult.pending_actions || [],
-    card: finalResult.card || null,
   };
 };
 

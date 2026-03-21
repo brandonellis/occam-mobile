@@ -361,8 +361,9 @@ const useMarshal = ({ screenContext = null } = {}) => {
       });
     }
 
-    sendMessage(intent.message, {
+    await sendMessage(intent.message, {
       displayText: intent?.handoff?.summary || intent?.handoff?.title || intent.message,
+      freshStart: true,
     });
   }, [chat.resetConversation, dispatch, sendMessage]);
 

@@ -1,7 +1,5 @@
 import apiClient from './apiClient';
-import { getToken, getTenantId } from '../helpers/storage.helper';
-import { getTenantApiUrl } from '../config';
-import { streamSSE } from '../helpers/sse.helper';
+import { sendStreamingRequest } from '../helpers/streaming.helper';
 import logger from '../helpers/logger.helper';
 
 /**
@@ -25,47 +23,21 @@ export const sendCaddieMessage = async (message, history = [], { bookingState, s
 
   // ── Attempt SSE streaming first ──
   try {
-    return await sendCaddieMessageStreaming(body, { onToken, onCard });
+    return await sendStreamingRequest('/caddie/chat/stream', body, {
+      token: (data) => { if (data.text && onToken) onToken(data.text); },
+      card: (data) => { if (data.card && onCard) onCard(data.card); },
+    });
   } catch (streamError) {
+    // Only fall back for network/streaming errors, not auth or server errors
+    if (streamError?.message?.includes('401') || streamError?.message?.includes('403')) {
+      throw streamError;
+    }
     logger.warn('Caddie streaming failed, falling back to non-streaming:', streamError?.message);
   }
 
   // ── Fallback: non-streaming via apiClient (axios) ──
   const response = await apiClient.post('/caddie/chat', body);
   return response.data?.data || response.data;
-};
-
-/**
- * Internal: SSE streaming implementation using XMLHttpRequest (React Native compatible).
- */
-const sendCaddieMessageStreaming = async (body, { onToken, onCard } = {}) => {
-  const token = await getToken();
-  if (!token) {
-    throw new Error('Authentication token is required');
-  }
-
-  const tenantId = await getTenantId();
-  const baseUrl = tenantId ? getTenantApiUrl(tenantId) : '';
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-    Accept: 'text/event-stream',
-    'X-Requested-With': 'XMLHttpRequest',
-  };
-  if (tenantId) {
-    headers['X-Tenant'] = tenantId;
-  }
-
-  const finalResult = await streamSSE(
-    `${baseUrl}/caddie/chat/stream`,
-    { headers, body: JSON.stringify(body), timeout: 60000 },
-    {
-      token: (data) => { if (data.text && onToken) onToken(data.text); },
-      card: (data) => { if (data.card && onCard) onCard(data.card); },
-    },
-  );
-
-  return finalResult;
 };
 
 export const saveCaddieConversation = async (sessionId, messages) => {

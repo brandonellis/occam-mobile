@@ -4,26 +4,18 @@
  * Uses XMLHttpRequest with onprogress for streaming, which is reliably
  * supported in React Native (unlike fetch ReadableStream which requires
  * New Architecture).
- *
- * Provides two exports:
- *   - streamSSE()    — makes an XHR POST and parses SSE events via onprogress
- *   - readSSEStream() — legacy fetch-based ReadableStream parser (web fallback)
  */
+import logger from './logger.helper';
 
 /**
  * Parse buffered SSE text into event/data pairs and dispatch to handlers.
  * Mutates `state.buffer` to retain incomplete lines for the next chunk.
- *
- * @param {Object} state   - { buffer: string, currentEvent: string|null }
- * @param {Object} handlers - Map of event names to callbacks
- * @returns {{ finalResult: any, streamError: string|null }}
  */
 const processSSEBuffer = (state, handlers) => {
   let finalResult = null;
   let streamError = null;
 
   const lines = state.buffer.split('\n');
-  // Keep the last (possibly incomplete) line in the buffer
   state.buffer = lines.pop() || '';
 
   for (const line of lines) {
@@ -46,7 +38,7 @@ const processSSEBuffer = (state, handlers) => {
           handlers[eventName](data);
         }
       } catch {
-        // Skip unparseable SSE data lines
+        logger.warn('SSE: skipping unparseable data:', jsonStr.substring(0, 200));
       }
       state.currentEvent = null;
     }
@@ -56,20 +48,46 @@ const processSSEBuffer = (state, handlers) => {
 };
 
 /**
+ * Sanitize XHR error response to avoid leaking server internals to UI.
+ */
+const sanitizeErrorResponse = (responseText, status) => {
+  if (!responseText) return `Stream request failed: ${status}`;
+
+  // Try to extract a message field from JSON error responses
+  try {
+    const parsed = JSON.parse(responseText);
+    if (parsed.message) return parsed.message;
+  } catch {
+    // Not JSON — truncate raw text
+  }
+
+  return responseText.substring(0, 200);
+};
+
+/**
  * Stream an SSE endpoint using XMLHttpRequest (React Native compatible).
  *
  * @param {string} url      - The SSE endpoint URL
- * @param {Object} options  - { method, headers, body, timeout }
+ * @param {Object} options  - { method, headers, body, timeout, onUnauthorized }
  * @param {Record<string, (data: any) => void>} handlers
  *   Map of event names to callbacks. Reserved names:
  *     - "done"  — receives the final payload; its data becomes the return value
  *     - "error" — receives { message } and causes the promise to reject
  *   All other names (e.g. "token", "card") are forwarded verbatim.
- * @returns {Promise<any>} The parsed data from the "done" event.
+ * @returns {{ promise: Promise<any>, abort: () => void }}
  */
-export function streamSSE(url, { method = 'POST', headers = {}, body, timeout = 60000 } = {}, handlers = {}) {
-  return new Promise((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
+export function streamSSE(url, { method = 'POST', headers = {}, body, timeout = 60000, onUnauthorized } = {}, handlers = {}) {
+  const xhr = new XMLHttpRequest();
+  let aborted = false;
+
+  const abort = () => {
+    if (!aborted) {
+      aborted = true;
+      xhr.abort();
+    }
+  };
+
+  const promise = new Promise((resolve, reject) => {
     const state = { buffer: '', currentEvent: null };
     let finalResult = null;
     let streamError = null;
@@ -77,7 +95,6 @@ export function streamSSE(url, { method = 'POST', headers = {}, body, timeout = 
 
     xhr.open(method, url);
 
-    // Set headers
     Object.entries(headers).forEach(([key, value]) => {
       xhr.setRequestHeader(key, value);
     });
@@ -85,7 +102,6 @@ export function streamSSE(url, { method = 'POST', headers = {}, body, timeout = 
     xhr.timeout = timeout;
 
     xhr.onprogress = () => {
-      // Get only the new data since last onprogress
       const newText = xhr.responseText.substring(lastIndex);
       lastIndex = xhr.responseText.length;
 
@@ -99,16 +115,26 @@ export function streamSSE(url, { method = 'POST', headers = {}, body, timeout = 
     };
 
     xhr.onload = () => {
-      // Process any remaining buffer
+      // Flush any unprocessed text (handles single-chunk responses where onprogress didn't fire)
+      const remaining = xhr.responseText.substring(lastIndex);
+      if (remaining) {
+        state.buffer += remaining;
+      }
+
       if (state.buffer.trim()) {
-        state.buffer += '\n'; // Ensure last line is processed
+        state.buffer += '\n';
         const result = processSSEBuffer(state, handlers);
         if (result.finalResult) finalResult = result.finalResult;
         if (result.streamError) streamError = result.streamError;
       }
 
+      // Handle 401 — trigger auth cleanup
+      if (xhr.status === 401 && onUnauthorized) {
+        onUnauthorized();
+      }
+
       if (xhr.status < 200 || xhr.status >= 300) {
-        reject(new Error(xhr.responseText || `Stream request failed: ${xhr.status}`));
+        reject(new Error(sanitizeErrorResponse(xhr.responseText, xhr.status)));
         return;
       }
 
@@ -135,57 +161,6 @@ export function streamSSE(url, { method = 'POST', headers = {}, body, timeout = 
 
     xhr.send(body || null);
   });
-}
 
-/**
- * Legacy fetch-based ReadableStream SSE parser.
- * Works on web and React Native with New Architecture ReadableStream support.
- * Falls back gracefully — callers should catch and use non-streaming endpoint.
- *
- * @param {Response} response  - A fetch Response whose body is an SSE stream.
- * @param {Record<string, (data: any) => void>} handlers
- * @returns {Promise<any>} The parsed data from the "done" event.
- */
-export async function readSSEStream(response, handlers = {}) {
-  if (!response.body) {
-    throw new Error('Response body is unavailable for streaming.');
-  }
-
-  const reader = response.body.getReader();
-  const decoder = new TextDecoder();
-  const state = { buffer: '', currentEvent: null };
-  let finalResult = null;
-  let streamError = null;
-
-  let streamDone = false;
-  while (!streamDone) {
-    const { done, value } = await reader.read();
-    if (done) {
-      streamDone = true;
-      break;
-    }
-
-    state.buffer += decoder.decode(value, { stream: true });
-    const result = processSSEBuffer(state, handlers);
-    if (result.finalResult) finalResult = result.finalResult;
-    if (result.streamError) streamError = result.streamError;
-  }
-
-  // Process any remaining buffer
-  if (state.buffer.trim()) {
-    state.buffer += '\n';
-    const result = processSSEBuffer(state, handlers);
-    if (result.finalResult) finalResult = result.finalResult;
-    if (result.streamError) streamError = result.streamError;
-  }
-
-  if (streamError) {
-    throw new Error(streamError);
-  }
-
-  if (!finalResult) {
-    throw new Error('Stream ended without a final result.');
-  }
-
-  return finalResult;
+  return { promise, abort };
 }

@@ -69,6 +69,7 @@ export const proactiveInsightsStyles = StyleSheet.create({
 
   cardBody: {
     flex: 1,
+    overflow: 'hidden',
   },
 
   // ── Card header ──

@@ -318,6 +318,7 @@ AgentChatBubble.propTypes = {
     sender: PropTypes.oneOf(['assistant', 'user']).isRequired,
     text: PropTypes.string.isRequired,
     type: PropTypes.string,
+    streaming: PropTypes.bool,
     success: PropTypes.bool,
     nextStep: PropTypes.string,
     timestamp: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),

@@ -159,7 +159,7 @@ const InsightCard = ({ card, onAskMarshal }) => {
       </View>
 
       {/* Ask Marshal CTA */}
-      <Pressable style={styles.marshalLink} hitSlop={8} onPress={() => onAskMarshal(card.type, card.data)}>
+      <Pressable style={styles.marshalLink} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => onAskMarshal(card.type, card.data)}>
         <Icon source="robot-outline" size={14} color={colors.accent} />
         <Text style={styles.marshalLinkText}>Ask Marshal</Text>
         <Icon source="arrow-right" size={12} color={colors.accent} />
