@@ -6,6 +6,7 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PaperProvider } from 'react-native-paper';
 import AuthProvider from './src/providers/AuthProvider';
+import MarshalIntentProvider from './src/providers/MarshalIntentProvider';
 import StripeConnectProvider from './src/providers/StripeConnectProvider';
 import NotificationBadgeProvider from './src/providers/NotificationBadgeProvider';
 import RootNavigator from './src/navigation/RootNavigator';
@@ -39,6 +40,7 @@ export default function App() {
       <PaperProvider theme={paperTheme}>
         <ErrorBoundary>
           <AuthProvider>
+            <MarshalIntentProvider>
             <StripeConnectProvider>
               <NavigationContainer ref={navigationRef} theme={navigationTheme} linking={linking} fallback={<LinkingFallback />}>
                 <NotificationBadgeProvider>
@@ -47,6 +49,7 @@ export default function App() {
                 </NotificationBadgeProvider>
               </NavigationContainer>
             </StripeConnectProvider>
+            </MarshalIntentProvider>
           </AuthProvider>
         </ErrorBoundary>
       </PaperProvider>

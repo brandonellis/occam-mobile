@@ -46,6 +46,7 @@ import {
   CLIENT_DETAIL_ACTIONS,
 } from '../../reducers/clientDetail.reducer';
 import { buildClientMarshalIntent } from '../../helpers/marshalIntent.helper';
+import useMarshalIntent from '../../hooks/useMarshalIntent';
 
 const getDocIcon = (mime) => {
   if (mime.startsWith('application/pdf')) return 'file-document';
@@ -341,25 +342,19 @@ const ClientDetailScreen = ({ route, navigation }) => {
     );
   }, [clientId, loadSectionData]);
 
-  const handleOpenMarshal = useCallback(() => {
-    if (!client) {
-      return;
-    }
+  const { deliverIntent } = useMarshalIntent();
 
-    const intent = buildClientMarshalIntent({
+  const handleOpenMarshal = useCallback(() => {
+    if (!client) return;
+
+    deliverIntent(buildClientMarshalIntent({
       client,
       company,
       upcomingBookings,
       pastBookings,
-    });
-
-    navigation.navigate(SCREENS.COACH_TABS, {
-      screen: SCREENS.MARSHAL,
-      params: {
-        marshalIntent: intent,
-      },
-    });
-  }, [client, company, upcomingBookings, pastBookings, navigation]);
+    }));
+    navigation.navigate(SCREENS.COACH_TABS, { screen: SCREENS.MARSHAL });
+  }, [client, company, deliverIntent, upcomingBookings, pastBookings, navigation]);
 
   const handleUnshare = useCallback((sharedMediaId) => {
     // Find the item being removed so we can restore on undo

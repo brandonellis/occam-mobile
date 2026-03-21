@@ -27,6 +27,7 @@ import {
   isStaffBookingRole,
 } from '../../helpers/bookingEdit.helper';
 import { buildBookingMarshalIntent } from '../../helpers/marshalIntent.helper';
+import useMarshalIntent from '../../hooks/useMarshalIntent';
 
 const BookingDetailScreen = ({ navigation, route }) => {
   const { bookingId, booking: passedBooking } = route.params || {};
@@ -92,19 +93,15 @@ const BookingDetailScreen = ({ navigation, route }) => {
     });
   }, [activeRole, booking, navigation]);
 
+  const { deliverIntent } = useMarshalIntent();
+
   const handleOpenMarshal = useCallback(() => {
     if (!booking) return;
 
-    const intent = buildBookingMarshalIntent({ booking, company });
+    deliverIntent(buildBookingMarshalIntent({ booking, company }));
     const parentScreen = activeRole === 'coach' ? SCREENS.COACH_TABS : SCREENS.ADMIN_TABS;
-
-    navigation.navigate(parentScreen, {
-      screen: SCREENS.MARSHAL,
-      params: {
-        marshalIntent: intent,
-      },
-    });
-  }, [activeRole, booking, company, navigation]);
+    navigation.navigate(parentScreen, { screen: SCREENS.MARSHAL });
+  }, [activeRole, booking, company, deliverIntent, navigation]);
 
   if (isLoading) {
     return (

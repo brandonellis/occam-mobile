@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import AgentChatInput from '../../components/AgentChat/AgentChatInput';
 import AgentChatMessages from '../../components/AgentChat/AgentChatMessages';
 import useAuth from '../../hooks/useAuth';
 import useMarshal from '../../hooks/useMarshal';
+import useMarshalIntent from '../../hooks/useMarshalIntent';
 import { buildMarshalScreenContext } from '../../helpers/marshalContext.helper';
 import { agentChatStyles as chatStyles } from '../../styles/agentChat.styles';
 import { marshalStyles as styles } from '../../styles/marshal.styles';
@@ -18,11 +19,10 @@ const INSIGHT_ACCENT_COLORS = [
   chatStyles.insightCardAccentCoral,
 ];
 
-const MarshalScreen = ({ navigation, route }) => {
+const MarshalScreen = ({ route }) => {
   const { activeRole } = useAuth();
-  // Only depend on entity ID params, not marshalIntent (which changes frequently).
-  // If new entity params are added to buildMarshalScreenContext, they must be added
-  // to the useMemo dependency array below.
+  const { consumeIntent } = useMarshalIntent();
+
   const routeParams = route?.params;
   const screenContext = useMemo(
     () => buildMarshalScreenContext(route?.name, routeParams),
@@ -30,20 +30,18 @@ const MarshalScreen = ({ navigation, route }) => {
     [route?.name, routeParams?.clientId, routeParams?.bookingId, routeParams?.serviceId,
      routeParams?.coachId, routeParams?.locationId, routeParams?.resourceId, routeParams?.classSessionId],
   );
-  const handleIntentConsumed = useCallback(() => {
-    if (navigation?.setParams) {
-      navigation.setParams({ marshalIntent: null });
-    }
-  }, [navigation]);
+
   const {
     confirmAction,
     declineAction,
     error,
+    handleIncomingIntent,
     input,
     insights,
     isConnected,
     isLoading,
     isRefreshingInsights,
+    isRestoring,
     messages,
     refreshInsights,
     resetConversation,
@@ -52,13 +50,25 @@ const MarshalScreen = ({ navigation, route }) => {
     sendCurrentMessage,
     setInput,
     suggestions,
-  } = useMarshal({
-    initialIntent: route?.params?.marshalIntent || null,
-    onIntentConsumed: handleIntentConsumed,
-    screenContext,
-  });
+  } = useMarshal({ screenContext });
 
-  useFocusEffect(useCallback(() => { runHealthCheck(); }, [runHealthCheck]));
+  // Consume pending intent on focus (handles normal tab navigation)
+  useFocusEffect(useCallback(() => {
+    runHealthCheck();
+    if (isRestoring) return;
+    const intent = consumeIntent();
+    if (intent) handleIncomingIntent(intent);
+  }, [consumeIntent, handleIncomingIntent, isRestoring, runHealthCheck]));
+
+  // Consume pending intent after restoration completes (handles role-switch + fresh mount)
+  const wasRestoringRef = useRef(true);
+  useEffect(() => {
+    if (wasRestoringRef.current && !isRestoring) {
+      wasRestoringRef.current = false;
+      const intent = consumeIntent();
+      if (intent) handleIncomingIntent(intent);
+    }
+  }, [isRestoring, consumeIntent, handleIncomingIntent]);
 
   const roleLabel = activeRole === 'coach' ? 'Coach' : 'Admin';
 
@@ -169,13 +179,9 @@ const MarshalScreen = ({ navigation, route }) => {
 };
 
 MarshalScreen.propTypes = {
-  navigation: PropTypes.shape({
-    setParams: PropTypes.func,
-  }),
   route: PropTypes.shape({
-    params: PropTypes.shape({
-      marshalIntent: PropTypes.object,
-    }),
+    name: PropTypes.string,
+    params: PropTypes.object,
   }),
 };
 

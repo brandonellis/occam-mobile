@@ -22,6 +22,7 @@ import {
   getSessionServiceName,
 } from '../../helpers/booking.helper';
 import { buildInsightMarshalIntent } from '../../helpers/marshalIntent.helper';
+import useMarshalIntent from '../../hooks/useMarshalIntent';
 import { adminDashboardStyles as styles } from '../../styles/adminDashboard.styles';
 import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
@@ -74,11 +75,12 @@ const AdminDashboardScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const { unreadCount } = useUnreadNotifications();
   const insights = useProactiveInsights();
+  const { deliverIntent } = useMarshalIntent();
 
   const handleAskMarshal = useCallback((insightType, insightData) => {
-    const intent = buildInsightMarshalIntent({ insightType, data: insightData });
-    navigation.navigate(SCREENS.MARSHAL, { marshalIntent: intent });
-  }, [navigation]);
+    deliverIntent(buildInsightMarshalIntent({ insightType, data: insightData }));
+    navigation.navigate(SCREENS.MARSHAL);
+  }, [deliverIntent, navigation]);
 
   const todayKey = getTodayKey(company);
 

@@ -16,6 +16,7 @@ import { formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
 import { getBookings } from '../../services/bookings.api';
 import { getClients } from '../../services/accounts.api';
 import { buildInsightMarshalIntent } from '../../helpers/marshalIntent.helper';
+import useMarshalIntent from '../../hooks/useMarshalIntent';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
 import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
@@ -34,11 +35,12 @@ const CoachDashboardScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const { unreadCount } = useUnreadNotifications();
   const insights = useProactiveInsights();
+  const { deliverIntent } = useMarshalIntent();
 
   const handleAskMarshal = useCallback((insightType, insightData) => {
-    const intent = buildInsightMarshalIntent({ insightType, data: insightData });
-    navigation.navigate(SCREENS.MARSHAL, { marshalIntent: intent });
-  }, [navigation]);
+    deliverIntent(buildInsightMarshalIntent({ insightType, data: insightData }));
+    navigation.navigate(SCREENS.MARSHAL);
+  }, [deliverIntent, navigation]);
 
   const todayKey = getTodayKey(company);
 

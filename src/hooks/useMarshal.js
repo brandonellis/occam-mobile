@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import logger from '../helpers/logger.helper';
 import { buildMessage, normalizeSuggestions } from '../helpers/agentChat.helper';
 import { AGENT_CHAT_ACTIONS } from '../reducers/agentChat.reducer';
@@ -176,7 +176,7 @@ const transformMarshalResponse = (result, initialSuggs) => {
   };
 };
 
-const useMarshal = ({ initialIntent = null, onIntentConsumed = null, screenContext = null } = {}) => {
+const useMarshal = ({ screenContext = null } = {}) => {
   const chat = useAgentChat({
     agentName: 'Marshal',
     initialMessages: INITIAL_MESSAGES,
@@ -197,11 +197,6 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null, screenConte
   const { dispatch } = chat;
   const [insights, setInsights] = useState(INITIAL_INSIGHTS);
   const [isRefreshingInsights, setIsRefreshingInsights] = useState(false);
-  const consumedIntentRef = useRef(null);
-  // Keep refs to onIntentConsumed and sendMessage so the intent effect
-  // doesn't re-fire when these callbacks change (they depend on messages).
-  const onIntentConsumedRef = useRef(onIntentConsumed);
-  onIntentConsumedRef.current = onIntentConsumed;
 
   // ── Marshal-specific: action confirmation ──
 
@@ -343,47 +338,33 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null, screenConte
     refreshInsights();
   }, [refreshInsights]);
 
-  // ── Marshal-specific: intent consumption (Caddie → Marshal handoff) ──
+  // ── Marshal-specific: imperative intent handling ──
 
-  // Keep a ref to sendMessage so the intent effect doesn't re-fire on every message change
-  const sendMessageRef = useRef(sendMessage);
-  sendMessageRef.current = sendMessage;
-
-  useEffect(() => {
-    const intent = normalizeIntent(initialIntent);
-    const intentKey = intent?.id || intent?.message || intent?.handoff?.prompt || null;
-
-    if (!intentKey || consumedIntentRef.current === intentKey || chat.isLoading || chat.isRestoring) {
-      return;
-    }
-
-    consumedIntentRef.current = intentKey;
+  const handleIncomingIntent = useCallback((rawIntent) => {
+    const intent = normalizeIntent(rawIntent);
+    if (!intent?.message) return;
 
     if (intent?.handoff) {
       dispatch({
         type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
         payload: buildMessage(
           'assistant',
-          intent.handoff.summary || intent.handoff.title || 'Prepared Caddie handoff ready for review.',
+          intent.handoff.summary || intent.handoff.title || 'Prepared handoff ready for review.',
           { type: 'handoff', handoff: intent.handoff }
         ),
       });
     }
 
-    if (intent?.message) {
-      sendMessageRef.current(intent.message, {
-        displayText: intent?.handoff?.summary || intent?.handoff?.title || intent.message,
-      });
-    }
-
-    onIntentConsumedRef.current?.();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialIntent, chat.isLoading, chat.isRestoring, dispatch]);
+    sendMessage(intent.message, {
+      displayText: intent?.handoff?.summary || intent?.handoff?.title || intent.message,
+    });
+  }, [dispatch, sendMessage]);
 
   return {
     ...chat,
     confirmAction,
     declineAction,
+    handleIncomingIntent,
     insights,
     isRefreshingInsights,
     refreshInsights,

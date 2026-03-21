@@ -10,9 +10,10 @@ import useCaddie from '../../hooks/useCaddie';
 import useAuth from '../../hooks/useAuth';
 import { ADMIN_SHELL_ROLES, COACH_ROLES, ROLES } from '../../constants/auth.constants';
 import { SCREENS } from '../../constants/navigation.constants';
-import { navigate } from '../../helpers/navigation.helper';
+import { navigate, navigationRef } from '../../helpers/navigation.helper';
 import { buildBookingDataFromLink } from '../../helpers/booking.helper';
 import { buildMarshalIntentFromHandoff } from '../../helpers/marshalIntent.helper';
+import useMarshalIntent from '../../hooks/useMarshalIntent';
 import { caddieStyles as styles } from '../../styles/caddie.styles';
 import { colors } from '../../theme';
 import logger from '../../helpers/logger.helper';
@@ -47,27 +48,10 @@ const CaddieScreen = () => {
   const marshalTargetRole = hasAdminShellRole ? ROLES.ADMIN : hasStaffCapability ? ROLES.COACH : null;
   const canLaunchMarshal = Boolean(isDualRole && marshalTargetRole);
   const combinedError = handoffError || error;
-
-  const openMarshalWithIntent = useCallback((intent) => {
-    const parentScreen = marshalTargetRole === ROLES.ADMIN ? SCREENS.ADMIN_TABS : SCREENS.COACH_TABS;
-
-    if (!parentScreen) {
-      return;
-    }
-
-    navigate(parentScreen, {
-      screen: SCREENS.MARSHAL,
-      params: {
-        marshalIntent: intent,
-      },
-    });
-  }, [marshalTargetRole]);
+  const { deliverIntent } = useMarshalIntent();
 
   const handleHandoffAction = useCallback(async (handoff) => {
-    if (!canLaunchMarshal || !handoff?.prompt) {
-      return;
-    }
-
+    if (!canLaunchMarshal || !handoff?.prompt) return;
     setHandoffError(null);
 
     const intent = buildMarshalIntentFromHandoff(handoff, {
@@ -75,18 +59,36 @@ const CaddieScreen = () => {
     });
 
     try {
+      // Deliver intent BEFORE role switch — survives navigator remount
+      // because MarshalIntentProvider sits above NavigationContainer
+      deliverIntent(intent);
+
       if (activeRole !== marshalTargetRole) {
         await switchRole(marshalTargetRole);
-        setTimeout(() => openMarshalWithIntent(intent), 50);
+        // Replace setTimeout(50) with bounded readiness check.
+        // After role switch, the navigator tree remounts (key changes),
+        // so we wait for it to be ready before navigating.
+        let retries = 0;
+        const tryNavigate = () => {
+          if (navigationRef.current?.isReady()) {
+            const parentScreen = marshalTargetRole === ROLES.ADMIN ? SCREENS.ADMIN_TABS : SCREENS.COACH_TABS;
+            navigate(parentScreen, { screen: SCREENS.MARSHAL });
+          } else if (retries < 10) {
+            retries++;
+            requestAnimationFrame(tryNavigate);
+          }
+        };
+        requestAnimationFrame(tryNavigate);
         return;
       }
 
-      openMarshalWithIntent(intent);
+      const parentScreen = marshalTargetRole === ROLES.ADMIN ? SCREENS.ADMIN_TABS : SCREENS.COACH_TABS;
+      navigate(parentScreen, { screen: SCREENS.MARSHAL });
     } catch (handoffActionError) {
-      logger.warn("CaddieScreen: Marshal handoff failed", handoffActionError?.message || handoffActionError);
+      logger.warn('CaddieScreen: Marshal handoff failed', handoffActionError?.message || handoffActionError);
       setHandoffError("We couldn't open Marshal right now. Please try again.");
     }
-  }, [activeRole, canLaunchMarshal, marshalTargetRole, openMarshalWithIntent, switchRole]);
+  }, [activeRole, canLaunchMarshal, deliverIntent, marshalTargetRole, switchRole]);
 
   const handleChangeText = useCallback((value) => {
     if (handoffError) {

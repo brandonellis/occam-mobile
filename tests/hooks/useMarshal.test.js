@@ -18,7 +18,7 @@ describe('useMarshal', () => {
     confirmMarshalAction.mockResolvedValue({ success: true, message: 'Done' });
   });
 
-  test('consumes an initial Marshal handoff intent once and sends the prepared prompt', async () => {
+  test('handleIncomingIntent sends the intent message and appends a handoff message when handoff is present', async () => {
     sendMarshalMessage.mockResolvedValue({
       response: 'Marshal reviewed the handoff.',
       pending_actions: [],
@@ -26,8 +26,7 @@ describe('useMarshal', () => {
       card: null,
     });
 
-    const onIntentConsumed = jest.fn();
-    const initialIntent = {
+    const intent = {
       id: 'handoff-1',
       message: 'Client handoff from Caddie\nReason: billing_support\nClient request: I need a refund for my booking',
       handoff: {
@@ -38,26 +37,85 @@ describe('useMarshal', () => {
       },
     };
 
-    // Wait for AsyncStorage restoration to complete before rendering with intent
-    await act(async () => {
-      // Flush async storage mocks
+    const { result } = renderHook(() => useMarshal());
+
+    // Wait for persistence restore to complete
+    await waitFor(() => {
+      expect(result.current.handleIncomingIntent).toBeDefined();
     });
 
-    const { result } = renderHook(() => useMarshal({ initialIntent, onIntentConsumed }));
+    // Call handleIncomingIntent imperatively
+    await act(async () => {
+      result.current.handleIncomingIntent(intent);
+    });
 
-    // Wait for persistence restore to finish (async), then intent effect fires
     await waitFor(() => {
       expect(sendMarshalMessage).toHaveBeenCalledWith(
-        initialIntent.message,
+        intent.message,
         expect.any(Array),
         expect.any(Object),
       );
     }, { timeout: 3000 });
 
     await waitFor(() => {
-      expect(onIntentConsumed).toHaveBeenCalledTimes(1);
       expect(result.current.messages.some((message) => message.type === 'handoff')).toBe(true);
-      expect(result.current.messages.some((message) => message.sender === 'user' && message.text === initialIntent.handoff.summary)).toBe(true);
+      expect(result.current.messages.some(
+        (message) => message.sender === 'user' && message.text === intent.handoff.summary
+      )).toBe(true);
     });
+  });
+
+  test('handleIncomingIntent sends a plain message when no handoff is present', async () => {
+    sendMarshalMessage.mockResolvedValue({
+      response: 'Here are today\'s bookings.',
+      pending_actions: [],
+      suggested_actions: [],
+      card: null,
+    });
+
+    const intent = {
+      message: 'Summarize today\'s bookings',
+    };
+
+    const { result } = renderHook(() => useMarshal());
+
+    await waitFor(() => {
+      expect(result.current.handleIncomingIntent).toBeDefined();
+    });
+
+    await act(async () => {
+      result.current.handleIncomingIntent(intent);
+    });
+
+    await waitFor(() => {
+      expect(sendMarshalMessage).toHaveBeenCalledWith(
+        intent.message,
+        expect.any(Array),
+        expect.any(Object),
+      );
+    }, { timeout: 3000 });
+
+    // No handoff message should be appended
+    expect(result.current.messages.every((message) => message.type !== 'handoff')).toBe(true);
+  });
+
+  test('handleIncomingIntent does nothing when intent has no message', async () => {
+    const { result } = renderHook(() => useMarshal());
+
+    await waitFor(() => {
+      expect(result.current.handleIncomingIntent).toBeDefined();
+    });
+
+    await act(async () => {
+      result.current.handleIncomingIntent(null);
+    });
+
+    expect(sendMarshalMessage).not.toHaveBeenCalled();
+
+    await act(async () => {
+      result.current.handleIncomingIntent({ handoff: { title: 'no message' } });
+    });
+
+    expect(sendMarshalMessage).not.toHaveBeenCalled();
   });
 });
