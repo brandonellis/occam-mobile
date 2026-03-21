@@ -226,6 +226,9 @@ HandoffCard.propTypes = {
 };
 
 const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction, onHandoffAction, handoffActionLabel, onSlotSelect, onBookingLinkPress }) => {
+  // Hide streaming placeholder until first token arrives
+  if (message.streaming && !message.text) return null;
+
   const isUser = message.sender === 'user';
   const isActionResult = message.type === 'action_result';
   const bubbleStyle = [

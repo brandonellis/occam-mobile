@@ -5,7 +5,8 @@ import { readSSEStream } from '../helpers/sse.helper';
 import logger from '../helpers/logger.helper';
 
 /**
- * Stream a Marshal chat response via SSE.
+ * Send a Marshal chat message, attempting SSE streaming first and falling
+ * back to the non-streaming endpoint if streaming is unavailable.
  *
  * @param {string}   message  - User message
  * @param {Array}    history  - Conversation history [{role, content}]
@@ -13,6 +14,31 @@ import logger from '../helpers/logger.helper';
  * @returns {Promise<Object>} Final response: { response, suggested_actions, pending_actions, card }
  */
 export const sendMarshalMessage = async (message, history = [], { onToken, onCard, pageContext } = {}) => {
+  const body = { message, history, ...(pageContext ? { page_context: pageContext } : {}) };
+
+  // ── Attempt SSE streaming first ──
+  try {
+    return await sendMarshalMessageStreaming(body, { onToken, onCard });
+  } catch (streamError) {
+    logger.warn('Marshal streaming failed, falling back to non-streaming:', streamError?.message);
+  }
+
+  // ── Fallback: non-streaming via apiClient (axios) ──
+  const response = await apiClient.post('/marshal/chat', body);
+  const result = response.data?.data || response.data;
+
+  return {
+    response: result?.response || '',
+    suggested_actions: result?.suggested_actions || [],
+    pending_actions: result?.pending_actions || [],
+    card: result?.card || null,
+  };
+};
+
+/**
+ * Internal: SSE streaming implementation.
+ */
+const sendMarshalMessageStreaming = async (body, { onToken, onCard } = {}) => {
   const token = await getToken();
   if (!token) {
     throw new Error('Authentication token is required');
@@ -38,7 +64,7 @@ export const sendMarshalMessage = async (message, history = [], { onToken, onCar
     response = await fetch(`${baseUrl}/marshal/chat/stream`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ message, history, ...(pageContext ? { page_context: pageContext } : {}) }),
+      body: JSON.stringify(body),
       signal: controller.signal,
     });
   } catch (fetchError) {
@@ -46,7 +72,7 @@ export const sendMarshalMessage = async (message, history = [], { onToken, onCar
     if (fetchError?.name === 'AbortError') {
       throw new Error('Marshal took too long to respond. Please try again.');
     }
-    throw new Error('Connection lost — please check your network and try again.');
+    throw fetchError;
   }
 
   if (!response.ok) {

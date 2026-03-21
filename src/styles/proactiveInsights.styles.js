@@ -35,6 +35,7 @@ export const proactiveInsightsStyles = StyleSheet.create({
   // ── Insight card ──
   card: {
     width: 280,
+    minHeight: 160,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
