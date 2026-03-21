@@ -34,7 +34,9 @@ const AgentChatMessages = ({
   messages,
   onConfirmAction,
   onDeclineAction,
+  onDiscardEmail,
   onHandoffAction,
+  onSendEmail,
   onSlotSelect,
   onBookingLinkPress,
   handoffActionLabel,
@@ -64,7 +66,9 @@ const AgentChatMessages = ({
             agentLabel={agentLabel}
             onConfirmAction={onConfirmAction}
             onDeclineAction={onDeclineAction}
+            onDiscardEmail={onDiscardEmail}
             onHandoffAction={onHandoffAction}
+            onSendEmail={onSendEmail}
             onSlotSelect={onSlotSelect}
             onBookingLinkPress={onBookingLinkPress}
             handoffActionLabel={handoffActionLabel}
@@ -91,7 +95,9 @@ AgentChatMessages.propTypes = {
   loadingLabel: PropTypes.string,
   onConfirmAction: PropTypes.func,
   onDeclineAction: PropTypes.func,
+  onDiscardEmail: PropTypes.func,
   onHandoffAction: PropTypes.func,
+  onSendEmail: PropTypes.func,
   onSlotSelect: PropTypes.func,
   onBookingLinkPress: PropTypes.func,
   handoffActionLabel: PropTypes.string,
@@ -108,7 +114,9 @@ AgentChatMessages.defaultProps = {
   loadingLabel: 'Thinking…',
   onConfirmAction: undefined,
   onDeclineAction: undefined,
+  onDiscardEmail: undefined,
   onHandoffAction: undefined,
+  onSendEmail: undefined,
   onSlotSelect: undefined,
   onBookingLinkPress: undefined,
   handoffActionLabel: 'Open in Marshal',

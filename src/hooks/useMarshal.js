@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import logger from '../helpers/logger.helper';
 import { buildMessage, normalizeSuggestions } from '../helpers/agentChat.helper';
 import { AGENT_CHAT_ACTIONS } from '../reducers/agentChat.reducer';
-import { confirmMarshalAction, getMarshalInsights, sendMarshalMessage, saveMarshalConversation, loadMarshalConversation, checkMarshalHealth } from '../services/marshal.api';
+import { confirmMarshalAction, discardClientEmail, getMarshalInsights, sendClientEmail, sendMarshalMessage, saveMarshalConversation, loadMarshalConversation, checkMarshalHealth } from '../services/marshal.api';
 import { MARSHAL_MESSAGES_KEY, MARSHAL_SESSION_KEY } from '../helpers/chatPersistence.helper';
 import useAgentChat from './useAgentChat';
 
@@ -228,9 +228,10 @@ const useMarshal = ({ screenContext = null } = {}) => {
       dispatch({
         type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
         payload: buildMessage('assistant', result?.message || 'Marshal completed that action.', {
-          type: 'action_result',
+          type: result?.email_preview ? 'email_preview' : 'action_result',
           success: Boolean(result?.success),
           nextStep: result?.next_step || null,
+          emailPreview: result?.email_preview || null,
         }),
       });
     } catch (error) {
@@ -268,6 +269,82 @@ const useMarshal = ({ screenContext = null } = {}) => {
     dispatch({
       type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
       payload: buildMessage('assistant', 'No problem \u2014 the action was cancelled. What would you like to do next?'),
+    });
+  }, [chat.messages, dispatch]);
+
+  // ── Email send/discard from preview card ──
+
+  const handleSendEmail = useCallback(async (campaignId) => {
+    if (!campaignId) return;
+    dispatch({ type: AGENT_CHAT_ACTIONS.SET_LOADING, payload: true });
+
+    try {
+      const result = await sendClientEmail(campaignId);
+
+      // Update the email preview message to show sent status
+      const previewMsg = chat.messages.find((m) => m.emailPreview?.campaign_id === campaignId);
+      if (previewMsg) {
+        dispatch({
+          type: AGENT_CHAT_ACTIONS.UPDATE_MESSAGE,
+          payload: {
+            id: previewMsg.id,
+            updates: {
+              emailPreview: { ...previewMsg.emailPreview, status: 'sent' },
+            },
+          },
+        });
+      }
+
+      dispatch({
+        type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
+        payload: buildMessage('assistant', result?.message || 'Email sent successfully.', {
+          type: 'action_result',
+          success: true,
+          nextStep: result?.next_step || null,
+        }),
+      });
+    } catch (error) {
+      logger.warn('Marshal email send failed:', error?.message || error);
+      dispatch({
+        type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
+        payload: buildMessage('assistant', error?.response?.data?.message || error?.message || 'Failed to send email.', {
+          type: 'action_result',
+          success: false,
+        }),
+      });
+    } finally {
+      dispatch({ type: AGENT_CHAT_ACTIONS.SET_LOADING, payload: false });
+    }
+  }, [chat.messages, dispatch]);
+
+  const handleDiscardEmail = useCallback(async (campaignId) => {
+    if (!campaignId) return;
+
+    try {
+      await discardClientEmail(campaignId);
+    } catch (error) {
+      logger.warn('Marshal email discard failed:', error?.message || error);
+    }
+
+    // Update the email preview message to show discarded
+    const previewMsg = chat.messages.find((m) => m.emailPreview?.campaign_id === campaignId);
+    if (previewMsg) {
+      dispatch({
+        type: AGENT_CHAT_ACTIONS.UPDATE_MESSAGE,
+        payload: {
+          id: previewMsg.id,
+          updates: {
+            emailPreview: { ...previewMsg.emailPreview, status: 'discarded' },
+            type: 'action_result',
+            success: false,
+          },
+        },
+      });
+    }
+
+    dispatch({
+      type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
+      payload: buildMessage('assistant', 'Email draft discarded. Would you like me to draft a different message?'),
     });
   }, [chat.messages, dispatch]);
 
@@ -371,7 +448,9 @@ const useMarshal = ({ screenContext = null } = {}) => {
     ...chat,
     confirmAction,
     declineAction,
+    handleDiscardEmail,
     handleIncomingIntent,
+    handleSendEmail,
     insights,
     isRefreshingInsights,
     refreshInsights,

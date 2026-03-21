@@ -84,3 +84,9 @@ jest.mock('@react-navigation/core', () => ({
   ...jest.requireActual('@react-navigation/core'),
   ...mockNavigationOverrides,
 }));
+
+// Mock react-native-webview (virtual — not in node_modules during test)
+jest.mock('react-native-webview', () => {
+  const { View } = require('react-native');
+  return { __esModule: true, default: (props) => View(props), WebView: (props) => View(props) };
+}, { virtual: true });

@@ -55,6 +55,15 @@ export const confirmMarshalAction = async (actionId) => {
   return response.data?.data || response.data;
 };
 
+export const sendClientEmail = async (campaignId) => {
+  const response = await apiClient.post(`/communications/campaigns/${campaignId}/send`);
+  return response.data?.data || response.data;
+};
+
+export const discardClientEmail = async (campaignId) => {
+  await apiClient.delete(`/communications/campaigns/${campaignId}`);
+};
+
 export const getMarshalInsights = async () => {
   const response = await apiClient.get('/marshal/insights');
 

@@ -7,6 +7,7 @@ import { colors } from '../../theme/colors';
 import { formatEligibilityLabel, stripContextBlocks } from '../../helpers/agentChat.helper';
 import AvailabilityCard from './AvailabilityCard';
 import BookingsCard from './BookingsCard';
+import EmailPreviewCard from './EmailPreviewCard';
 import FormattedResponseText from './FormattedResponseText';
 
 const ACTION_LABELS = {
@@ -18,6 +19,8 @@ const ACTION_LABELS = {
   update_location_hours: 'Update Location Hours',
   toggle_service: 'Toggle Service',
   create_campaign: 'Create Campaign Draft',
+  draft_client_email: 'Draft Client Email',
+  send_client_email: 'Send Client Email',
   update_service_pricing: 'Update Pricing',
   update_company_info: 'Update Company Info',
   create_location: 'Create Location',
@@ -225,7 +228,7 @@ HandoffCard.propTypes = {
   onHandoffAction: PropTypes.func,
 };
 
-const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction, onHandoffAction, handoffActionLabel, onSlotSelect, onBookingLinkPress }) => {
+const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction, onHandoffAction, handoffActionLabel, onSlotSelect, onBookingLinkPress, onSendEmail, onDiscardEmail }) => {
   // Hide streaming placeholder until first token arrives
   if (message.streaming && !message.text) return null;
 
@@ -261,6 +264,13 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
               handoff={message.handoff}
               handoffActionLabel={handoffActionLabel}
               onHandoffAction={onHandoffAction}
+            />
+          ) : null}
+          {message.type === 'email_preview' && message.emailPreview ? (
+            <EmailPreviewCard
+              emailPreview={message.emailPreview}
+              onSendEmail={onSendEmail}
+              onDiscardEmail={onDiscardEmail}
             />
           ) : null}
           {isUser ? (
@@ -369,6 +379,15 @@ AgentChatBubble.propTypes = {
       total: PropTypes.number,
       timezone: PropTypes.string,
     }),
+    emailPreview: PropTypes.shape({
+      campaign_id: PropTypes.number,
+      subject: PropTypes.string,
+      to_name: PropTypes.string,
+      to_email: PropTypes.string,
+      body_html: PropTypes.string,
+      preview_html: PropTypes.string,
+      status: PropTypes.string,
+    }),
     pendingActions: PropTypes.arrayOf(PropTypes.shape({
       action_id: PropTypes.string.isRequired,
       tool: PropTypes.string.isRequired,
@@ -379,7 +398,9 @@ AgentChatBubble.propTypes = {
   agentLabel: PropTypes.string,
   onConfirmAction: PropTypes.func,
   onDeclineAction: PropTypes.func,
+  onDiscardEmail: PropTypes.func,
   onHandoffAction: PropTypes.func,
+  onSendEmail: PropTypes.func,
   onSlotSelect: PropTypes.func,
   onBookingLinkPress: PropTypes.func,
   handoffActionLabel: PropTypes.string,
@@ -389,7 +410,9 @@ AgentChatBubble.defaultProps = {
   agentLabel: 'A',
   onConfirmAction: undefined,
   onDeclineAction: undefined,
+  onDiscardEmail: undefined,
   onHandoffAction: undefined,
+  onSendEmail: undefined,
   onSlotSelect: undefined,
   onBookingLinkPress: undefined,
   handoffActionLabel: 'Open in Marshal',

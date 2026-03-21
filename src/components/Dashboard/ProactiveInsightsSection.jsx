@@ -36,7 +36,7 @@ const TrendBadge = ({ pct }) => {
 
 TrendBadge.propTypes = { pct: PropTypes.number };
 
-const MemberList = ({ members, maxVisible = 4 }) => {
+const MemberList = ({ members, maxVisible = 3 }) => {
   if (!members || members.length === 0) return null;
 
   const visible = members.slice(0, maxVisible);
@@ -70,17 +70,23 @@ MemberList.propTypes = {
   maxVisible: PropTypes.number,
 };
 
-const HighlightsList = ({ highlights }) => {
+const HighlightsList = ({ highlights, maxVisible = 3 }) => {
   if (!highlights || highlights.length === 0) return null;
+
+  const visible = highlights.slice(0, maxVisible);
+  const overflow = highlights.length - maxVisible;
 
   return (
     <View style={styles.memberList}>
-      {highlights.map((h, i) => (
+      {visible.map((h, i) => (
         <View key={h.type || h.label || `highlight-${i}`} style={styles.highlightRow}>
           <Text style={styles.highlightLabel} numberOfLines={1}>{h.label}</Text>
           <Text style={styles.highlightCount}>{h.count}</Text>
         </View>
       ))}
+      {overflow > 0 ? (
+        <Text style={styles.memberOverflow}>+{overflow} more</Text>
+      ) : null}
     </View>
   );
 };
@@ -91,6 +97,7 @@ HighlightsList.propTypes = {
     label: PropTypes.string,
     count: PropTypes.number,
   })),
+  maxVisible: PropTypes.number,
 };
 
 const InsightCard = ({ card, onAskMarshal }) => {
@@ -152,10 +159,10 @@ const InsightCard = ({ card, onAskMarshal }) => {
         ) : null}
 
         {/* Member list (expiring, engagement) */}
-        {card.members ? <MemberList members={card.members} /> : null}
+        {card.members ? <MemberList members={card.members} maxVisible={card.headline ? 2 : 3} /> : null}
 
         {/* Highlights (caddie demand, conversions) */}
-        {card.highlights ? <HighlightsList highlights={card.highlights} /> : null}
+        {card.highlights ? <HighlightsList highlights={card.highlights} maxVisible={card.headline ? 2 : 3} /> : null}
       </View>
 
       {/* Ask Marshal CTA */}
