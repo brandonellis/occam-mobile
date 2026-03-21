@@ -6,6 +6,7 @@ module.exports = {
   ],
   moduleNameMapper: {
     '\\.svg$': '<rootDir>/tests/__mocks__/svgMock.js',
+    '^@expo/vector-icons$': '<rootDir>/tests/__mocks__/expoVectorIconsMock.js',
   },
   testMatch: [
     '<rootDir>/tests/**/*.test.{js,jsx}',

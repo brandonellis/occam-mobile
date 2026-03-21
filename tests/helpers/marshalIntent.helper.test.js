@@ -44,7 +44,7 @@ describe('marshalIntent.helper', () => {
     expect(intent.message).toContain('Coach: Taylor Reed');
     expect(intent.message).toContain('Location: North Studio');
     expect(intent.message).toContain('Resources: Bay 2');
-    expect(intent.message).toContain('Notes: Client may need to move to a later time.');
+    expect(intent.message).toContain('[BOOKING_NOTE_START] Client may need to move to a later time. [BOOKING_NOTE_END]');
     expect(intent.handoff.target).toBe('marshal');
     expect(intent.handoff.reason).toBe('booking_follow_up');
     expect(intent.handoff.title).toBe('Booking follow-up recommended');

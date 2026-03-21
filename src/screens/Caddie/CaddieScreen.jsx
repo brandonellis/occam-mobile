@@ -15,7 +15,7 @@ import { buildBookingDataFromLink } from '../../helpers/booking.helper';
 import { buildMarshalIntentFromHandoff } from '../../helpers/marshalIntent.helper';
 import { caddieStyles as styles } from '../../styles/caddie.styles';
 import { colors } from '../../theme';
-import { logger } from '../../helpers/logger.helper';
+import logger from '../../helpers/logger.helper';
 
 const CaddieScreen = () => {
   const { user, activeRole, isDualRole, switchRole } = useAuth();

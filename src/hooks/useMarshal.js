@@ -345,7 +345,7 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null, screenConte
     const intent = normalizeIntent(initialIntent);
     const intentKey = intent?.id || intent?.message || intent?.handoff?.prompt || null;
 
-    if (!intentKey || consumedIntentRef.current === intentKey || chat.isLoading) {
+    if (!intentKey || consumedIntentRef.current === intentKey || chat.isLoading || chat.isRestoring) {
       return;
     }
 
@@ -369,7 +369,7 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null, screenConte
     }
 
     onIntentConsumed?.();
-  }, [initialIntent, chat.isLoading, onIntentConsumed, sendMessage, dispatch]);
+  }, [initialIntent, chat.isLoading, chat.isRestoring, onIntentConsumed, sendMessage, dispatch]);
 
   return {
     ...chat,

@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react-native';
+import { act, renderHook, waitFor } from '@testing-library/react-native';
 import useMarshal from '../../src/hooks/useMarshal';
 import { confirmMarshalAction, getMarshalInsights, sendMarshalMessage } from '../../src/services/marshal.api';
 
@@ -6,6 +6,9 @@ jest.mock('../../src/services/marshal.api', () => ({
   sendMarshalMessage: jest.fn(),
   confirmMarshalAction: jest.fn(),
   getMarshalInsights: jest.fn(),
+  saveMarshalConversation: jest.fn().mockResolvedValue({}),
+  loadMarshalConversation: jest.fn().mockResolvedValue(null),
+  checkMarshalHealth: jest.fn().mockResolvedValue(true),
 }));
 
 describe('useMarshal', () => {
@@ -35,14 +38,21 @@ describe('useMarshal', () => {
       },
     };
 
+    // Wait for AsyncStorage restoration to complete before rendering with intent
+    await act(async () => {
+      // Flush async storage mocks
+    });
+
     const { result } = renderHook(() => useMarshal({ initialIntent, onIntentConsumed }));
 
+    // Wait for persistence restore to finish (async), then intent effect fires
     await waitFor(() => {
       expect(sendMarshalMessage).toHaveBeenCalledWith(
         initialIntent.message,
-        expect.any(Array)
+        expect.any(Array),
+        expect.any(Object),
       );
-    });
+    }, { timeout: 3000 });
 
     await waitFor(() => {
       expect(onIntentConsumed).toHaveBeenCalledTimes(1);

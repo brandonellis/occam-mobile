@@ -20,8 +20,10 @@ const mockUseCaddie = useCaddie;
 const mockUseAuth = useAuth;
 
 const buildCaddieState = () => ({
+  dismissNudge: jest.fn(),
   error: null,
   input: '',
+  isConnected: true,
   isLoading: false,
   messages: [
     {
@@ -38,9 +40,12 @@ const buildCaddieState = () => ({
       },
     },
   ],
+  nudges: [],
   resetConversation: jest.fn(),
+  runHealthCheck: jest.fn(),
   selectSuggestion: jest.fn(),
   sendCurrentMessage: jest.fn(),
+  sendMessage: jest.fn(),
   setInput: jest.fn(),
   suggestions: [],
 });

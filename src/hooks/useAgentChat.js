@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 import logger from '../helpers/logger.helper';
 import { buildMessage, buildHistory, normalizeSuggestions } from '../helpers/agentChat.helper';
 import { AGENT_CHAT_ACTIONS, agentChatReducer, createInitialAgentChatState } from '../reducers/agentChat.reducer';
@@ -46,6 +46,7 @@ const useAgentChat = ({
 
   const streamingTextRef = useRef('');
   const restoringRef = useRef(!!messagesStorageKey);
+  const [isRestoring, setIsRestoring] = useState(!!messagesStorageKey);
   const serverSaveTimerRef = useRef(null);
   const latestMessagesRef = useRef(state.messages);
   latestMessagesRef.current = state.messages;
@@ -85,6 +86,7 @@ const useAgentChat = ({
         logger.warn(`${agentName} restore failed:`, error?.message);
       } finally {
         restoringRef.current = false;
+        setIsRestoring(false);
       }
     };
 
@@ -330,6 +332,7 @@ const useAgentChat = ({
   return {
     ...state,
     dispatch,
+    isRestoring,
     resetConversation,
     runHealthCheck,
     selectSuggestion,
