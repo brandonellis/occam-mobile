@@ -45,6 +45,8 @@ const useCaddie = () => {
       if (restored) {
         dispatch({ type: AGENT_CHAT_ACTIONS.SET_BOOKING_STATE, payload: restored });
       }
+    }).catch((err) => {
+      logger.warn('Caddie booking state restore failed:', err?.message);
     });
   }, [dispatch]);
 
