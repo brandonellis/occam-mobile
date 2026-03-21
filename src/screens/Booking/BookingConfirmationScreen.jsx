@@ -181,11 +181,13 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     // If membership covers this service, skip package check
     if (isMembershipBooking) {
       setPackageBenefit(null);
+      setPackageBenefitLoading(false);
       return;
     }
     // Only check for the authenticated client (not coach booking for others)
     if (isCoach) {
       setPackageBenefit(null);
+      setPackageBenefitLoading(false);
       return;
     }
     let cancelled = false;

@@ -219,6 +219,7 @@ export const buildBookingDataFromLink = (bookingLink) => {
       duration_minutes: bookingLink.duration_minutes || 60,
       price: priceCents != null ? priceCents / 100 : null,
       price_cents: priceCents,
+      requires_resource: bookingLink.requires_resource || false,
     },
     location: {
       id: locationId,
