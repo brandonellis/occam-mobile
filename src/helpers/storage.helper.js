@@ -1,5 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import { STORAGE_KEYS } from '../constants/auth.constants';
+import { clearPersistence, CADDIE_MESSAGES_KEY, CADDIE_SESSION_KEY, CADDIE_BOOKING_STATE_KEY, CADDIE_DISMISSED_NUDGES_KEY, MARSHAL_MESSAGES_KEY, MARSHAL_SESSION_KEY } from './chatPersistence.helper';
 
 // In-memory cache to avoid hitting SecureStore (native bridge) on every API call
 // undefined = not yet loaded from SecureStore; null = loaded but no value stored
@@ -103,5 +104,9 @@ export const clearAllStorage = async () => {
     removeTenantId(),
     removeActiveRole(),
     removeCompanyData(),
+    clearPersistence(
+      CADDIE_MESSAGES_KEY, CADDIE_SESSION_KEY, CADDIE_BOOKING_STATE_KEY,
+      CADDIE_DISMISSED_NUDGES_KEY, MARSHAL_MESSAGES_KEY, MARSHAL_SESSION_KEY,
+    ),
   ]);
 };

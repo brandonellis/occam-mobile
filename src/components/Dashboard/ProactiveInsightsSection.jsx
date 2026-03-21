@@ -1,8 +1,7 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
 import { Pressable, ScrollView, View } from 'react-native';
 import { Button, Icon, Surface, Text } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../../theme';
 import { proactiveInsightsStyles as styles } from '../../styles/proactiveInsights.styles';
 
@@ -76,8 +75,8 @@ const HighlightsList = ({ highlights }) => {
 
   return (
     <View style={styles.memberList}>
-      {highlights.map((h) => (
-        <View key={h.type || h.label} style={styles.highlightRow}>
+      {highlights.map((h, i) => (
+        <View key={h.type || h.label || `highlight-${i}`} style={styles.highlightRow}>
           <Text style={styles.highlightLabel} numberOfLines={1}>{h.label}</Text>
           <Text style={styles.highlightCount}>{h.count}</Text>
         </View>
@@ -100,7 +99,7 @@ const InsightCard = ({ card, onAskMarshal }) => {
   return (
     <Surface style={[styles.card, accent, card.urgent && styles.cardUrgent]} elevation={0}>
       <View style={styles.cardHeader}>
-        <MaterialCommunityIcons name={card.icon} size={16} color={colors.textSecondary} />
+        <Icon source={card.icon} size={16} color={colors.textSecondary} />
         <Text style={styles.cardTitle}>{card.title}</Text>
         {card.trendPct !== undefined && card.trendPct !== null ? (
           <TrendBadge pct={card.trendPct} />
@@ -158,7 +157,7 @@ const InsightCard = ({ card, onAskMarshal }) => {
       {card.highlights ? <HighlightsList highlights={card.highlights} /> : null}
 
       {/* Ask Marshal CTA */}
-      <Pressable style={styles.marshalLink} onPress={() => onAskMarshal(card.type, card.data)}>
+      <Pressable style={styles.marshalLink} hitSlop={8} onPress={() => onAskMarshal(card.type, card.data)}>
         <Icon source="robot-outline" size={14} color={colors.accent} />
         <Text style={styles.marshalLinkText}>Ask Marshal</Text>
         <Icon source="arrow-right" size={12} color={colors.accent} />
@@ -190,7 +189,7 @@ InsightCard.propTypes = {
 
 const ProactiveInsightsSection = ({ cards, isLoading, error, onRefresh, onAskMarshal }) => {
   if (isLoading) return null;
-  if (error || cards.length === 0) return null;
+  if (error || !cards || cards.length === 0) return null;
 
   return (
     <View style={styles.section}>

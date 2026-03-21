@@ -1,6 +1,11 @@
 import { formatDateInTz, formatTimeInTz } from './timezone.helper';
 import { getSessionCoachNames, getSessionResourceNames, getSessionServiceName } from './booking.helper';
 
+const sanitize = (text) => {
+  if (!text) return '';
+  return String(text).replace(/[<>\[\]{}]/g, '').substring(0, 500);
+};
+
 const getPersonName = (person) => {
   if (!person) {
     return '';
@@ -76,10 +81,10 @@ export const buildBookingMarshalIntent = ({ booking, company }) => {
 };
 
 export const buildClassSessionMarshalIntent = ({ booking, company, waitlistEntries = [] }) => {
-  const serviceName = getSessionServiceName(booking) || 'Class Session';
-  const coachNames = getSessionCoachNames(booking) || 'Unassigned';
-  const resourceNames = getSessionResourceNames(booking) || 'None assigned';
-  const locationName = booking?.location?.name || booking?.location_name || 'Unknown location';
+  const serviceName = sanitize(getSessionServiceName(booking)) || 'Class Session';
+  const coachNames = sanitize(getSessionCoachNames(booking)) || 'Unassigned';
+  const resourceNames = sanitize(getSessionResourceNames(booking)) || 'None assigned';
+  const locationName = sanitize(booking?.location?.name || booking?.location_name) || 'Unknown location';
   const sessionDate = booking?.start_time ? formatDateInTz(booking.start_time, company, 'long') : 'Unknown date';
   const startTime = booking?.start_time ? formatTimeInTz(booking.start_time, company) : 'Unknown time';
   const endTime = booking?.end_time ? formatTimeInTz(booking.end_time, company) : '';
@@ -137,7 +142,7 @@ export const buildClassSessionMarshalIntent = ({ booking, company, waitlistEntri
 };
 
 export const buildOnboardingMarshalIntent = ({ stepId, step }) => {
-  const stepTitle = step?.title || 'Go-live setup';
+  const stepTitle = sanitize(step?.title) || 'Go-live setup';
   const summary = `Help complete the ${stepTitle} setup step.`;
   const prompt = [
     'Onboarding setup handoff for Marshal',
@@ -145,9 +150,9 @@ export const buildOnboardingMarshalIntent = ({ stepId, step }) => {
     `Step ID: ${stepId || 'unknown'}`,
     `Step: ${stepTitle}`,
     `Completed: ${step?.completed ? 'Yes' : 'No'}`,
-    `Estimate: ${step?.estimate || 'Unknown'}`,
-    `Description: ${step?.description || 'No description provided'}`,
-    `Rationale: ${step?.rationale || 'No rationale provided'}`,
+    `Estimate: ${sanitize(step?.estimate) || 'Unknown'}`,
+    `Description: ${sanitize(step?.description) || 'No description provided'}`,
+    `Rationale: ${sanitize(step?.rationale) || 'No rationale provided'}`,
     'Please guide the staff user through the most useful next setup action. Any mutation still requires explicit human approval.',
   ].join('\n');
 

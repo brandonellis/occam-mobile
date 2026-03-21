@@ -3,14 +3,12 @@ import PropTypes from 'prop-types';
 import { View } from 'react-native';
 import { Icon, Surface, Text } from 'react-native-paper';
 import { bookingsCardStyles as styles } from '../../styles/bookingsCard.styles';
+import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
 import { colors } from '../../theme/colors';
 
 const STATUS_CONFIG = {
-  confirmed: { color: colors.success, label: 'Confirmed' },
-  completed: { color: colors.info || colors.accent, label: 'Completed' },
-  cancelled: { color: colors.error, label: 'Cancelled' },
-  pending: { color: colors.warning, label: 'Pending' },
-  no_show: { color: colors.error, label: 'No Show' },
+  ...BOOKING_STATUS_CONFIG,
+  no_show: { color: colors.error, label: 'No Show', icon: 'close-circle', backgroundColor: colors.errorLight },
 };
 
 const BookingRow = ({ booking }) => {
@@ -87,8 +85,8 @@ const BookingsCard = ({ bookings }) => {
         </Text>
       </View>
       <View style={styles.list}>
-        {items.map((booking) => (
-          <BookingRow key={booking.id} booking={booking} />
+        {items.map((booking, index) => (
+          <BookingRow key={booking.id ?? `booking-${index}`} booking={booking} />
         ))}
       </View>
     </Surface>

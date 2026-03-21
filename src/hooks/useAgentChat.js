@@ -109,7 +109,8 @@ const useAgentChat = ({
       if (serverSaveTimerRef.current) clearTimeout(serverSaveTimerRef.current);
       serverSaveTimerRef.current = setTimeout(() => {
         const latest = latestMessagesRef.current.filter((m) => !m.streaming);
-        saveConversationApi(state.sessionId, messagesToServerFormat(latest));
+        saveConversationApi(state.sessionId, messagesToServerFormat(latest))
+          .catch((err) => logger.warn('Server save failed:', err?.message));
       }, SERVER_SAVE_DEBOUNCE_MS);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -265,7 +266,7 @@ const useAgentChat = ({
           type: AGENT_CHAT_ACTIONS.UPDATE_MESSAGE,
           payload: {
             id: streamingId,
-            updates: { text: streamingTextRef.current, streaming: false, type: 'assistant' },
+            updates: { text: `${streamingTextRef.current} [response interrupted]`, streaming: false, type: 'assistant' },
           },
         });
       } else {

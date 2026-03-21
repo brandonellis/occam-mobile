@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Crypto from 'expo-crypto';
 import logger from './logger.helper';
 
 // ── Storage keys ──
@@ -40,7 +41,8 @@ export const loadMessages = async (storageKey) => {
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed) ? parsed : null;
   } catch (error) {
-    logger.warn('Chat persistence: failed to load messages', error?.message);
+    logger.warn('Chat persistence: failed to load messages, clearing corrupted data', error?.message);
+    await AsyncStorage.removeItem(storageKey).catch(() => {});
     return null;
   }
 };
@@ -163,10 +165,7 @@ export const normalizePersistedMessages = (messages) => {
 
 // ── UUID generator ──
 
-export const generateSessionId = () => {
-  const s4 = () => Math.floor((1 + Math.random()) * 0x10000).toString(16).substring(1);
-  return `${s4()}${s4()}-${s4()}-${s4()}-${s4()}-${s4()}${s4()}${s4()}`;
-};
+export const generateSessionId = () => Crypto.randomUUID();
 
 // ── Server save helpers ──
 

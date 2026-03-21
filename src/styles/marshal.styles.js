@@ -2,6 +2,7 @@ import { StyleSheet } from 'react-native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius, shadows } from '../theme/spacing';
+import { sharedAgentStyles } from './agentChat.styles';
 
 export const marshalStyles = StyleSheet.create({
   container: {
@@ -62,24 +63,9 @@ export const marshalStyles = StyleSheet.create({
     color: colors.textSecondary,
     marginTop: spacing.xs,
   },
-  heroTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  statusConnected: {
-    backgroundColor: colors.success,
-  },
-  statusDisconnected: {
-    backgroundColor: colors.error,
-  },
-  statusUnknown: {
-    backgroundColor: colors.gray400,
-  },
+  heroTitleRow: sharedAgentStyles.heroTitleRow,
+  statusDot: sharedAgentStyles.statusDot,
+  statusConnected: sharedAgentStyles.statusConnected,
+  statusDisconnected: sharedAgentStyles.statusDisconnected,
+  statusUnknown: sharedAgentStyles.statusUnknown,
 });

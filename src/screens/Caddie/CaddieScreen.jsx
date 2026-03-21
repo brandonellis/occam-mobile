@@ -158,24 +158,29 @@ const CaddieScreen = () => {
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nudgesRow}>
                 {nudges.map((nudge) => (
-                  <Pressable key={nudge.id} onPress={() => selectSuggestion(nudge.prompt || nudge.title)}>
-                    <Surface style={styles.nudgeCard} elevation={0}>
+                  <Surface key={nudge.id} style={styles.nudgeCard} elevation={0}>
+                    <Pressable onPress={() => selectSuggestion(nudge.prompt || nudge.title)}>
                       <Text style={styles.nudgeTitle}>{nudge.title}</Text>
                       <Text style={styles.nudgeBody} numberOfLines={3}>{nudge.body || nudge.description}</Text>
-                      <View style={styles.nudgeActions}>
-                        <View style={styles.nudgeAskRow}>
-                          <Text style={styles.nudgeAskText}>Ask Caddie</Text>
-                          <Icon source="arrow-right" size={14} color={colors.accent} />
-                        </View>
-                        <Pressable
-                          hitSlop={8}
-                          onPress={(e) => { e.stopPropagation?.(); dismissNudge(nudge.id); }}
-                        >
-                          <Text style={styles.nudgeDismiss}>Dismiss</Text>
-                        </Pressable>
-                      </View>
-                    </Surface>
-                  </Pressable>
+                    </Pressable>
+                    <View style={styles.nudgeActions}>
+                      <Pressable
+                        hitSlop={8}
+                        style={styles.nudgeAskRow}
+                        onPress={() => selectSuggestion(nudge.prompt || nudge.title)}
+                      >
+                        <Text style={styles.nudgeAskText}>Ask Caddie</Text>
+                        <Icon source="arrow-right" size={14} color={colors.accent} />
+                      </Pressable>
+                      <Pressable
+                        hitSlop={12}
+                        style={{ minHeight: 44, justifyContent: 'center' }}
+                        onPress={() => dismissNudge(nudge.id)}
+                      >
+                        <Text style={styles.nudgeDismiss}>Dismiss</Text>
+                      </Pressable>
+                    </View>
+                  </Surface>
                 ))}
               </ScrollView>
             </View>

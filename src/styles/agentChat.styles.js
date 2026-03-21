@@ -603,3 +603,27 @@ export const agentChatStyles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 });
+
+// Shared styles used by both Caddie and Marshal screens
+export const sharedAgentStyles = StyleSheet.create({
+  heroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusConnected: {
+    backgroundColor: colors.success,
+  },
+  statusDisconnected: {
+    backgroundColor: colors.error,
+  },
+  statusUnknown: {
+    backgroundColor: colors.gray400,
+  },
+});

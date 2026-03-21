@@ -279,6 +279,7 @@ export const proactiveInsightsStyles = StyleSheet.create({
     gap: spacing.xs,
     marginTop: spacing.sm,
     paddingTop: spacing.sm,
+    minHeight: 44,
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
   },
