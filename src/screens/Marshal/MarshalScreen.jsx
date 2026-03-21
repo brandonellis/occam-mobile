@@ -1,24 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Icon, Surface, Text } from 'react-native-paper';
+import { Button, Surface, Text } from 'react-native-paper';
 import AgentChatInput from '../../components/AgentChat/AgentChatInput';
 import AgentChatMessages from '../../components/AgentChat/AgentChatMessages';
 import useAuth from '../../hooks/useAuth';
 import useMarshal from '../../hooks/useMarshal';
 import useMarshalIntent from '../../hooks/useMarshalIntent';
 import { buildMarshalScreenContext } from '../../helpers/marshalContext.helper';
-import { agentChatStyles as chatStyles } from '../../styles/agentChat.styles';
 import { marshalStyles as styles } from '../../styles/marshal.styles';
 import logger from '../../helpers/logger.helper';
-
-const INSIGHT_ACCENT_COLORS = [
-  chatStyles.insightCardAccentBlue,
-  chatStyles.insightCardAccentGold,
-  chatStyles.insightCardAccentCoral,
-];
 
 const MarshalScreen = ({ route }) => {
   const { activeRole } = useAuth();
@@ -36,15 +29,14 @@ const MarshalScreen = ({ route }) => {
     confirmAction,
     declineAction,
     error,
+    handleDiscardEmail,
     handleIncomingIntent,
+    handleSendEmail,
     input,
-    insights,
     isConnected,
     isLoading,
-    isRefreshingInsights,
     isRestoring,
     messages,
-    refreshInsights,
     resetConversation,
     runHealthCheck,
     selectSuggestion,
@@ -61,8 +53,11 @@ const MarshalScreen = ({ route }) => {
       return;
     }
     const intent = consumeIntent();
-    if (intent) handleIncomingIntent(intent);
-  }, [consumeIntent, handleIncomingIntent, isRestoring, runHealthCheck]));
+    if (intent) {
+      handleIncomingIntent(intent);
+      scrollToConversation();
+    }
+  }, [consumeIntent, handleIncomingIntent, isRestoring, runHealthCheck, scrollToConversation]));
 
   // Consume pending intent after restoration completes (handles role-switch + fresh mount)
   const wasRestoringRef = useRef(true);
@@ -70,13 +65,23 @@ const MarshalScreen = ({ route }) => {
     if (wasRestoringRef.current && !isRestoring) {
       wasRestoringRef.current = false;
       const intent = consumeIntent();
-      if (intent) handleIncomingIntent(intent);
+      if (intent) {
+        handleIncomingIntent(intent);
+        scrollToConversation();
+      }
     }
-  }, [isRestoring, consumeIntent, handleIncomingIntent]);
+  }, [isRestoring, consumeIntent, handleIncomingIntent, scrollToConversation]);
 
   const roleLabel = activeRole === 'coach' ? 'Coach' : 'Admin';
 
   const scrollRef = useRef(null);
+  const conversationYRef = useRef(0);
+
+  const scrollToConversation = useCallback(() => {
+    setTimeout(() => {
+      scrollRef.current?.scrollTo?.({ y: conversationYRef.current, animated: true });
+    }, 200);
+  }, []);
 
   const handleFocusInput = useCallback(() => {
     setTimeout(() => {
@@ -114,40 +119,7 @@ const MarshalScreen = ({ route }) => {
             </Text>
           </Surface>
 
-          <View style={styles.section}>
-            <View style={styles.sectionHeader}>
-              <View>
-                <Text style={styles.sectionTitle}>Insights</Text>
-                <Text style={styles.sectionHint}>Marshal highlights the most actionable items first.</Text>
-              </View>
-              <Button mode="text" loading={isRefreshingInsights} onPress={refreshInsights}>
-                Refresh
-              </Button>
-            </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={chatStyles.insightsRow}>
-              {insights.map((insight, index) => (
-                <Pressable key={insight.id} onPress={() => selectSuggestion(insight.prompt)}>
-                  <Surface
-                    style={[
-                      chatStyles.insightCard,
-                      chatStyles.insightCardAccent,
-                      INSIGHT_ACCENT_COLORS[index % INSIGHT_ACCENT_COLORS.length],
-                    ]}
-                    elevation={0}
-                  >
-                    <Text style={chatStyles.insightTitle}>{insight.title}</Text>
-                    <Text style={chatStyles.insightBody} numberOfLines={3}>{insight.body}</Text>
-                    <View style={chatStyles.insightActionRow}>
-                      <Text style={chatStyles.insightActionText}>Ask Marshal</Text>
-                      <Icon source="arrow-right" size={14} color={chatStyles.insightActionArrow.color} />
-                    </View>
-                  </Surface>
-                </Pressable>
-              ))}
-            </ScrollView>
-          </View>
-
-          <View style={styles.section}>
+          <View onLayout={(e) => { conversationYRef.current = e.nativeEvent.layout.y; }} style={styles.section}>
             <Text style={styles.sectionTitle}>Conversation</Text>
             <Text style={styles.sectionHint}>
               Ask for a summary, next actions, follow-ups, or booking pressure by day.
@@ -159,6 +131,8 @@ const MarshalScreen = ({ route }) => {
               messages={messages}
               onConfirmAction={confirmAction}
               onDeclineAction={declineAction}
+              onSendEmail={handleSendEmail}
+              onDiscardEmail={handleDiscardEmail}
             />
             <AgentChatInput
               error={error}

@@ -35,12 +35,14 @@ export const proactiveInsightsStyles = StyleSheet.create({
   // ── Insight card ──
   card: {
     width: 280,
+    height: 200,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.borderLight,
     borderLeftWidth: 3,
+    justifyContent: 'space-between',
     ...shadows.sm,
   },
   cardWarning: {
@@ -65,12 +67,17 @@ export const proactiveInsightsStyles = StyleSheet.create({
     borderLeftColor: colors.info,
   },
 
+  cardBody: {
+    flex: 1,
+    overflow: 'hidden',
+  },
+
   // ── Card header ──
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   cardTitle: {
     ...typography.label,
@@ -121,7 +128,7 @@ export const proactiveInsightsStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: spacing.sm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   headlineNumber: {
     ...typography.h2,
@@ -179,7 +186,8 @@ export const proactiveInsightsStyles = StyleSheet.create({
 
   // ── Member list ──
   memberList: {
-    marginBottom: spacing.sm,
+    // No marginBottom — cardBody overflow: hidden clips content, and
+    // justifyContent: space-between handles spacing to the CTA footer.
   },
   memberRow: {
     flexDirection: 'row',
@@ -277,9 +285,8 @@ export const proactiveInsightsStyles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
-    marginTop: spacing.sm,
     paddingTop: spacing.sm,
-    minHeight: 44,
+    minHeight: 32,
     borderTopWidth: 1,
     borderTopColor: colors.borderLight,
   },

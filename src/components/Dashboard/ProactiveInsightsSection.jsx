@@ -36,7 +36,7 @@ const TrendBadge = ({ pct }) => {
 
 TrendBadge.propTypes = { pct: PropTypes.number };
 
-const MemberList = ({ members, maxVisible = 4 }) => {
+const MemberList = ({ members, maxVisible = 3 }) => {
   if (!members || members.length === 0) return null;
 
   const visible = members.slice(0, maxVisible);
@@ -70,17 +70,23 @@ MemberList.propTypes = {
   maxVisible: PropTypes.number,
 };
 
-const HighlightsList = ({ highlights }) => {
+const HighlightsList = ({ highlights, maxVisible = 3 }) => {
   if (!highlights || highlights.length === 0) return null;
+
+  const visible = highlights.slice(0, maxVisible);
+  const overflow = highlights.length - maxVisible;
 
   return (
     <View style={styles.memberList}>
-      {highlights.map((h, i) => (
+      {visible.map((h, i) => (
         <View key={h.type || h.label || `highlight-${i}`} style={styles.highlightRow}>
           <Text style={styles.highlightLabel} numberOfLines={1}>{h.label}</Text>
           <Text style={styles.highlightCount}>{h.count}</Text>
         </View>
       ))}
+      {overflow > 0 ? (
+        <Text style={styles.memberOverflow}>+{overflow} more</Text>
+      ) : null}
     </View>
   );
 };
@@ -91,6 +97,7 @@ HighlightsList.propTypes = {
     label: PropTypes.string,
     count: PropTypes.number,
   })),
+  maxVisible: PropTypes.number,
 };
 
 const InsightCard = ({ card, onAskMarshal }) => {
@@ -98,66 +105,68 @@ const InsightCard = ({ card, onAskMarshal }) => {
 
   return (
     <Surface style={[styles.card, accent, card.urgent && styles.cardUrgent]} elevation={0}>
-      <View style={styles.cardHeader}>
-        <Icon source={card.icon} size={16} color={colors.textSecondary} />
-        <Text style={styles.cardTitle}>{card.title}</Text>
-        {card.trendPct !== undefined && card.trendPct !== null ? (
-          <TrendBadge pct={card.trendPct} />
-        ) : card.trending ? (
-          <View style={styles.trendingBadge}>
-            <Icon source="arrow-up" size={9} color={colors.success} />
-            <Text style={styles.trendingText}>trending</Text>
+      <View style={styles.cardBody}>
+        <View style={styles.cardHeader}>
+          <Icon source={card.icon} size={16} color={colors.textSecondary} />
+          <Text style={styles.cardTitle}>{card.title}</Text>
+          {card.trendPct !== undefined && card.trendPct !== null ? (
+            <TrendBadge pct={card.trendPct} />
+          ) : card.trending ? (
+            <View style={styles.trendingBadge}>
+              <Icon source="arrow-up" size={9} color={colors.success} />
+              <Text style={styles.trendingText}>trending</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {card.period ? (
+          <Text style={styles.cardPeriod}>{card.period}</Text>
+        ) : null}
+
+        {/* Revenue special layout */}
+        {card.type === 'revenue_trend' ? (
+          <View style={styles.revenueRow}>
+            <View style={styles.revenueAmount}>
+              <Text style={styles.revenueValue}>{card.thisMonth}</Text>
+              <Text style={styles.revenuePeriod}>this month</Text>
+            </View>
+            <View style={styles.revenueSep} />
+            <View style={styles.revenueAmount}>
+              <Text style={styles.revenueValue}>{card.lastMonth}</Text>
+              <Text style={styles.revenuePeriod}>last month</Text>
+            </View>
           </View>
         ) : null}
+
+        {/* Big number headline */}
+        {card.headline && card.type !== 'revenue_trend' ? (
+          <View style={styles.headline}>
+            <Text style={styles.headlineNumber}>{card.headline}</Text>
+            <Text style={styles.headlineLabel}>{card.headlineLabel}</Text>
+          </View>
+        ) : null}
+
+        {/* Stats row (capacity) */}
+        {card.stats ? (
+          <View style={styles.statsRow}>
+            {card.stats.map((s) => (
+              <View key={s.label} style={styles.statItem}>
+                <Text style={styles.statValue}>{s.value}</Text>
+                <Text style={styles.statLabel}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {/* Member list (expiring, engagement) */}
+        {card.members ? <MemberList members={card.members} maxVisible={card.headline ? 2 : 3} /> : null}
+
+        {/* Highlights (caddie demand, conversions) */}
+        {card.highlights ? <HighlightsList highlights={card.highlights} maxVisible={card.headline ? 2 : 3} /> : null}
       </View>
 
-      {card.period ? (
-        <Text style={styles.cardPeriod}>{card.period}</Text>
-      ) : null}
-
-      {/* Revenue special layout */}
-      {card.type === 'revenue_trend' ? (
-        <View style={styles.revenueRow}>
-          <View style={styles.revenueAmount}>
-            <Text style={styles.revenueValue}>{card.thisMonth}</Text>
-            <Text style={styles.revenuePeriod}>this month</Text>
-          </View>
-          <View style={styles.revenueSep} />
-          <View style={styles.revenueAmount}>
-            <Text style={styles.revenueValue}>{card.lastMonth}</Text>
-            <Text style={styles.revenuePeriod}>last month</Text>
-          </View>
-        </View>
-      ) : null}
-
-      {/* Big number headline */}
-      {card.headline && card.type !== 'revenue_trend' ? (
-        <View style={styles.headline}>
-          <Text style={styles.headlineNumber}>{card.headline}</Text>
-          <Text style={styles.headlineLabel}>{card.headlineLabel}</Text>
-        </View>
-      ) : null}
-
-      {/* Stats row (capacity) */}
-      {card.stats ? (
-        <View style={styles.statsRow}>
-          {card.stats.map((s) => (
-            <View key={s.label} style={styles.statItem}>
-              <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
-
-      {/* Member list (expiring, engagement) */}
-      {card.members ? <MemberList members={card.members} /> : null}
-
-      {/* Highlights (caddie demand, conversions) */}
-      {card.highlights ? <HighlightsList highlights={card.highlights} /> : null}
-
       {/* Ask Marshal CTA */}
-      <Pressable style={styles.marshalLink} hitSlop={8} onPress={() => onAskMarshal(card.type, card.data)}>
+      <Pressable style={styles.marshalLink} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} onPress={() => onAskMarshal(card.type, card.data)}>
         <Icon source="robot-outline" size={14} color={colors.accent} />
         <Text style={styles.marshalLinkText}>Ask Marshal</Text>
         <Icon source="arrow-right" size={12} color={colors.accent} />

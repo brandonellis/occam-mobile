@@ -139,11 +139,6 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
                   >
                     {label}
                   </Text>
-                  {route.name === SCREENS.CADDIE && (
-                    <View style={styles.betaTag}>
-                      <Text style={styles.betaTagText}>BETA</Text>
-                    </View>
-                  )}
                 </View>
               </TouchableOpacity>
             );
@@ -245,18 +240,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
-  },
-  betaTag: {
-    backgroundColor: colors.accent,
-    borderRadius: 3,
-    paddingHorizontal: 3,
-    paddingVertical: 0.5,
-  },
-  betaTagText: {
-    color: colors.textInverse,
-    fontSize: 6,
-    fontWeight: '800',
-    letterSpacing: 0.3,
   },
 });
 

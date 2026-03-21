@@ -425,9 +425,9 @@ export const agentChatStyles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   suggestionChip: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
+    backgroundColor: 'rgba(76, 172, 213, 0.08)',
+    borderWidth: 1.5,
+    borderColor: colors.accent,
     borderRadius: 20,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -437,7 +437,7 @@ export const agentChatStyles = StyleSheet.create({
     gap: spacing.xs,
   },
   suggestionChipPressed: {
-    backgroundColor: colors.accentSubtle,
+    backgroundColor: 'rgba(76, 172, 213, 0.18)',
     borderColor: colors.accent,
   },
   suggestionChipIcon: {
@@ -445,7 +445,8 @@ export const agentChatStyles = StyleSheet.create({
   },
   suggestionChipText: {
     ...typography.bodySmall,
-    color: colors.textSecondary,
+    color: colors.accent,
+    fontWeight: '600',
   },
   insightsRow: {
     gap: spacing.md,

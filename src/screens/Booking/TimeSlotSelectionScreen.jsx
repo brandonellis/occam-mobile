@@ -125,14 +125,13 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         // but fall back to all type-matched resources if none match the location.
         // This mirrors the web client behaviour where the backend validates the
         // final booking and doesn't strictly enforce resource–location pairing.
-        const serviceTypeIds = service.resource_type_ids ||
-          (service.resource_type?.id ? [service.resource_type.id] : (service.resource_type_id ? [service.resource_type_id] : []));
+        const serviceTypeIds = service.resource_type_ids || [];
 
         const typeMatched = allResources.filter((r) => {
           if (r.status === 'inactive' || r.status === 'disabled') return false;
           if (serviceTypeIds.length > 0) {
-            const rTypeId = r.resource_type_id || r.type?.id || r.resource_type?.id;
-            if (rTypeId && !serviceTypeIds.includes(rTypeId)) return false;
+            const rTypeIds = r.resource_type_ids || [];
+            if (rTypeIds.length > 0 && !serviceTypeIds.some(id => rTypeIds.includes(id))) return false;
           }
           return true;
         });
@@ -156,7 +155,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       }
     })();
     return () => { cancelled = true; };
-  }, [isClassService, service?.requires_resource, service?.resource_type_ids, service?.resource_type_id, service?.resource_type?.id, location?.id]);
+  }, [isClassService, service?.requires_resource, service?.resource_type_ids, location?.id]);
 
   // Determine which months we need to fetch summaries for
   const monthsToFetch = useMemo(() => {

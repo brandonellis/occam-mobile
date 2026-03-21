@@ -1,11 +1,10 @@
 import apiClient from './apiClient';
-import { getToken, getTenantId } from '../helpers/storage.helper';
-import { getTenantApiUrl } from '../config';
-import { readSSEStream } from '../helpers/sse.helper';
+import { sendStreamingRequest } from '../helpers/streaming.helper';
 import logger from '../helpers/logger.helper';
 
 /**
- * Stream a Marshal chat response via SSE.
+ * Send a Marshal chat message, attempting SSE streaming first and falling
+ * back to the non-streaming endpoint if streaming is unavailable.
  *
  * @param {string}   message  - User message
  * @param {Array}    history  - Conversation history [{role, content}]
@@ -13,50 +12,11 @@ import logger from '../helpers/logger.helper';
  * @returns {Promise<Object>} Final response: { response, suggested_actions, pending_actions, card }
  */
 export const sendMarshalMessage = async (message, history = [], { onToken, onCard, pageContext } = {}) => {
-  const token = await getToken();
-  if (!token) {
-    throw new Error('Authentication token is required');
-  }
+  const body = { message, history, ...(pageContext ? { page_context: pageContext } : {}) };
 
-  const tenantId = await getTenantId();
-  const baseUrl = tenantId ? getTenantApiUrl(tenantId) : '';
-  const headers = {
-    'Content-Type': 'application/json',
-    Authorization: `Bearer ${token}`,
-    Accept: 'text/event-stream',
-    'X-Requested-With': 'XMLHttpRequest',
-  };
-  if (tenantId) {
-    headers['X-Tenant'] = tenantId;
-  }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-  let response;
+  // ── Attempt SSE streaming first ──
   try {
-    response = await fetch(`${baseUrl}/marshal/chat/stream`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ message, history, ...(pageContext ? { page_context: pageContext } : {}) }),
-      signal: controller.signal,
-    });
-  } catch (fetchError) {
-    clearTimeout(timeoutId);
-    if (fetchError?.name === 'AbortError') {
-      throw new Error('Marshal took too long to respond. Please try again.');
-    }
-    throw new Error('Connection lost — please check your network and try again.');
-  }
-
-  if (!response.ok) {
-    clearTimeout(timeoutId);
-    const text = await response.text().catch(() => '');
-    throw new Error(text || `Stream request failed: ${response.status}`);
-  }
-
-  try {
-    const finalResult = await readSSEStream(response, {
+    const finalResult = await sendStreamingRequest('/marshal/chat/stream', body, {
       token: (data) => { if (data.text && onToken) onToken(data.text); },
       card: (data) => { if (data.card && onCard) onCard(data.card); },
     });
@@ -67,9 +27,24 @@ export const sendMarshalMessage = async (message, history = [], { onToken, onCar
       pending_actions: finalResult.pending_actions || [],
       card: finalResult.card || null,
     };
-  } finally {
-    clearTimeout(timeoutId);
+  } catch (streamError) {
+    // Only fall back for network/streaming errors, not auth or server errors
+    if (streamError?.message?.includes('401') || streamError?.message?.includes('403')) {
+      throw streamError;
+    }
+    logger.warn('Marshal streaming failed, falling back to non-streaming:', streamError?.message);
   }
+
+  // ── Fallback: non-streaming via apiClient (axios) ──
+  const response = await apiClient.post('/marshal/chat', body);
+  const result = response.data?.data || response.data;
+
+  return {
+    response: result?.response || '',
+    suggested_actions: result?.suggested_actions || [],
+    pending_actions: result?.pending_actions || [],
+    card: result?.card || null,
+  };
 };
 
 export const confirmMarshalAction = async (actionId) => {
@@ -78,6 +53,15 @@ export const confirmMarshalAction = async (actionId) => {
   });
 
   return response.data?.data || response.data;
+};
+
+export const sendClientEmail = async (campaignId) => {
+  const response = await apiClient.post(`/communications/campaigns/${campaignId}/send`);
+  return response.data?.data || response.data;
+};
+
+export const discardClientEmail = async (campaignId) => {
+  await apiClient.delete(`/communications/campaigns/${campaignId}`);
 };
 
 export const getMarshalInsights = async () => {

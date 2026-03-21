@@ -79,7 +79,10 @@ const useAgentChat = ({
         if (restored && restored.length > 0) {
           const normalized = normalizePersistedMessages(restored);
           if (normalized.length > 0) {
-            dispatch({ type: AGENT_CHAT_ACTIONS.SET_MESSAGES, payload: [...initialMessages, ...normalized] });
+            // Filter out any messages whose IDs clash with initialMessages to avoid duplicate keys
+            const initialIds = new Set((initialMessages || []).map((m) => m.id));
+            const deduped = normalized.filter((m) => !initialIds.has(m.id));
+            dispatch({ type: AGENT_CHAT_ACTIONS.SET_MESSAGES, payload: [...initialMessages, ...deduped] });
           }
         }
       } catch (error) {
@@ -147,7 +150,7 @@ const useAgentChat = ({
     }
   }, [initialMessages, initialSuggestions, messagesStorageKey, sessionStorageKey]);
 
-  const sendMessage = useCallback(async (value, { slotContext, displayText, pageContext } = {}) => {
+  const sendMessage = useCallback(async (value, { slotContext, displayText, pageContext, freshStart } = {}) => {
     const trimmed = typeof value === 'string' ? value.trim() : '';
 
     if (!trimmed || state.isLoading || restoringRef.current) {
@@ -155,7 +158,11 @@ const useAgentChat = ({
     }
 
     const userMessage = buildMessage('user', displayText || trimmed);
-    const history = buildHistory([...state.messages, userMessage]);
+    // When freshStart is true (e.g., after resetConversation), use empty history
+    // to avoid stale closure capturing pre-reset messages
+    const history = freshStart
+      ? buildHistory([...(initialMessages || []), userMessage])
+      : buildHistory([...state.messages, userMessage]);
 
     dispatch({ type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE, payload: userMessage });
     dispatch({ type: AGENT_CHAT_ACTIONS.SET_INPUT, payload: '' });

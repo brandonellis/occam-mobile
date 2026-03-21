@@ -8,7 +8,7 @@ import ScreenHeader from '../../components/ScreenHeader';
 import Avatar from '../../components/Avatar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { formatDuration } from '../../constants/booking.constants';
-import { createBooking, updateBooking, cancelBooking, getBooking } from '../../services/bookings.api';
+import { createBooking, updateBooking, cancelBooking, getBooking, getResources } from '../../services/bookings.api';
 import { createServicePayment, handlePaymentSuccess, getClientPaymentMethods } from '../../services/billing.api';
 import { getCurrentClientMembership } from '../../services/accounts.api';
 import { getMyBookingBenefits } from '../../services/packages.api';
@@ -28,7 +28,7 @@ import PromoCodeInput from '../../components/PromoCodeInput';
 
 const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const { bookingData = {} } = route.params || {};
-  const { service, coach, location, client, date, timeSlot, selectedResource } = bookingData;
+  const { service, coach, location, client, date, timeSlot, selectedResource: initialResource } = bookingData;
   const { user, activeRole, company } = useAuth();
   const { confirmPayment } = useConfirmPayment();
   const { platformFeeRate, feeDescription, paymentsEnabled, connectAccount, loading: ecommerceLoading } = ecommerceConfig;
@@ -54,6 +54,48 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const [savedMethodsLoading, setSavedMethodsLoading] = useState(false);
   const [selectedSavedMethodId, setSelectedSavedMethodId] = useState(null);
   const [paymentMode, setPaymentMode] = useState('card'); // 'card' | 'saved'
+
+  // Resource auto-resolution for Caddie/Marshal flow (service requires resource but none was provided)
+  // Mirrors TimeSlotSelectionScreen's resource pool logic: filter by type + location
+  const [selectedResource, setSelectedResource] = useState(initialResource || null);
+  useEffect(() => {
+    if (selectedResource?.id || !service?.requires_resource || !location?.id) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const resp = await getResources();
+        if (cancelled) return;
+        const allResources = resp?.data || resp || [];
+
+        const serviceTypeIds = service.resource_type_ids || [];
+
+        const typeMatched = allResources.filter((r) => {
+          if (r.status === 'inactive' || r.status === 'disabled') return false;
+          if (serviceTypeIds.length > 0) {
+            const rTypeIds = r.resource_type_ids || [];
+            if (rTypeIds.length > 0 && !serviceTypeIds.some(id => rTypeIds.includes(id))) return false;
+          }
+          return true;
+        });
+
+        // Prefer resources at the booking location
+        const atLocation = typeMatched.filter((r) => {
+          if (r.location_id === location.id) return true;
+          if (Array.isArray(r.location_ids) && r.location_ids.includes(location.id)) return true;
+          if (!r.location_id && !r.location_ids) return true;
+          return false;
+        });
+
+        const filtered = atLocation.length > 0 ? atLocation : typeMatched;
+        if (filtered.length > 0) {
+          setSelectedResource({ id: filtered[0].id, name: filtered[0].name });
+        }
+      } catch (err) {
+        logger.warn('Failed to auto-resolve resource for booking:', err.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [service?.requires_resource, service?.resource_type_ids, location?.id, selectedResource?.id]);
 
   // Promo code state
   const [appliedPromo, setAppliedPromo] = useState(null);
@@ -181,11 +223,13 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     // If membership covers this service, skip package check
     if (isMembershipBooking) {
       setPackageBenefit(null);
+      setPackageBenefitLoading(false);
       return;
     }
     // Only check for the authenticated client (not coach booking for others)
     if (isCoach) {
       setPackageBenefit(null);
+      setPackageBenefitLoading(false);
       return;
     }
     let cancelled = false;
@@ -338,7 +382,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     }
 
     return payload;
-  }, [clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes]);
+  }, [clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource]);
 
   const buildUpdatePayload = useCallback(() => {
     const payload = {

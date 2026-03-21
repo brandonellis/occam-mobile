@@ -1,7 +1,17 @@
 import apiClient from './apiClient';
+import { sendStreamingRequest } from '../helpers/streaming.helper';
 import logger from '../helpers/logger.helper';
 
-export const sendCaddieMessage = async (message, history = [], { bookingState, slotContext } = {}) => {
+/**
+ * Send a Caddie chat message, attempting SSE streaming first and falling
+ * back to the non-streaming endpoint if streaming is unavailable.
+ *
+ * @param {string}   message  - User message
+ * @param {Array}    history  - Conversation history [{role, content}]
+ * @param {Object}   options  - Optional { bookingState, slotContext, onToken, onCard }
+ * @returns {Promise<Object>} Final response
+ */
+export const sendCaddieMessage = async (message, history = [], { bookingState, slotContext, onToken, onCard } = {}) => {
   const body = { message, history };
 
   if (bookingState) {
@@ -11,8 +21,22 @@ export const sendCaddieMessage = async (message, history = [], { bookingState, s
     body.slot_context = slotContext;
   }
 
-  const response = await apiClient.post('/caddie/chat', body);
+  // ── Attempt SSE streaming first ──
+  try {
+    return await sendStreamingRequest('/caddie/chat/stream', body, {
+      token: (data) => { if (data.text && onToken) onToken(data.text); },
+      card: (data) => { if (data.card && onCard) onCard(data.card); },
+    });
+  } catch (streamError) {
+    // Only fall back for network/streaming errors, not auth or server errors
+    if (streamError?.message?.includes('401') || streamError?.message?.includes('403')) {
+      throw streamError;
+    }
+    logger.warn('Caddie streaming failed, falling back to non-streaming:', streamError?.message);
+  }
 
+  // ── Fallback: non-streaming via apiClient (axios) ──
+  const response = await apiClient.post('/caddie/chat', body);
   return response.data?.data || response.data;
 };
 
