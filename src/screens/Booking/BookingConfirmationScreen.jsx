@@ -55,25 +55,49 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const [selectedSavedMethodId, setSelectedSavedMethodId] = useState(null);
   const [paymentMode, setPaymentMode] = useState('card'); // 'card' | 'saved'
 
-  // Resource auto-resolution for Caddie flow (service requires resource but none was provided)
+  // Resource auto-resolution for Caddie/Marshal flow (service requires resource but none was provided)
+  // Mirrors TimeSlotSelectionScreen's resource pool logic: filter by type + location
   const [selectedResource, setSelectedResource] = useState(initialResource || null);
   useEffect(() => {
     if (selectedResource?.id || !service?.requires_resource || !location?.id) return;
     let cancelled = false;
     (async () => {
       try {
-        const data = await getResources({ location_id: location.id, is_active: true });
+        const resp = await getResources();
         if (cancelled) return;
-        const resources = data?.data || data || [];
-        if (resources.length > 0) {
-          setSelectedResource({ id: resources[0].id, name: resources[0].name });
+        const allResources = resp?.data || resp || [];
+
+        // Filter by resource type (same logic as TimeSlotSelectionScreen)
+        const serviceTypeIds = service.resource_type_ids ||
+          (service.resource_type?.id ? [service.resource_type.id] : (service.resource_type_id ? [service.resource_type_id] : []));
+
+        const typeMatched = allResources.filter((r) => {
+          if (r.status === 'inactive' || r.status === 'disabled') return false;
+          if (serviceTypeIds.length > 0) {
+            const rTypeId = r.resource_type_id || r.type?.id || r.resource_type?.id;
+            if (rTypeId && !serviceTypeIds.includes(rTypeId)) return false;
+          }
+          return true;
+        });
+
+        // Prefer resources at the booking location
+        const atLocation = typeMatched.filter((r) => {
+          if (r.location_id === location.id) return true;
+          if (Array.isArray(r.location_ids) && r.location_ids.includes(location.id)) return true;
+          if (!r.location_id && !r.location_ids) return true;
+          return false;
+        });
+
+        const filtered = atLocation.length > 0 ? atLocation : typeMatched;
+        if (filtered.length > 0) {
+          setSelectedResource({ id: filtered[0].id, name: filtered[0].name });
         }
       } catch (err) {
         logger.warn('Failed to auto-resolve resource for booking:', err.message);
       }
     })();
     return () => { cancelled = true; };
-  }, [service?.requires_resource, location?.id, selectedResource?.id]);
+  }, [service?.requires_resource, service?.resource_type_ids, service?.resource_type_id, service?.resource_type?.id, location?.id, selectedResource?.id]);
 
   // Promo code state
   const [appliedPromo, setAppliedPromo] = useState(null);

@@ -220,6 +220,7 @@ export const buildBookingDataFromLink = (bookingLink) => {
       price: priceCents != null ? priceCents / 100 : null,
       price_cents: priceCents,
       requires_resource: bookingLink.requires_resource || false,
+      resource_type_ids: bookingLink.resource_type_ids || [],
     },
     location: {
       id: locationId,
