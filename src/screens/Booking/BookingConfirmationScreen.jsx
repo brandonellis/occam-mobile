@@ -67,15 +67,13 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         if (cancelled) return;
         const allResources = resp?.data || resp || [];
 
-        // Filter by resource type (same logic as TimeSlotSelectionScreen)
-        const serviceTypeIds = service.resource_type_ids ||
-          (service.resource_type?.id ? [service.resource_type.id] : (service.resource_type_id ? [service.resource_type_id] : []));
+        const serviceTypeIds = service.resource_type_ids || [];
 
         const typeMatched = allResources.filter((r) => {
           if (r.status === 'inactive' || r.status === 'disabled') return false;
           if (serviceTypeIds.length > 0) {
-            const rTypeId = r.resource_type_id || r.type?.id || r.resource_type?.id;
-            if (rTypeId && !serviceTypeIds.includes(rTypeId)) return false;
+            const rTypeIds = r.resource_type_ids || [];
+            if (rTypeIds.length > 0 && !serviceTypeIds.some(id => rTypeIds.includes(id))) return false;
           }
           return true;
         });
@@ -97,7 +95,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       }
     })();
     return () => { cancelled = true; };
-  }, [service?.requires_resource, service?.resource_type_ids, service?.resource_type_id, service?.resource_type?.id, location?.id, selectedResource?.id]);
+  }, [service?.requires_resource, service?.resource_type_ids, location?.id, selectedResource?.id]);
 
   // Promo code state
   const [appliedPromo, setAppliedPromo] = useState(null);
