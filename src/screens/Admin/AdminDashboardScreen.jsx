@@ -11,6 +11,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TouchableRipple } from 'react-native-paper';
 import PropTypes from 'prop-types';
 import useAuth from '../../hooks/useAuth';
+import useProactiveInsights from '../../hooks/useProactiveInsights';
 import { SCREENS } from '../../constants/navigation.constants';
 import { formatDateKeyLong, formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
 import { getBookings } from '../../services/bookings.api';
@@ -20,9 +21,11 @@ import {
   getSessionResourceNames,
   getSessionServiceName,
 } from '../../helpers/booking.helper';
+import { buildInsightMarshalIntent } from '../../helpers/marshalIntent.helper';
 import { adminDashboardStyles as styles } from '../../styles/adminDashboard.styles';
 import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
+import ProactiveInsightsSection from '../../components/Dashboard/ProactiveInsightsSection';
 import useUnreadNotifications from '../../hooks/useUnreadNotifications';
 import { colors } from '../../theme';
 import logger from '../../helpers/logger.helper';
@@ -70,6 +73,15 @@ const AdminDashboardScreen = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const { unreadCount } = useUnreadNotifications();
+  const insights = useProactiveInsights();
+
+  const handleAskMarshal = useCallback((insightType, insightData) => {
+    const intent = buildInsightMarshalIntent({ insightType, data: insightData });
+    navigation.navigate(SCREENS.ADMIN_TABS, {
+      screen: SCREENS.MARSHAL,
+      params: { marshalIntent: intent },
+    });
+  }, [navigation]);
 
   const todayKey = getTodayKey(company);
 
@@ -244,6 +256,14 @@ const AdminDashboardScreen = ({ navigation }) => {
                 ))}
               </View>
             </View>
+
+            <ProactiveInsightsSection
+              cards={insights.cards}
+              isLoading={insights.isLoading}
+              error={insights.error}
+              onRefresh={insights.fetchInsights}
+              onAskMarshal={handleAskMarshal}
+            />
 
             <View style={styles.section}>
               <View style={styles.sectionHeader}>

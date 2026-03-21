@@ -1,7 +1,8 @@
 import React, { useCallback, useRef, useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, Surface, Text } from 'react-native-paper';
+import { Button, Icon, Surface, Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import AgentChatInput from '../../components/AgentChat/AgentChatInput';
 import AgentChatMessages from '../../components/AgentChat/AgentChatMessages';
@@ -20,17 +21,23 @@ const CaddieScreen = () => {
   const { user, activeRole, isDualRole, switchRole } = useAuth();
   const [handoffError, setHandoffError] = useState(null);
   const {
+    dismissNudge,
     error,
     input,
+    isConnected,
     isLoading,
     messages,
+    nudges,
     resetConversation,
+    runHealthCheck,
     selectSuggestion,
     sendCurrentMessage,
     sendMessage,
     setInput,
     suggestions,
   } = useCaddie();
+
+  useFocusEffect(useCallback(() => { runHealthCheck(); }, [runHealthCheck]));
 
   const roleNames = Array.isArray(user?.roles)
     ? user.roles.map((role) => (typeof role === 'string' ? role : role?.name)).filter(Boolean)
@@ -129,11 +136,50 @@ const CaddieScreen = () => {
           <Surface style={styles.heroCard} elevation={1}>
             <MaterialCommunityIcons name="golf" size={32} color={colors.aquaLight} style={styles.heroIcon} />
             <Text style={styles.heroEyebrow}>Client booking concierge</Text>
-            <Text style={styles.heroTitle}>Caddie</Text>
+            <View style={styles.heroTitleRow}>
+              <Text style={styles.heroTitle}>Caddie</Text>
+              <View style={[
+                styles.statusDot,
+                isConnected === true ? styles.statusConnected
+                  : isConnected === false ? styles.statusDisconnected
+                    : styles.statusUnknown,
+              ]} />
+            </View>
             <Text style={styles.heroBody}>
               Ask for availability, upcoming bookings, memberships, or the best next step for your practice schedule.
             </Text>
           </Surface>
+
+          {nudges.length > 0 ? (
+            <View style={styles.nudgesSection}>
+              <View style={styles.nudgesSectionHeader}>
+                <Icon source="lightbulb-on-outline" size={18} color={colors.accent} />
+                <Text style={styles.nudgesSectionTitle}>Suggestions</Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.nudgesRow}>
+                {nudges.map((nudge) => (
+                  <Pressable key={nudge.id} onPress={() => selectSuggestion(nudge.prompt || nudge.title)}>
+                    <Surface style={styles.nudgeCard} elevation={0}>
+                      <Text style={styles.nudgeTitle}>{nudge.title}</Text>
+                      <Text style={styles.nudgeBody} numberOfLines={3}>{nudge.body || nudge.description}</Text>
+                      <View style={styles.nudgeActions}>
+                        <View style={styles.nudgeAskRow}>
+                          <Text style={styles.nudgeAskText}>Ask Caddie</Text>
+                          <Icon source="arrow-right" size={14} color={colors.accent} />
+                        </View>
+                        <Pressable
+                          hitSlop={8}
+                          onPress={(e) => { e.stopPropagation?.(); dismissNudge(nudge.id); }}
+                        >
+                          <Text style={styles.nudgeDismiss}>Dismiss</Text>
+                        </Pressable>
+                      </View>
+                    </Surface>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
 
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Conversation</Text>

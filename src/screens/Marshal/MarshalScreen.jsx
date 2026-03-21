@@ -1,12 +1,14 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, View } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Icon, Surface, Text } from 'react-native-paper';
 import AgentChatInput from '../../components/AgentChat/AgentChatInput';
 import AgentChatMessages from '../../components/AgentChat/AgentChatMessages';
 import useAuth from '../../hooks/useAuth';
 import useMarshal from '../../hooks/useMarshal';
+import { buildMarshalScreenContext } from '../../helpers/marshalContext.helper';
 import { agentChatStyles as chatStyles } from '../../styles/agentChat.styles';
 import { marshalStyles as styles } from '../../styles/marshal.styles';
 
@@ -18,6 +20,10 @@ const INSIGHT_ACCENT_COLORS = [
 
 const MarshalScreen = ({ navigation, route }) => {
   const { activeRole } = useAuth();
+  const screenContext = useMemo(
+    () => buildMarshalScreenContext(route?.name, route?.params),
+    [route?.name, route?.params],
+  );
   const handleIntentConsumed = useCallback(() => {
     if (navigation?.setParams && route?.params?.marshalIntent) {
       navigation.setParams({ marshalIntent: null });
@@ -29,11 +35,13 @@ const MarshalScreen = ({ navigation, route }) => {
     error,
     input,
     insights,
+    isConnected,
     isLoading,
     isRefreshingInsights,
     messages,
     refreshInsights,
     resetConversation,
+    runHealthCheck,
     selectSuggestion,
     sendCurrentMessage,
     setInput,
@@ -41,7 +49,10 @@ const MarshalScreen = ({ navigation, route }) => {
   } = useMarshal({
     initialIntent: route?.params?.marshalIntent || null,
     onIntentConsumed: handleIntentConsumed,
+    screenContext,
   });
+
+  useFocusEffect(useCallback(() => { runHealthCheck(); }, [runHealthCheck]));
 
   const roleLabel = activeRole === 'coach' ? 'Coach' : 'Admin';
 
@@ -69,7 +80,15 @@ const MarshalScreen = ({ navigation, route }) => {
             <View style={styles.heroBadge}>
               <Text style={styles.heroBadgeText}>{roleLabel} operations</Text>
             </View>
-            <Text style={styles.heroTitle}>Marshal</Text>
+            <View style={styles.heroTitleRow}>
+              <Text style={styles.heroTitle}>Marshal</Text>
+              <View style={[
+                styles.statusDot,
+                isConnected === true ? styles.statusConnected
+                  : isConnected === false ? styles.statusDisconnected
+                    : styles.statusUnknown,
+              ]} />
+            </View>
             <Text style={styles.heroBody}>
               Review operational priorities, ask questions about the schedule, and surface the next best actions for your facility.
             </Text>

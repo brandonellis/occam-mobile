@@ -1,7 +1,18 @@
-import { useCallback, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import logger from '../helpers/logger.helper';
 import { buildMessage, buildHistory, normalizeSuggestions } from '../helpers/agentChat.helper';
 import { AGENT_CHAT_ACTIONS, agentChatReducer, createInitialAgentChatState } from '../reducers/agentChat.reducer';
+import {
+  saveMessages,
+  loadMessages,
+  saveSessionId,
+  loadSessionId,
+  clearPersistence,
+  normalizePersistedMessages,
+  generateSessionId,
+  messagesToServerFormat,
+  SERVER_SAVE_DEBOUNCE_MS,
+} from '../helpers/chatPersistence.helper';
 
 const defaultFallback = (agentName, suggestions) => ({
   response: `${agentName} is available on mobile now, and the live AI backend is still being connected. You can already use this screen as the home for ${agentName.toLowerCase()} conversations.`,
@@ -17,6 +28,13 @@ const useAgentChat = ({
   supportsBookingState = false,
   supportsStreaming = false,
   transformResponse,
+  // Persistence options
+  messagesStorageKey,
+  sessionStorageKey,
+  saveConversationApi,
+  loadConversationApi,
+  // Connection status
+  healthCheckApi,
 }) => {
   const [state, dispatch] = useReducer(
     agentChatReducer,
@@ -27,21 +45,109 @@ const useAgentChat = ({
   );
 
   const streamingTextRef = useRef('');
+  const restoringRef = useRef(!!messagesStorageKey);
+  const serverSaveTimerRef = useRef(null);
+  const latestMessagesRef = useRef(state.messages);
+  latestMessagesRef.current = state.messages;
+
+  // ── Persistence: restore on mount ──
+
+  useEffect(() => {
+    if (!messagesStorageKey) return;
+
+    const restore = async () => {
+      try {
+        // Restore or generate session ID
+        let sessionId = sessionStorageKey ? await loadSessionId(sessionStorageKey) : null;
+        if (!sessionId) {
+          sessionId = generateSessionId();
+          if (sessionStorageKey) await saveSessionId(sessionStorageKey, sessionId);
+        }
+        dispatch({ type: AGENT_CHAT_ACTIONS.SET_SESSION_ID, payload: sessionId });
+
+        // Try local first, then server
+        let restored = await loadMessages(messagesStorageKey);
+
+        if (!restored && loadConversationApi && sessionId) {
+          const serverData = await loadConversationApi(sessionId);
+          if (serverData?.messages) {
+            restored = serverData.messages;
+          }
+        }
+
+        if (restored && restored.length > 0) {
+          const normalized = normalizePersistedMessages(restored);
+          if (normalized.length > 0) {
+            dispatch({ type: AGENT_CHAT_ACTIONS.SET_MESSAGES, payload: [...initialMessages, ...normalized] });
+          }
+        }
+      } catch (error) {
+        logger.warn(`${agentName} restore failed:`, error?.message);
+      } finally {
+        restoringRef.current = false;
+      }
+    };
+
+    restore();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Persistence: save on message changes ──
+
+  useEffect(() => {
+    if (!messagesStorageKey || restoringRef.current) return;
+
+    // Only persist non-initial messages
+    const persistable = state.messages.filter((m) => !m.streaming);
+    if (persistable.length <= (initialMessages?.length || 0)) return;
+
+    // Save to local storage immediately
+    saveMessages(messagesStorageKey, persistable);
+
+    // Debounced server save
+    if (saveConversationApi && state.sessionId) {
+      if (serverSaveTimerRef.current) clearTimeout(serverSaveTimerRef.current);
+      serverSaveTimerRef.current = setTimeout(() => {
+        const latest = latestMessagesRef.current.filter((m) => !m.streaming);
+        saveConversationApi(state.sessionId, messagesToServerFormat(latest));
+      }, SERVER_SAVE_DEBOUNCE_MS);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.messages]);
+
+  // Cleanup debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (serverSaveTimerRef.current) clearTimeout(serverSaveTimerRef.current);
+    };
+  }, []);
 
   const setInput = useCallback((value) => {
     dispatch({ type: AGENT_CHAT_ACTIONS.SET_INPUT, payload: value });
   }, []);
 
-  const resetConversation = useCallback(() => {
+  const resetConversation = useCallback(async () => {
     dispatch({ type: AGENT_CHAT_ACTIONS.RESET_MESSAGES, payload: initialMessages });
     dispatch({ type: AGENT_CHAT_ACTIONS.SET_SUGGESTIONS, payload: initialSuggestions });
     dispatch({ type: AGENT_CHAT_ACTIONS.SET_INPUT, payload: '' });
-  }, [initialMessages, initialSuggestions]);
 
-  const sendMessage = useCallback(async (value, { slotContext, displayText } = {}) => {
+    // Clear persisted data
+    if (messagesStorageKey) {
+      const keysToRemove = [messagesStorageKey];
+      if (sessionStorageKey) keysToRemove.push(sessionStorageKey);
+      await clearPersistence(...keysToRemove);
+
+      // Generate new session ID
+      const newSessionId = generateSessionId();
+      dispatch({ type: AGENT_CHAT_ACTIONS.SET_SESSION_ID, payload: newSessionId });
+      if (sessionStorageKey) await saveSessionId(sessionStorageKey, newSessionId);
+    }
+  }, [initialMessages, initialSuggestions, messagesStorageKey, sessionStorageKey]);
+
+  const sendMessage = useCallback(async (value, { slotContext, displayText, pageContext } = {}) => {
     const trimmed = typeof value === 'string' ? value.trim() : '';
 
-    if (!trimmed || state.isLoading) {
+    if (!trimmed || state.isLoading || restoringRef.current) {
       return;
     }
 
@@ -77,6 +183,10 @@ const useAgentChat = ({
         }
       }
 
+      if (pageContext) {
+        apiOptions.pageContext = pageContext;
+      }
+
       if (supportsStreaming) {
         apiOptions.onToken = (text) => {
           streamingTextRef.current += text;
@@ -99,6 +209,9 @@ const useAgentChat = ({
       if (supportsBookingState && result?.booking_state !== undefined) {
         dispatch({ type: AGENT_CHAT_ACTIONS.SET_BOOKING_STATE, payload: result.booking_state });
       }
+
+      // Mark connection as healthy on success
+      dispatch({ type: AGENT_CHAT_ACTIONS.SET_CONNECTED, payload: true });
 
       // Allow consumers to customize how the response becomes a message + suggestions
       if (transformResponse) {
@@ -123,6 +236,7 @@ const useAgentChat = ({
           card: result?.card || null,
           bookingLink: result?.booking_link || null,
           availability: result?.availability || null,
+          bookings: result?.bookings || null,
           streaming: false,
         };
 
@@ -141,34 +255,50 @@ const useAgentChat = ({
       }
     } catch (error) {
       logger.warn(`${agentName} mobile message failed:`, error?.message || error);
-      const fallback = defaultFallback(agentName, initialSuggestions);
+
+      // Mark connection as unhealthy on error
+      dispatch({ type: AGENT_CHAT_ACTIONS.SET_CONNECTED, payload: false });
+
+      // Preserve partial streamed text on error instead of replacing with error message
+      if (streamingId && streamingTextRef.current.trim()) {
+        dispatch({
+          type: AGENT_CHAT_ACTIONS.UPDATE_MESSAGE,
+          payload: {
+            id: streamingId,
+            updates: { text: streamingTextRef.current, streaming: false, type: 'assistant' },
+          },
+        });
+      } else {
+        const fallback = defaultFallback(agentName, initialSuggestions);
+
+        const errorData = {
+          text: fallbackMessage || fallback.response,
+          type: 'error',
+          streaming: false,
+        };
+
+        if (streamingId) {
+          dispatch({
+            type: AGENT_CHAT_ACTIONS.UPDATE_MESSAGE,
+            payload: { id: streamingId, updates: errorData },
+          });
+        } else {
+          dispatch({
+            type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
+            payload: buildMessage('assistant', fallbackMessage || fallback.response, { type: 'error' }),
+          });
+        }
+        dispatch({
+          type: AGENT_CHAT_ACTIONS.SET_SUGGESTIONS,
+          payload: fallback.suggested_actions.map((action) => action.prompt),
+        });
+      }
 
       // Clear booking state on error so stale state doesn't compound failures
       if (supportsBookingState) {
         dispatch({ type: AGENT_CHAT_ACTIONS.SET_BOOKING_STATE, payload: null });
       }
 
-      const errorData = {
-        text: fallbackMessage || fallback.response,
-        type: 'error',
-        streaming: false,
-      };
-
-      if (streamingId) {
-        dispatch({
-          type: AGENT_CHAT_ACTIONS.UPDATE_MESSAGE,
-          payload: { id: streamingId, updates: errorData },
-        });
-      } else {
-        dispatch({
-          type: AGENT_CHAT_ACTIONS.APPEND_MESSAGE,
-          payload: buildMessage('assistant', fallbackMessage || fallback.response, { type: 'error' }),
-        });
-      }
-      dispatch({
-        type: AGENT_CHAT_ACTIONS.SET_SUGGESTIONS,
-        payload: fallback.suggested_actions.map((action) => action.prompt),
-      });
       dispatch({
         type: AGENT_CHAT_ACTIONS.SET_ERROR,
         payload: error?.response?.data?.message || error?.message || `${agentName} is temporarily unavailable right now. Please try again.`,
@@ -186,10 +316,21 @@ const useAgentChat = ({
     sendMessage(suggestion);
   }, [sendMessage]);
 
+  const runHealthCheck = useCallback(async () => {
+    if (!healthCheckApi) return;
+    try {
+      const healthy = await healthCheckApi();
+      dispatch({ type: AGENT_CHAT_ACTIONS.SET_CONNECTED, payload: Boolean(healthy) });
+    } catch {
+      dispatch({ type: AGENT_CHAT_ACTIONS.SET_CONNECTED, payload: false });
+    }
+  }, [healthCheckApi]);
+
   return {
     ...state,
     dispatch,
     resetConversation,
+    runHealthCheck,
     selectSuggestion,
     sendCurrentMessage,
     sendMessage,

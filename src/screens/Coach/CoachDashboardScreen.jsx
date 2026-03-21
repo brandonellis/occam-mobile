@@ -10,13 +10,16 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IconButton, TouchableRipple } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
+import useProactiveInsights from '../../hooks/useProactiveInsights';
 import { SCREENS } from '../../constants/navigation.constants';
 import { formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
 import { getBookings } from '../../services/bookings.api';
 import { getClients } from '../../services/accounts.api';
+import { buildInsightMarshalIntent } from '../../helpers/marshalIntent.helper';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
 import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
+import ProactiveInsightsSection from '../../components/Dashboard/ProactiveInsightsSection';
 import useUnreadNotifications from '../../hooks/useUnreadNotifications';
 import { colors } from '../../theme';
 
@@ -30,6 +33,15 @@ const CoachDashboardScreen = ({ navigation }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const { unreadCount } = useUnreadNotifications();
+  const insights = useProactiveInsights();
+
+  const handleAskMarshal = useCallback((insightType, insightData) => {
+    const intent = buildInsightMarshalIntent({ insightType, data: insightData });
+    navigation.navigate(SCREENS.COACH_TABS, {
+      screen: SCREENS.MARSHAL,
+      params: { marshalIntent: intent },
+    });
+  }, [navigation]);
 
   const todayKey = getTodayKey(company);
 
@@ -174,6 +186,14 @@ const CoachDashboardScreen = ({ navigation }) => {
                 </TouchableOpacity>
               </View>
             </View>
+
+            <ProactiveInsightsSection
+              cards={insights.cards}
+              isLoading={insights.isLoading}
+              error={insights.error}
+              onRefresh={insights.fetchInsights}
+              onAskMarshal={handleAskMarshal}
+            />
 
             <View style={styles.section}>
               <View style={styles.sectionHeader}>

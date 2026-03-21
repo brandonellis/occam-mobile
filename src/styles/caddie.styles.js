@@ -35,7 +35,6 @@ export const caddieStyles = StyleSheet.create({
   heroTitle: {
     ...typography.h2,
     color: colors.textInverse,
-    marginBottom: spacing.sm,
   },
   heroBody: {
     ...typography.body,
@@ -54,5 +53,82 @@ export const caddieStyles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.textSecondary,
     lineHeight: 20,
+  },
+  heroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusConnected: {
+    backgroundColor: colors.success,
+  },
+  statusDisconnected: {
+    backgroundColor: colors.error,
+  },
+  statusUnknown: {
+    backgroundColor: colors.gray400,
+  },
+  nudgesSection: {
+    marginBottom: spacing.xl,
+  },
+  nudgesSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  nudgesSectionTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+  },
+  nudgesRow: {
+    gap: spacing.md,
+    paddingRight: spacing.lg,
+  },
+  nudgeCard: {
+    width: 240,
+    backgroundColor: colors.surface,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.accent,
+  },
+  nudgeTitle: {
+    ...typography.label,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  nudgeBody: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+    lineHeight: 18,
+  },
+  nudgeActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  nudgeAskRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  nudgeAskText: {
+    ...typography.bodySmall,
+    color: colors.accent,
+    fontWeight: '600',
+  },
+  nudgeDismiss: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
   },
 });

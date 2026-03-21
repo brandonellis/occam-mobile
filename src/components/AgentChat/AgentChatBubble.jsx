@@ -4,18 +4,21 @@ import { Pressable, View } from 'react-native';
 import { Button, Divider, Icon, Surface, Text } from 'react-native-paper';
 import { agentChatStyles as styles } from '../../styles/agentChat.styles';
 import { colors } from '../../theme/colors';
-import { formatEligibilityLabel } from '../../helpers/agentChat.helper';
+import { formatEligibilityLabel, stripContextBlocks } from '../../helpers/agentChat.helper';
 import AvailabilityCard from './AvailabilityCard';
+import BookingsCard from './BookingsCard';
 import FormattedResponseText from './FormattedResponseText';
 
 const ACTION_LABELS = {
   create_booking: 'Create Booking',
+  create_recurring_booking: 'Book Recurring Sessions',
   cancel_booking: 'Cancel Booking',
   reschedule_booking: 'Reschedule Booking',
   update_client_notes: 'Update Client Notes',
   update_location_hours: 'Update Location Hours',
   toggle_service: 'Toggle Service',
   create_campaign: 'Create Campaign Draft',
+  update_service_pricing: 'Update Pricing',
   update_company_info: 'Update Company Info',
   create_location: 'Create Location',
   update_location: 'Update Location',
@@ -24,6 +27,9 @@ const ACTION_LABELS = {
   create_coach: 'Add Coach',
   set_coach_availability: 'Set Availability',
   create_membership_plan: 'Create Plan',
+  cancel_membership: 'Cancel Membership',
+  pause_membership: 'Pause Membership',
+  resume_membership: 'Resume Membership',
   create_resource: 'Create Resource',
   close_resource: 'Close Resource',
   create_client: 'Add Client',
@@ -40,6 +46,9 @@ const ACTION_LABELS = {
   assign_tag: 'Assign Tag',
   enroll_client_in_class: 'Enroll Client In Class',
 };
+
+const formatToolName = (tool) =>
+  ACTION_LABELS[tool] || tool.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
 const renderCard = (card) => {
   if (!card) {
@@ -241,6 +250,9 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
           {message.availability ? (
             <AvailabilityCard availability={message.availability} onSlotSelect={onSlotSelect} />
           ) : null}
+          {message.bookings ? (
+            <BookingsCard bookings={message.bookings} />
+          ) : null}
           {message.type === 'handoff' ? (
             <HandoffCard
               handoff={message.handoff}
@@ -251,14 +263,14 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
           {isUser ? (
             <Text style={styles.userText}>{message.text}</Text>
           ) : message.type === 'handoff' ? null : (
-            <FormattedResponseText text={message.text} style={styles.assistantText} />
+            <FormattedResponseText text={stripContextBlocks(message.text)} style={styles.assistantText} />
           )}
           {message.type === 'confirmation' && Array.isArray(message.pendingActions) ? (
             <View style={styles.confirmationList}>
               {message.pendingActions.map((action) => (
                 <Surface key={action.action_id} style={styles.confirmationCard} elevation={0}>
                   <Text style={styles.confirmationEyebrow}>Requires your approval</Text>
-                  <Text style={styles.confirmationTitle}>{ACTION_LABELS[action.tool] || action.tool}</Text>
+                  <Text style={styles.confirmationTitle}>{formatToolName(action.tool)}</Text>
                   {action.description ? (
                     <Text style={styles.confirmationDescription}>{action.description}</Text>
                   ) : null}
@@ -347,6 +359,11 @@ AgentChatBubble.propTypes = {
         remaining: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
         package_name: PropTypes.string,
       }),
+    }),
+    bookings: PropTypes.shape({
+      bookings: PropTypes.array,
+      total: PropTypes.number,
+      timezone: PropTypes.string,
     }),
     pendingActions: PropTypes.arrayOf(PropTypes.shape({
       action_id: PropTypes.string.isRequired,

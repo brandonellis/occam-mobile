@@ -38,7 +38,6 @@ export const marshalStyles = StyleSheet.create({
   heroTitle: {
     ...typography.h2,
     color: colors.textInverse,
-    marginBottom: spacing.sm,
   },
   heroBody: {
     ...typography.body,
@@ -62,5 +61,25 @@ export const marshalStyles = StyleSheet.create({
     ...typography.bodySmall,
     color: colors.textSecondary,
     marginTop: spacing.xs,
+  },
+  heroTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  statusConnected: {
+    backgroundColor: colors.success,
+  },
+  statusDisconnected: {
+    backgroundColor: colors.error,
+  },
+  statusUnknown: {
+    backgroundColor: colors.gray400,
   },
 });

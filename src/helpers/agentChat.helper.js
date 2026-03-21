@@ -28,6 +28,19 @@ export const normalizeSuggestions = (suggestedActions, fallback = []) => {
     .slice(0, 3);
 };
 
+/**
+ * Strip internal context blocks from assistant messages before display.
+ * These blocks are useful for LLM context but should not be shown to users.
+ */
+export const stripContextBlocks = (text) => {
+  if (!text || typeof text !== 'string') return text;
+  return text
+    .replace(/\n?\[AVAILABILITY CONTEXT:[\s\S]*?\]/g, '')
+    .replace(/\n?\[BOOKING LINK CONTEXT:[\s\S]*?\]/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+};
+
 export const formatEligibilityLabel = (eligibility) => {
   if (!eligibility) return null;
 

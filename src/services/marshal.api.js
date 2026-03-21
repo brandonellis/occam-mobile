@@ -2,16 +2,17 @@ import apiClient from './apiClient';
 import { getToken, getTenantId } from '../helpers/storage.helper';
 import { getTenantApiUrl } from '../config';
 import { readSSEStream } from '../helpers/sse.helper';
+import logger from '../helpers/logger.helper';
 
 /**
  * Stream a Marshal chat response via SSE.
  *
  * @param {string}   message  - User message
  * @param {Array}    history  - Conversation history [{role, content}]
- * @param {Object}   options  - Optional { onToken, onCard }
+ * @param {Object}   options  - Optional { onToken, onCard, pageContext }
  * @returns {Promise<Object>} Final response: { response, suggested_actions, pending_actions, card }
  */
-export const sendMarshalMessage = async (message, history = [], { onToken, onCard } = {}) => {
+export const sendMarshalMessage = async (message, history = [], { onToken, onCard, pageContext } = {}) => {
   const token = await getToken();
   if (!token) {
     throw new Error('Authentication token is required');
@@ -37,7 +38,7 @@ export const sendMarshalMessage = async (message, history = [], { onToken, onCar
     response = await fetch(`${baseUrl}/marshal/chat/stream`, {
       method: 'POST',
       headers,
-      body: JSON.stringify({ message, history }),
+      body: JSON.stringify({ message, history, ...(pageContext ? { page_context: pageContext } : {}) }),
       signal: controller.signal,
     });
   } catch (fetchError) {
@@ -83,4 +84,36 @@ export const getMarshalInsights = async () => {
   const response = await apiClient.get('/marshal/insights');
 
   return response.data?.data || response.data;
+};
+
+export const saveMarshalConversation = async (sessionId, messages) => {
+  try {
+    await apiClient.post('/marshal/conversations', {
+      session_id: sessionId,
+      messages,
+    });
+  } catch (error) {
+    logger.warn('Marshal conversation save failed:', error?.message);
+  }
+};
+
+export const loadMarshalConversation = async (sessionId) => {
+  try {
+    const response = await apiClient.get('/marshal/conversations/load', {
+      params: { session_id: sessionId },
+    });
+    return response.data?.data || response.data;
+  } catch (error) {
+    logger.warn('Marshal conversation load failed:', error?.message);
+    return null;
+  }
+};
+
+export const checkMarshalHealth = async () => {
+  try {
+    await apiClient.get('/onboarding/health');
+    return true;
+  } catch {
+    return false;
+  }
 };
