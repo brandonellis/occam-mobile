@@ -27,6 +27,7 @@ const useCaddie = () => {
     initialSuggestions: INITIAL_SUGGESTIONS,
     sendMessageApi: sendCaddieMessage,
     supportsBookingState: true,
+    supportsStreaming: true,
     // Persistence
     messagesStorageKey: CADDIE_MESSAGES_KEY,
     sessionStorageKey: CADDIE_SESSION_KEY,
