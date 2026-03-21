@@ -275,7 +275,7 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
           ) : null}
           {isUser ? (
             <Text style={styles.userText}>{message.text}</Text>
-          ) : message.type === 'handoff' ? null : (
+          ) : message.type === 'handoff' || message.bookings || message.availability ? null : (
             <FormattedResponseText text={stripContextBlocks(message.text)} style={styles.assistantText} />
           )}
           {message.type === 'confirmation' && Array.isArray(message.pendingActions) ? (
