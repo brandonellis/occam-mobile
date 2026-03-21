@@ -98,63 +98,65 @@ const InsightCard = ({ card, onAskMarshal }) => {
 
   return (
     <Surface style={[styles.card, accent, card.urgent && styles.cardUrgent]} elevation={0}>
-      <View style={styles.cardHeader}>
-        <Icon source={card.icon} size={16} color={colors.textSecondary} />
-        <Text style={styles.cardTitle}>{card.title}</Text>
-        {card.trendPct !== undefined && card.trendPct !== null ? (
-          <TrendBadge pct={card.trendPct} />
-        ) : card.trending ? (
-          <View style={styles.trendingBadge}>
-            <Icon source="arrow-up" size={9} color={colors.success} />
-            <Text style={styles.trendingText}>trending</Text>
+      <View style={styles.cardBody}>
+        <View style={styles.cardHeader}>
+          <Icon source={card.icon} size={16} color={colors.textSecondary} />
+          <Text style={styles.cardTitle}>{card.title}</Text>
+          {card.trendPct !== undefined && card.trendPct !== null ? (
+            <TrendBadge pct={card.trendPct} />
+          ) : card.trending ? (
+            <View style={styles.trendingBadge}>
+              <Icon source="arrow-up" size={9} color={colors.success} />
+              <Text style={styles.trendingText}>trending</Text>
+            </View>
+          ) : null}
+        </View>
+
+        {card.period ? (
+          <Text style={styles.cardPeriod}>{card.period}</Text>
+        ) : null}
+
+        {/* Revenue special layout */}
+        {card.type === 'revenue_trend' ? (
+          <View style={styles.revenueRow}>
+            <View style={styles.revenueAmount}>
+              <Text style={styles.revenueValue}>{card.thisMonth}</Text>
+              <Text style={styles.revenuePeriod}>this month</Text>
+            </View>
+            <View style={styles.revenueSep} />
+            <View style={styles.revenueAmount}>
+              <Text style={styles.revenueValue}>{card.lastMonth}</Text>
+              <Text style={styles.revenuePeriod}>last month</Text>
+            </View>
           </View>
         ) : null}
+
+        {/* Big number headline */}
+        {card.headline && card.type !== 'revenue_trend' ? (
+          <View style={styles.headline}>
+            <Text style={styles.headlineNumber}>{card.headline}</Text>
+            <Text style={styles.headlineLabel}>{card.headlineLabel}</Text>
+          </View>
+        ) : null}
+
+        {/* Stats row (capacity) */}
+        {card.stats ? (
+          <View style={styles.statsRow}>
+            {card.stats.map((s) => (
+              <View key={s.label} style={styles.statItem}>
+                <Text style={styles.statValue}>{s.value}</Text>
+                <Text style={styles.statLabel}>{s.label}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+
+        {/* Member list (expiring, engagement) */}
+        {card.members ? <MemberList members={card.members} /> : null}
+
+        {/* Highlights (caddie demand, conversions) */}
+        {card.highlights ? <HighlightsList highlights={card.highlights} /> : null}
       </View>
-
-      {card.period ? (
-        <Text style={styles.cardPeriod}>{card.period}</Text>
-      ) : null}
-
-      {/* Revenue special layout */}
-      {card.type === 'revenue_trend' ? (
-        <View style={styles.revenueRow}>
-          <View style={styles.revenueAmount}>
-            <Text style={styles.revenueValue}>{card.thisMonth}</Text>
-            <Text style={styles.revenuePeriod}>this month</Text>
-          </View>
-          <View style={styles.revenueSep} />
-          <View style={styles.revenueAmount}>
-            <Text style={styles.revenueValue}>{card.lastMonth}</Text>
-            <Text style={styles.revenuePeriod}>last month</Text>
-          </View>
-        </View>
-      ) : null}
-
-      {/* Big number headline */}
-      {card.headline && card.type !== 'revenue_trend' ? (
-        <View style={styles.headline}>
-          <Text style={styles.headlineNumber}>{card.headline}</Text>
-          <Text style={styles.headlineLabel}>{card.headlineLabel}</Text>
-        </View>
-      ) : null}
-
-      {/* Stats row (capacity) */}
-      {card.stats ? (
-        <View style={styles.statsRow}>
-          {card.stats.map((s) => (
-            <View key={s.label} style={styles.statItem}>
-              <Text style={styles.statValue}>{s.value}</Text>
-              <Text style={styles.statLabel}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
-
-      {/* Member list (expiring, engagement) */}
-      {card.members ? <MemberList members={card.members} /> : null}
-
-      {/* Highlights (caddie demand, conversions) */}
-      {card.highlights ? <HighlightsList highlights={card.highlights} /> : null}
 
       {/* Ask Marshal CTA */}
       <Pressable style={styles.marshalLink} hitSlop={8} onPress={() => onAskMarshal(card.type, card.data)}>

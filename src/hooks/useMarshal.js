@@ -340,12 +340,15 @@ const useMarshal = ({ screenContext = null } = {}) => {
 
   // ── Marshal-specific: imperative intent handling ──
 
-  const handleIncomingIntent = useCallback((rawIntent) => {
+  const handleIncomingIntent = useCallback(async (rawIntent) => {
     const intent = normalizeIntent(rawIntent);
     if (!intent?.message) {
       if (rawIntent) logger.log('Marshal: ignoring intent without message');
       return;
     }
+
+    // Start a fresh conversation for each incoming intent
+    await chat.resetConversation();
 
     if (intent?.handoff) {
       dispatch({
@@ -361,7 +364,7 @@ const useMarshal = ({ screenContext = null } = {}) => {
     sendMessage(intent.message, {
       displayText: intent?.handoff?.summary || intent?.handoff?.title || intent.message,
     });
-  }, [dispatch, sendMessage]);
+  }, [chat.resetConversation, dispatch, sendMessage]);
 
   return {
     ...chat,

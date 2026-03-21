@@ -1,7 +1,7 @@
 import apiClient from './apiClient';
 import { getToken, getTenantId } from '../helpers/storage.helper';
 import { getTenantApiUrl } from '../config';
-import { readSSEStream } from '../helpers/sse.helper';
+import { streamSSE } from '../helpers/sse.helper';
 import logger from '../helpers/logger.helper';
 
 /**
@@ -36,7 +36,7 @@ export const sendCaddieMessage = async (message, history = [], { bookingState, s
 };
 
 /**
- * Internal: SSE streaming implementation for Caddie.
+ * Internal: SSE streaming implementation using XMLHttpRequest (React Native compatible).
  */
 const sendCaddieMessageStreaming = async (body, { onToken, onCard } = {}) => {
   const token = await getToken();
@@ -56,41 +56,16 @@ const sendCaddieMessageStreaming = async (body, { onToken, onCard } = {}) => {
     headers['X-Tenant'] = tenantId;
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 60000);
-
-  let response;
-  try {
-    response = await fetch(`${baseUrl}/caddie/chat/stream`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-  } catch (fetchError) {
-    clearTimeout(timeoutId);
-    if (fetchError?.name === 'AbortError') {
-      throw new Error('Caddie took too long to respond. Please try again.');
-    }
-    throw fetchError;
-  }
-
-  if (!response.ok) {
-    clearTimeout(timeoutId);
-    const text = await response.text().catch(() => '');
-    throw new Error(text || `Stream request failed: ${response.status}`);
-  }
-
-  try {
-    const finalResult = await readSSEStream(response, {
+  const finalResult = await streamSSE(
+    `${baseUrl}/caddie/chat/stream`,
+    { headers, body: JSON.stringify(body), timeout: 60000 },
+    {
       token: (data) => { if (data.text && onToken) onToken(data.text); },
       card: (data) => { if (data.card && onCard) onCard(data.card); },
-    });
+    },
+  );
 
-    return finalResult;
-  } finally {
-    clearTimeout(timeoutId);
-  }
+  return finalResult;
 };
 
 export const saveCaddieConversation = async (sessionId, messages) => {

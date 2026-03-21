@@ -79,7 +79,10 @@ const useAgentChat = ({
         if (restored && restored.length > 0) {
           const normalized = normalizePersistedMessages(restored);
           if (normalized.length > 0) {
-            dispatch({ type: AGENT_CHAT_ACTIONS.SET_MESSAGES, payload: [...initialMessages, ...normalized] });
+            // Filter out any messages whose IDs clash with initialMessages to avoid duplicate keys
+            const initialIds = new Set((initialMessages || []).map((m) => m.id));
+            const deduped = normalized.filter((m) => !initialIds.has(m.id));
+            dispatch({ type: AGENT_CHAT_ACTIONS.SET_MESSAGES, payload: [...initialMessages, ...deduped] });
           }
         }
       } catch (error) {

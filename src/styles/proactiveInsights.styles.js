@@ -35,13 +35,14 @@ export const proactiveInsightsStyles = StyleSheet.create({
   // ── Insight card ──
   card: {
     width: 280,
-    minHeight: 160,
+    height: 200,
     backgroundColor: colors.surface,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     borderWidth: 1,
     borderColor: colors.borderLight,
     borderLeftWidth: 3,
+    justifyContent: 'space-between',
     ...shadows.sm,
   },
   cardWarning: {
@@ -64,6 +65,10 @@ export const proactiveInsightsStyles = StyleSheet.create({
   },
   cardConversions: {
     borderLeftColor: colors.info,
+  },
+
+  cardBody: {
+    flex: 1,
   },
 
   // ── Card header ──
