@@ -198,6 +198,8 @@ const useMarshal = ({ initialIntent = null, onIntentConsumed = null, screenConte
   const [insights, setInsights] = useState(INITIAL_INSIGHTS);
   const [isRefreshingInsights, setIsRefreshingInsights] = useState(false);
   const consumedIntentRef = useRef(null);
+  // Keep refs to onIntentConsumed and sendMessage so the intent effect
+  // doesn't re-fire when these callbacks change (they depend on messages).
   const onIntentConsumedRef = useRef(onIntentConsumed);
   onIntentConsumedRef.current = onIntentConsumed;
 

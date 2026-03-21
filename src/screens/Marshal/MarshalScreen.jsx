@@ -20,7 +20,9 @@ const INSIGHT_ACCENT_COLORS = [
 
 const MarshalScreen = ({ navigation, route }) => {
   const { activeRole } = useAuth();
-  // Only depend on entity ID params, not marshalIntent (which changes frequently)
+  // Only depend on entity ID params, not marshalIntent (which changes frequently).
+  // If new entity params are added to buildMarshalScreenContext, they must be added
+  // to the useMemo dependency array below.
   const routeParams = route?.params;
   const screenContext = useMemo(
     () => buildMarshalScreenContext(route?.name, routeParams),

@@ -12,7 +12,7 @@ export function useOfflineStatus() {
     // Fetch current state immediately on mount
     NetInfo.fetch().then((state) => {
       setIsOffline(!state.isConnected || state.isInternetReachable === false);
-    });
+    }).catch(() => {});
 
     // Subscribe to future changes
     const unsubscribe = NetInfo.addEventListener((state) => {
