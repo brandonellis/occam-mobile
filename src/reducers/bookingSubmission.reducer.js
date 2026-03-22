@@ -19,6 +19,8 @@ export const bookingSubmissionReducer = (state, action) => {
         ...state,
         isSubmitting: true,
         loadingMessage: action.payload || 'Processing...',
+        showSuccess: false,
+        createdBookingData: null,
       };
     case BOOKING_SUBMISSION_ACTIONS.SET_LOADING_MESSAGE:
       return {

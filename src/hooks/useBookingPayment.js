@@ -57,7 +57,7 @@ const useBookingPayment = ({
           }
         }
       } catch (err) {
-        logger.warn('Failed to fetch saved payment methods:', err.message);
+        logger.error('Failed to fetch saved payment methods:', err.message);
         if (!cancelled) setSavedMethods([]);
       } finally {
         if (!cancelled) setSavedMethodsLoading(false);

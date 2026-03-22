@@ -10,7 +10,7 @@ import { QUERY_KEYS } from '../constants/queryKeys.constants';
  */
 const useMyMembershipQuery = (clientId, options = {}) => {
   return useQuery({
-    queryKey: QUERY_KEYS.MEMBERSHIPS.my,
+    queryKey: [...QUERY_KEYS.MEMBERSHIPS.my, clientId],
     queryFn: () => getCurrentClientMembership(clientId),
     enabled: !!clientId,
     ...options,

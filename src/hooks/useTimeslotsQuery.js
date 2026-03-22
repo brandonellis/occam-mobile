@@ -17,7 +17,7 @@ const useTimeslotsQuery = (params, options = {}) => {
     queryKey: [...QUERY_KEYS.AVAILABILITY.forDate(params), 'timeslots'],
     queryFn: async () => {
       const resp = await getAvailabilityTimeslots(params);
-      return resp?.data || resp || [];
+      return resp?.data ?? resp ?? [];
     },
     enabled: !!(params?.service_id && params?.date),
     staleTime: 30 * 1000, // 30 seconds — slots can change as others book

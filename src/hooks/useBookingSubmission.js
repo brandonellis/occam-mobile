@@ -231,15 +231,15 @@ const useBookingSubmission = ({
       pendingBookingId = null;
 
       // Fetch full booking for success screen
-      let bookingData;
+      let confirmedBookingData;
       try {
         const full = await getBooking(confirmedBookingId);
-        bookingData = full?.data || full;
+        confirmedBookingData = full?.data || full;
       } catch (fetchErr) {
         logger.warn('Failed to fetch booking details for success screen:', fetchErr.message);
-        bookingData = bookingResponse?.data || bookingResponse;
+        confirmedBookingData = bookingResponse?.data || bookingResponse;
       }
-      dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: bookingData });
+      dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: confirmedBookingData });
     } catch (error) {
       if (pendingBookingId) {
         try {
@@ -299,6 +299,8 @@ const useBookingSubmission = ({
         await handlePaymentSuccess(piResponse.payment_intent_id);
       } else if (piResponse.status === 'succeeded') {
         await handlePaymentSuccess(piResponse.payment_intent_id);
+      } else {
+        throw new Error(`Unexpected payment status: ${piResponse.status}`);
       }
 
       pendingBookingId = null;
@@ -346,11 +348,7 @@ const useBookingSubmission = ({
     }
     if (isMembershipBooking || isPackageBooking) {
       handleDirectConfirm();
-    } else if (isCoach && !paymentsEnabled) {
-      handleDirectConfirm();
-    } else if (isCoach && isPaymentNotRequired) {
-      handleDirectConfirm();
-    } else if (isPaymentNotRequired) {
+    } else if (isPaymentNotRequired || (isCoach && !paymentsEnabled)) {
       handleDirectConfirm();
     } else if (paymentsEnabled && paymentMode === 'saved' && selectedSavedMethodId) {
       handleSavedCardPayment();

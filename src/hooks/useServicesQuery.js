@@ -11,7 +11,7 @@ const useServicesQuery = (options = {}) => {
     queryKey: QUERY_KEYS.SERVICES.all,
     queryFn: async () => {
       const resp = await getServices();
-      return resp?.data || resp || [];
+      return resp?.data ?? resp ?? [];
     },
     ...options,
   });

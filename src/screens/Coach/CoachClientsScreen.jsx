@@ -150,6 +150,8 @@ const CoachClientsScreen = ({ navigation }) => {
     navigation.navigate(SCREENS.CLIENT_DETAIL, { clientId: item.id });
   }, [navigation]);
 
+  const clientKeyExtractor = useCallback((item) => String(item.id), []);
+
   const renderClient = useCallback(({ item }) => (
     <ClientListItem item={item} onPress={handleClientPress} />
   ), [handleClientPress]);
@@ -203,7 +205,7 @@ const CoachClientsScreen = ({ navigation }) => {
         <FlatList
           data={clients}
           renderItem={renderClient}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={clientKeyExtractor}
           contentContainerStyle={[
             styles.listContent,
             clients.length === 0 && { flex: 1 },

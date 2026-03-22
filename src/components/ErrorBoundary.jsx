@@ -2,9 +2,9 @@ import React from 'react';
 import { View, Platform } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { reportFrontendError } from '../services/errorReporting.api';
+import { buildFingerprint, shouldReport } from '../helpers/errorThrottle.helper';
 import { colors, spacing } from '../theme';
 import deviceMeta from '../helpers/deviceMeta.helper';
-import logger from '../helpers/logger.helper';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -17,21 +17,24 @@ class ErrorBoundary extends React.Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    logger.error('ErrorBoundary caught an error:', error);
+    console.error('ErrorBoundary caught an error:', error);
 
-    reportFrontendError({
-      message: error?.message || error?.toString() || 'Unknown error',
-      name: error?.name || 'Error',
-      stack: error?.stack || null,
-      componentStack: errorInfo?.componentStack || null,
-      url: null,
-      userAgent: `${Platform.OS} ${Platform.Version}`,
-      timestamp: new Date().toISOString(),
-      environment: __DEV__ ? 'development' : 'production',
-      source: 'mobile',
-      device: deviceMeta,
-      extra: { origin: 'ErrorBoundary', platform: Platform.OS },
-    });
+    const fingerprint = buildFingerprint(error?.name, error?.message, error?.stack);
+    if (shouldReport(fingerprint)) {
+      reportFrontendError({
+        message: error?.message || error?.toString() || 'Unknown error',
+        name: error?.name || 'Error',
+        stack: error?.stack || null,
+        componentStack: errorInfo?.componentStack || null,
+        url: null,
+        userAgent: `${Platform.OS} ${Platform.Version}`,
+        timestamp: new Date().toISOString(),
+        environment: __DEV__ ? 'development' : 'production',
+        source: 'mobile',
+        device: deviceMeta,
+        extra: { origin: 'ErrorBoundary', platform: Platform.OS },
+      });
+    }
   }
 
   handleRestart = () => {

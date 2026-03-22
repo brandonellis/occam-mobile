@@ -15,7 +15,7 @@ const useAvailabilityQuery = (params, options = {}) => {
     queryKey: QUERY_KEYS.AVAILABILITY.forDate(params),
     queryFn: async () => {
       const resp = await getAvailability(params);
-      return resp?.data || resp || [];
+      return resp?.data ?? resp ?? [];
     },
     enabled: !!(params?.service_id && params?.date),
     staleTime: 30 * 1000, // 30 seconds — availability changes as others book

@@ -11,7 +11,7 @@ const useLocationsQuery = (options = {}) => {
     queryKey: QUERY_KEYS.LOCATIONS.all,
     queryFn: async () => {
       const resp = await getLocations();
-      return resp?.data || resp || [];
+      return resp?.data ?? resp ?? [];
     },
     ...options,
   });

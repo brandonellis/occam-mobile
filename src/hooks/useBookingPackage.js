@@ -58,7 +58,7 @@ const useBookingPackage = ({
           setPackageBenefit({ hasPackage: false });
         }
       } catch (err) {
-        logger.warn('Failed to fetch booking benefits:', err.message);
+        logger.error('Failed to fetch booking benefits:', err.message);
         if (!cancelled) setPackageBenefit({ hasPackage: false });
       } finally {
         if (!cancelled) setPackageBenefitLoading(false);

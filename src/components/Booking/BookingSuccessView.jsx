@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, ScrollView, TouchableOpacity, Animated } from 'react-native';
-import { Text, Icon } from 'react-native-paper';
+import { View, ScrollView, Animated } from 'react-native';
+import { Text, Icon, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import PropTypes from 'prop-types';
 import Avatar from '../Avatar';
@@ -129,23 +129,23 @@ const BookingSuccessView = ({
 
       <View style={styles.successBottomBar}>
         {!isEditMode && isCoach && (
-          <TouchableOpacity
+          <Button
+            mode="outlined"
             style={styles.successSecondaryButton}
             onPress={() => navigation.popToTop()}
-            activeOpacity={0.7}
+            labelStyle={styles.successSecondaryButtonText}
           >
-            <Text style={styles.successSecondaryButtonText}>Back to Schedule</Text>
-          </TouchableOpacity>
+            Back to Schedule
+          </Button>
         )}
-        <TouchableOpacity
+        <Button
+          mode="contained"
           style={[styles.continueButton, (!isCoach || isEditMode) && styles.successPrimaryFull]}
           onPress={() => navigation.popToTop()}
-          activeOpacity={0.8}
+          labelStyle={styles.continueButtonText}
         >
-          <Text style={styles.continueButtonText}>
-            {isEditMode ? 'Done' : isCoach ? 'Book Another Session' : 'Done'}
-          </Text>
-        </TouchableOpacity>
+          {isEditMode ? 'Done' : isCoach ? 'Book Another Session' : 'Done'}
+        </Button>
       </View>
     </SafeAreaView>
   );

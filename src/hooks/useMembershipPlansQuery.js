@@ -11,7 +11,7 @@ const useMembershipPlansQuery = (options = {}) => {
     queryKey: QUERY_KEYS.MEMBERSHIPS.plans,
     queryFn: async () => {
       const resp = await getMembershipPlans();
-      return resp?.data || resp || [];
+      return resp?.data ?? resp ?? [];
     },
     ...options,
   });

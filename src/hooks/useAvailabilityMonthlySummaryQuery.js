@@ -17,7 +17,7 @@ const useAvailabilityMonthlySummaryQuery = (params, options = {}) => {
     queryKey: QUERY_KEYS.AVAILABILITY.monthly(params),
     queryFn: async () => {
       const resp = await getAvailabilityMonthlySummary(params);
-      return resp?.data || resp || {};
+      return resp?.data ?? resp ?? {};
     },
     enabled: !!(params?.service_id),
     staleTime: 30 * 1000, // 30 seconds

@@ -16,7 +16,7 @@ const useBookingsQuery = (params = {}, options = {}) => {
     queryKey: QUERY_KEYS.BOOKINGS.list(params),
     queryFn: async () => {
       const resp = await getBookings(params);
-      return resp?.data || resp || [];
+      return resp?.data ?? resp ?? [];
     },
     ...options,
   });

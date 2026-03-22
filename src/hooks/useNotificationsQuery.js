@@ -13,7 +13,7 @@ const useNotificationsQuery = (params = {}, options = {}) => {
     queryKey: QUERY_KEYS.NOTIFICATIONS.list(params),
     queryFn: async ({ pageParam = 1 }) => {
       const resp = await getNotifications({ ...params, page: pageParam });
-      return resp?.data || resp || { data: [], last_page: 1, current_page: 1 };
+      return resp?.data ?? resp ?? { data: [], last_page: 1, current_page: 1 };
     },
     getNextPageParam: (lastPage) => {
       const currentPage = lastPage?.current_page || 1;

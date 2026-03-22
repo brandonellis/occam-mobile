@@ -67,7 +67,7 @@ const useBookingMembership = ({ clientId, serviceId, isEditMode }) => {
           setMembershipStatus({ hasActiveMembership: false, hasUsage: false });
         }
       } catch (err) {
-        logger.warn('Failed to fetch membership status:', err.message);
+        logger.error('Failed to fetch membership status:', err.message);
         if (!cancelled) setMembershipStatus({ hasActiveMembership: false, hasUsage: false });
       } finally {
         if (!cancelled) setMembershipLoading(false);

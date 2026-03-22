@@ -11,7 +11,7 @@ const useCoachesQuery = (options = {}) => {
     queryKey: QUERY_KEYS.COACHES.all,
     queryFn: async () => {
       const resp = await getCoaches();
-      return resp?.data || resp || [];
+      return resp?.data ?? resp ?? [];
     },
     ...options,
   });

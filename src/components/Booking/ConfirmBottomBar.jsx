@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Text } from 'react-native-paper';
+import { View } from 'react-native';
+import { Text, ActivityIndicator, Button } from 'react-native-paper';
 import PropTypes from 'prop-types';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { colors } from '../../theme';
@@ -16,25 +16,21 @@ const ConfirmBottomBar = ({
     <View style={styles.bottomBar}>
       {loadingMessage ? (
         <View style={styles.loadingBar}>
-          <ActivityIndicator size="small" color={colors.primary} />
+          <ActivityIndicator animating={true} size="small" color={colors.primary} />
           <Text style={[styles.loadingBarText, { color: colors.textSecondary }]}>{loadingMessage}</Text>
         </View>
       ) : (
-        <TouchableOpacity
+        <Button
+          mode="contained"
           style={[styles.continueButton, !canConfirm && styles.continueButtonDisabled]}
           onPress={onConfirm}
           disabled={!canConfirm}
-          activeOpacity={0.8}
+          loading={isSubmitting}
           testID="confirm-booking-button"
+          labelStyle={styles.continueButtonText}
         >
-          {isSubmitting ? (
-            <ActivityIndicator color={colors.textInverse} />
-          ) : (
-            <Text style={styles.continueButtonText}>
-              {buttonLabel}
-            </Text>
-          )}
-        </TouchableOpacity>
+          {buttonLabel}
+        </Button>
       )}
     </View>
   );

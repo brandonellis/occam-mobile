@@ -202,6 +202,14 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     );
   }
 
+  // ── Derived visibility flags for JSX sections ──
+
+  const showMembershipBanner = !isEditMode && !membershipLoading && !ecommerceLoading && isMembershipBooking;
+  const showPackageBenefitSkeleton = !isEditMode && !membershipLoading && !isMembershipBooking && packageBenefitLoading;
+  const showPackageBanner = !isEditMode && !membershipLoading && !packageBenefitLoading && !ecommerceLoading && isPackageBooking;
+  const showNoPaymentBanner = !isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && isPaymentNotRequired;
+  const showPromoSection = !isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled;
+
   // ── Main confirmation form ──
 
   return (
@@ -327,7 +335,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           skeletonAnim={skeletonAnim}
         />
 
-        {!isEditMode && !membershipLoading && !ecommerceLoading && isMembershipBooking && (
+        {showMembershipBanner && (
           <BookingBenefitBanner
             type="membership"
             isCoach={isCoach}
@@ -335,7 +343,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           />
         )}
 
-        {!isEditMode && !membershipLoading && !isMembershipBooking && packageBenefitLoading && (
+        {showPackageBenefitSkeleton && (
           <View style={styles.confirmSection}>
             <Animated.View style={[styles.skeletonBlock, { opacity: skeletonAnim }]}>
               <View style={[styles.skeletonBar, { width: '50%' }]} />
@@ -344,7 +352,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
-        {!isEditMode && !membershipLoading && !packageBenefitLoading && !ecommerceLoading && isPackageBooking && (
+        {showPackageBanner && (
           <BookingBenefitBanner
             type="package"
             packageName={packageBenefit?.package_name}
@@ -352,11 +360,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           />
         )}
 
-        {!isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && isPaymentNotRequired && (
+        {showNoPaymentBanner && (
           <BookingBenefitBanner type="noPayment" isCoach={isCoach} />
         )}
 
-        {!isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled && (
+        {showPromoSection && (
           <View style={styles.confirmSection}>
             <Text style={styles.confirmLabel}>PROMO CODE</Text>
             <PromoCodeInput
