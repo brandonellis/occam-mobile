@@ -164,9 +164,22 @@ export const resumeMembership = async (membershipId) => {
   return response.data;
 };
 
+/**
+ * Fetch allowed coaches for a client/service (staff endpoint).
+ */
 export const getAllowedCoachesForService = async (clientId, serviceId) => {
   const response = await apiClient.get(
     `/clients/${clientId}/coach-assignments/allowed/${serviceId}`
+  );
+  return response.data?.data || response.data;
+};
+
+/**
+ * Fetch the authenticated user's allowed coaches for a service.
+ */
+export const getMyAllowedCoachesForService = async (serviceId) => {
+  const response = await apiClient.get(
+    `/auth/my-coach-assignments/allowed/${serviceId}`
   );
   return response.data?.data || response.data;
 };

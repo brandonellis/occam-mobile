@@ -46,13 +46,23 @@ export const createMembershipSubscription = async (data) => {
 };
 
 /**
- * Fetch saved payment methods for a client.
+ * Fetch saved payment methods for a client (staff endpoint).
  *
  * @param {number} clientId
  * @returns {Promise<Object>} { payment_methods, default_payment_method }
  */
 export const getClientPaymentMethods = async (clientId) => {
   const response = await apiClient.get(`/clients/${clientId}/payment-methods`);
+  return response.data;
+};
+
+/**
+ * Fetch the authenticated user's own saved payment methods.
+ *
+ * @returns {Promise<Object>} { payment_methods, default_payment_method }
+ */
+export const getMyPaymentMethods = async () => {
+  const response = await apiClient.get('/auth/my-payment-methods');
   return response.data;
 };
 

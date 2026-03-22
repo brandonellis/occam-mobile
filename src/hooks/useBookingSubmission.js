@@ -371,6 +371,23 @@ const useBookingSubmission = ({
     }
     // Recurring booking flow (coach only)
     if (recurrenceEnabled && recurrenceOccurrences > 1) {
+      // Pre-flight allotment warning for membership bookings
+      if (
+        isMembershipBooking &&
+        membershipStatus?.remainingQuantity != null &&
+        recurrenceOccurrences > membershipStatus.remainingQuantity
+      ) {
+        const remaining = membershipStatus.remainingQuantity;
+        Alert.alert(
+          'Allotment Warning',
+          `This client has ${remaining} session${remaining !== 1 ? 's' : ''} remaining on their membership, but you're scheduling ${recurrenceOccurrences} recurring bookings. Sessions beyond the allotment may fail or require separate payment.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Continue Anyway', onPress: () => handleRecurringConfirm() },
+          ],
+        );
+        return;
+      }
       handleRecurringConfirm();
       return;
     }
@@ -383,9 +400,13 @@ const useBookingSubmission = ({
     } else if (paymentsEnabled) {
       handlePaymentConfirm();
     } else {
-      handleDirectConfirm();
+      // paymentsEnabled is false for a client — payment system unavailable
+      Alert.alert(
+        'Payment Unavailable',
+        'Online payments are not set up for this facility. Please contact them to book.',
+      );
     }
-  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, recurrenceEnabled, recurrenceOccurrences, handleDirectConfirm, handleRecurringConfirm, handlePaymentConfirm, handleSavedCardPayment]);
+  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, membershipStatus, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, recurrenceEnabled, recurrenceOccurrences, handleDirectConfirm, handleRecurringConfirm, handlePaymentConfirm, handleSavedCardPayment]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
@@ -397,7 +418,8 @@ const useBookingSubmission = ({
     if (isCoach && !paymentsEnabled) return true;
     if (paymentsEnabled && paymentMode === 'saved') return !!selectedSavedMethodId;
     if (paymentsEnabled) return cardComplete;
-    return true;
+    // Client with no payment system — cannot confirm
+    return false;
   }, [isSubmitting, isEditMode, bookingId, timeSlot?.start_time, membershipLoading, packageBenefitLoading, ecommerceLoading, isMembershipBooking, isPackageBooking, isPaymentNotRequired, isCoach, paymentsEnabled, paymentMode, selectedSavedMethodId, cardComplete]);
 
   return {

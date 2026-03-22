@@ -99,6 +99,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     clientId,
     serviceId: service?.id,
     isEditMode,
+    isCoach,
   });
 
   const { packageBenefit, packageBenefitLoading, packageBenefitError, isPackageBooking } = useBookingPackage({

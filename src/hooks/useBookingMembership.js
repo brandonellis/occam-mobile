@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { getCurrentClientMembership } from '../services/accounts.api';
+import { getCurrentClientMembership, getMyMembership } from '../services/accounts.api';
 import { QUERY_KEYS } from '../constants/queryKeys.constants';
 
 /**
@@ -10,8 +10,11 @@ import { QUERY_KEYS } from '../constants/queryKeys.constants';
  *
  * Uses React Query internally for caching — switching between clients
  * or navigating back returns cached membership data instantly.
+ *
+ * Coach/Admin flow uses the staff endpoint (/clients/{id}/current-membership).
+ * Client flow uses the client-accessible endpoint (/auth/my-membership).
  */
-const useBookingMembership = ({ clientId, serviceId, isEditMode }) => {
+const useBookingMembership = ({ clientId, serviceId, isEditMode, isCoach }) => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const {
@@ -20,7 +23,15 @@ const useBookingMembership = ({ clientId, serviceId, isEditMode }) => {
     isError: membershipError,
   } = useQuery({
     queryKey: [...QUERY_KEYS.MEMBERSHIPS.my, clientId, refreshKey],
-    queryFn: () => getCurrentClientMembership(clientId),
+    queryFn: async () => {
+      try {
+        return isCoach ? await getCurrentClientMembership(clientId) : await getMyMembership();
+      } catch (err) {
+        // 404 = no active membership — treat as null data, not an error
+        if (err?.response?.status === 404) return null;
+        throw err;
+      }
+    },
     enabled: !isEditMode && !!clientId && !!serviceId,
     staleTime: 30 * 1000, // 30s — membership can change mid-session
   });

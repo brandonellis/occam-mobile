@@ -8,7 +8,9 @@ import { ListSkeleton } from '../../components/SkeletonLoader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { getCoaches } from '../../services/bookings.api';
-import { getAllowedCoachesForService } from '../../services/accounts.api';
+import { getAllowedCoachesForService, getMyAllowedCoachesForService } from '../../services/accounts.api';
+import useAuth from '../../hooks/useAuth';
+import { COACH_ROLES } from '../../constants/auth.constants';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
@@ -19,6 +21,8 @@ import logger from '../../helpers/logger.helper';
 const CoachSelectionScreen = ({ route, navigation }) => {
   const { bookingData = {} } = route.params || {};
   const service = bookingData.service;
+  const { activeRole } = useAuth();
+  const isCoach = COACH_ROLES.includes(activeRole);
 
   const [state, setState] = React.useState({
     coaches: [],
@@ -61,7 +65,9 @@ const CoachSelectionScreen = ({ route, navigation }) => {
       const clientId = bookingData.client?.id;
       if (clientId && service?.id) {
         try {
-          const assignmentRes = await getAllowedCoachesForService(clientId, service.id);
+          const assignmentRes = isCoach
+            ? await getAllowedCoachesForService(clientId, service.id)
+            : await getMyAllowedCoachesForService(service.id);
           const allowedIds = assignmentRes?.allowed_coach_ids || [];
           if (allowedIds.length > 0) {
             coachList = coachList.filter((c) => allowedIds.includes(c.id));

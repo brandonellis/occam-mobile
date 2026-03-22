@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getClientPaymentMethods } from '../services/billing.api';
+import { getClientPaymentMethods, getMyPaymentMethods } from '../services/billing.api';
 import logger from '../helpers/logger.helper';
 
 /**
@@ -46,7 +46,9 @@ const useBookingPayment = ({
     (async () => {
       try {
         setSavedMethodsLoading(true);
-        const resp = await getClientPaymentMethods(clientId);
+        const resp = isCoach
+          ? await getClientPaymentMethods(clientId)
+          : await getMyPaymentMethods();
         const methods = resp?.payment_methods || resp?.data || [];
         if (!cancelled) {
           const list = Array.isArray(methods) ? methods : [];

@@ -11,6 +11,27 @@ const INITIAL_SUGGESTIONS = [
   'What memberships do I have?',
 ];
 
+const NUDGE_TITLES = {
+  upcoming_booking: 'Upcoming Session',
+  package_low: 'Package Running Low',
+  membership_exhausted: 'Sessions Used Up',
+};
+
+const NUDGE_PROMPTS = {
+  upcoming_booking: 'Show my upcoming bookings',
+  package_low: 'What packages do I have?',
+  membership_exhausted: 'What memberships do I have?',
+};
+
+/** Map backend nudge format ({ type, message, data }) to frontend format ({ id, title, body, prompt }). */
+const normalizeNudge = (raw, index) => ({
+  id: raw.id || `${raw.type || 'nudge'}-${index}`,
+  title: raw.title || NUDGE_TITLES[raw.type] || 'Tip',
+  body: raw.body || raw.description || raw.message || '',
+  prompt: raw.prompt || NUDGE_PROMPTS[raw.type] || raw.message || '',
+  type: raw.type,
+});
+
 const INITIAL_MESSAGES = [
   {
     id: 'caddie-welcome',
@@ -67,7 +88,7 @@ const useCaddie = () => {
         setDismissedNudgeIds(dismissed);
 
         const context = await fetchCaddieContext();
-        const fetched = context?.nudges || [];
+        const fetched = (context?.nudges || []).map(normalizeNudge);
         if (fetched.length > 0) {
           setNudges(fetched.filter((n) => !dismissed.includes(n.id)));
         }
