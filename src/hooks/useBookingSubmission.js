@@ -4,13 +4,12 @@ import {
   createBooking,
   createRecurringBooking,
   updateBooking,
-  cancelBooking,
-  getBooking,
 } from '../services/bookings.api';
 import { createServicePayment, handlePaymentSuccess } from '../services/billing.api';
 import { extractErrorMessage } from '../helpers/error.helper';
 import { isStaffBookingRole } from '../helpers/bookingEdit.helper';
-import logger from '../helpers/logger.helper';
+import { buildBookingPayload, buildUpdatePayload } from '../helpers/bookingPayload.helpers';
+import usePaymentSaga from './usePaymentSaga';
 import {
   bookingSubmissionReducer,
   initialBookingSubmissionState,
@@ -74,136 +73,27 @@ const useBookingSubmission = ({
   const bookingId = bookingData.bookingId || null;
   const clientId = isCoach ? client?.id : user?.id;
 
-  // Build the booking payload (shared between membership, package, and payment flows)
-  const buildBookingPayload = useCallback((status = 'confirmed') => {
-    let bookingType = 'one_off';
-    if (isMembershipBooking) bookingType = 'membership';
-    else if (isPackageBooking) bookingType = 'package';
-
-    const payload = {
-      client_id: clientId,
-      booking_type: bookingType,
-      location_id: location?.id,
-      service_ids: [service?.id],
-      start_time: timeSlot?.start_time,
-      end_time: timeSlot?.end_time,
+  // Wrap pure buildBookingPayload with current closure values
+  const buildPayload = useCallback((status = 'confirmed') => {
+    return buildBookingPayload(
+      { clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource },
       status,
-      notes: bookingNotes || '',
-    };
-
-    if (coach?.id) {
-      payload.bookable_type = 'App\\Models\\User';
-      payload.bookable_id = coach.id;
-    } else {
-      payload.bookable_type = 'App\\Models\\Service';
-      payload.bookable_id = service?.id;
-    }
-
-    if (selectedResource?.id) {
-      payload.resource_ids = [selectedResource.id];
-    }
-
-    if (bookingData.duration_minutes && service?.is_variable_duration) {
-      payload.duration_minutes = bookingData.duration_minutes;
-    }
-
-    if (isMembershipBooking && membershipStatus) {
-      payload.membership_subscription_id = membershipStatus.membershipId;
-      payload.membership_plan_service_id = membershipStatus.membershipPlanServiceId;
-    }
-
-    if (isPackageBooking && packageBenefit?.client_package_id) {
-      payload.client_package_id = packageBenefit.client_package_id;
-    }
-
-    if (bookingData.selectedClassSession?.id) {
-      payload.class_session_id = bookingData.selectedClassSession.id;
-    }
-
-    return payload;
+    );
   }, [clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource]);
 
-  const buildUpdatePayload = useCallback(() => {
-    const payload = {
-      notes: bookingNotes || '',
-      status: bookingStatus,
-      start_time: timeSlot?.start_time,
-      end_time: timeSlot?.end_time,
-      resource_ids: selectedResource?.id ? [selectedResource.id] : [],
-    };
-
-    if (isStaffEditor) {
-      if (service?.id) {
-        payload.service_ids = [service.id];
-      }
-      payload.location_id = location?.id || null;
-      payload.client_id = client?.id || null;
-      payload.coach_ids = coach?.id ? [coach.id] : [];
-    }
-
-    return payload;
+  // Wrap pure buildUpdatePayload with current closure values
+  const buildUpdate = useCallback(() => {
+    return buildUpdatePayload({ bookingNotes, bookingStatus, timeSlot, selectedResource, isStaffEditor, service, location, client, coach });
   }, [bookingNotes, bookingStatus, timeSlot?.start_time, timeSlot?.end_time, selectedResource?.id, isStaffEditor, service?.id, location?.id, client?.id, coach?.id]);
 
-  /**
-   * Shared payment saga: create pending booking → execute payment → finalize.
-   * Used by both new-card and saved-card flows. The caller provides a paymentFn
-   * that receives (pendingBookingId, markCharged) and handles the payment-specific logic.
-   *
-   * The paymentFn MUST call markCharged() once the Stripe charge succeeds but
-   * before calling handlePaymentSuccess — this prevents the saga from cancelling
-   * a booking that was already charged if handlePaymentSuccess fails.
-   *
-   * @param {Function} paymentFn - async (pendingBookingId, markCharged) => void
-   */
-  const executePaymentSaga = useCallback(async (paymentFn) => {
-    let pendingBookingId = null;
-    let chargeCompleted = false;
-
-    const markCharged = () => { chargeCompleted = true; };
-
-    try {
-      dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
-
-      // PHASE 1: Create pending booking
-      const payload = buildBookingPayload('pending');
-      const bookingResponse = await createBooking(payload);
-      pendingBookingId = bookingResponse?.data?.id || bookingResponse?.id;
-
-      // PHASE 2-3: Execute payment (new card or saved card)
-      dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Processing payment...' });
-      await paymentFn(pendingBookingId, markCharged);
-
-      // PHASE 4: Fetch full booking for success screen
-      dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Finalizing...' });
-
-      let confirmedBookingData;
-      try {
-        const full = await getBooking(bookingResponse?.data?.id || bookingResponse?.id);
-        confirmedBookingData = full?.data || full;
-      } catch (fetchErr) {
-        logger.warn('Failed to fetch booking details for success screen:', fetchErr.message);
-        confirmedBookingData = bookingResponse?.data || bookingResponse;
-      }
-      dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: confirmedBookingData });
-    } catch (error) {
-      if (pendingBookingId && !chargeCompleted) {
-        try {
-          await cancelBooking(pendingBookingId);
-        } catch (cancelErr) {
-          logger.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
-        }
-      }
-      Alert.alert('Payment Failed', extractErrorMessage(error));
-    } finally {
-      dispatch({ type: ACTIONS.SUBMIT_END });
-    }
-  }, [buildBookingPayload]);
+  // Payment saga from extracted hook
+  const { executePaymentSaga } = usePaymentSaga({ buildPayload, dispatch, ACTIONS });
 
   // Handle direct booking (membership or no-payment — no Stripe involved)
   const handleDirectConfirm = useCallback(async () => {
     try {
       dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
-      const payload = buildBookingPayload('confirmed');
+      const payload = buildPayload('confirmed');
       const result = await createBooking(payload);
       const booking = result?.data || result;
       refreshMembership();
@@ -213,14 +103,14 @@ const useBookingSubmission = ({
     } finally {
       dispatch({ type: ACTIONS.SUBMIT_END });
     }
-  }, [buildBookingPayload, refreshMembership]);
+  }, [buildPayload, refreshMembership]);
 
   // Handle recurring booking (coach only — creates a series of bookings)
   const handleRecurringConfirm = useCallback(async () => {
     try {
       dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating recurring bookings...' });
       const payload = {
-        ...buildBookingPayload('confirmed'),
+        ...buildPayload('confirmed'),
         frequency: recurrenceFrequency,
         occurrences: recurrenceOccurrences,
       };
@@ -240,7 +130,7 @@ const useBookingSubmission = ({
     } finally {
       dispatch({ type: ACTIONS.SUBMIT_END });
     }
-  }, [buildBookingPayload, recurrenceFrequency, recurrenceOccurrences, refreshMembership]);
+  }, [buildPayload, recurrenceFrequency, recurrenceOccurrences, refreshMembership]);
 
   const handleUpdateConfirm = useCallback(async () => {
     if (!bookingId) {
@@ -250,14 +140,14 @@ const useBookingSubmission = ({
 
     try {
       dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Updating booking...' });
-      const result = await updateBooking(bookingId, buildUpdatePayload());
+      const result = await updateBooking(bookingId, buildUpdate());
       dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: result?.data || result });
     } catch (error) {
       Alert.alert('Update Failed', extractErrorMessage(error));
     } finally {
       dispatch({ type: ACTIONS.SUBMIT_END });
     }
-  }, [bookingId, buildUpdatePayload]);
+  }, [bookingId, buildUpdate]);
 
   // Handle one-off payment booking (new Stripe card)
   const handlePaymentConfirm = useCallback(async () => {
