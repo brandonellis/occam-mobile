@@ -68,12 +68,12 @@ export const adminDashboardStyles = StyleSheet.create({
   },
   notificationBadge: {
     position: 'absolute',
-    top: -2,
-    right: -2,
-    minWidth: 18,
-    height: 18,
-    paddingHorizontal: 4,
-    borderRadius: 9,
+    top: -1,
+    right: -1,
+    minWidth: 14,
+    height: 14,
+    paddingHorizontal: 2,
+    borderRadius: 7,
     backgroundColor: colors.error,
     alignItems: 'center',
     justifyContent: 'center',
@@ -81,7 +81,7 @@ export const adminDashboardStyles = StyleSheet.create({
   notificationBadgeText: {
     ...typography.labelSmall,
     color: colors.textInverse,
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '700',
   },
   heroContextRow: {

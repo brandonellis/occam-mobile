@@ -161,20 +161,20 @@ export const dashboardStyles = StyleSheet.create({
   // Notification badge
   notificationBadge: {
     position: 'absolute',
-    top: -4,
-    right: -6,
+    top: 2,
+    right: 0,
     backgroundColor: colors.error,
     borderRadius: borderRadius.full,
-    minWidth: 18,
-    height: 18,
+    minWidth: 14,
+    height: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: 2,
   },
   notificationBadgeText: {
     color: colors.white,
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '700',
-    lineHeight: 12,
+    lineHeight: 10,
   },
 });

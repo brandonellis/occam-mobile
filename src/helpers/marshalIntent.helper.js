@@ -25,22 +25,24 @@ export const buildMarshalIntentFromHandoff = (handoff, options = {}) => {
 };
 
 export const buildBookingMarshalIntent = ({ booking, company }) => {
-  const clientName = getPersonName(booking?.client || booking?.user) || 'Unknown client';
-  const serviceName = getSessionServiceName(booking);
-  const coachNames = getSessionCoachNames(booking) || 'Unassigned';
-  const resourceNames = getSessionResourceNames(booking) || 'None assigned';
+  const clientName = sanitize(getPersonName(booking?.client || booking?.user)) || 'Unknown client';
+  const serviceName = sanitize(getSessionServiceName(booking));
+  const coachNames = sanitize(getSessionCoachNames(booking)) || 'Unassigned';
+  const resourceNames = sanitize(getSessionResourceNames(booking)) || 'None assigned';
   // Show endpoint returns flat location_name; index returns nested location.name
-  const locationName = booking?.location?.name || booking?.location_name || 'Unknown location';
+  const locationName = sanitize(booking?.location?.name || booking?.location_name) || 'Unknown location';
   const bookingDate = booking?.start_time ? formatDateInTz(booking.start_time, company, 'long') : 'Unknown date';
   const startTime = booking?.start_time ? formatTimeInTz(booking.start_time, company) : 'Unknown time';
   const endTime = booking?.end_time ? formatTimeInTz(booking.end_time, company) : '';
   const timeRange = endTime ? `${startTime} – ${endTime}` : startTime;
   const status = booking?.status || 'unknown';
-  // Strip potential LLM instruction characters from user-supplied notes to
-  // prevent prompt injection before embedding in the intent message.
-  const rawNotes = booking?.notes ? String(booking.notes).trim() : '';
-  const notes = rawNotes.replace(/[<>\[\]{}]/g, '').substring(0, 500);
+  const notes = sanitize(booking?.notes ? String(booking.notes).trim() : '');
   const summary = `Review ${serviceName} for ${clientName} on ${bookingDate}${timeRange ? ` at ${timeRange}` : ''}.`;
+
+  const service = booking?.services?.[0] || booking?.service;
+  const requiresCoach = service?.requires_coach ?? service?.coach_required ?? null;
+  const paymentStatus = booking?.payment_status || 'unknown';
+  const totalAmount = booking?.total_amount;
 
   const promptLines = [
     'Booking follow-up handoff for Marshal',
@@ -48,12 +50,15 @@ export const buildBookingMarshalIntent = ({ booking, company }) => {
     `Booking ID: ${booking?.id ?? 'unknown'}`,
     `Client: ${clientName}`,
     `Service: ${serviceName}`,
+    `Service requires coach: ${requiresCoach === true ? 'yes' : requiresCoach === false ? 'no' : 'unknown'}`,
     `Date: ${bookingDate}`,
     `Time: ${timeRange}`,
     `Location: ${locationName}`,
     `Coach: ${coachNames}`,
     `Resources: ${resourceNames}`,
     `Status: ${status}`,
+    `Payment status: ${paymentStatus}`,
+    `Total amount: ${totalAmount != null ? `$${totalAmount}` : 'N/A'}`,
   ];
 
   if (notes) {
@@ -198,6 +203,11 @@ export const buildInsightMarshalIntent = ({ insightType, data }) => {
           `Period: last ${data?.period_days ?? 7} days`,
           `Availability misses: ${data?.counts?.availability_misses ?? 0}`,
           `Booking abandonments: ${data?.counts?.booking_abandonments ?? 0}`,
+          `Membership inquiries: ${data?.counts?.membership_inquiries ?? 0}`,
+          `Package inquiries: ${data?.counts?.package_inquiries ?? 0}`,
+          `Cancellations via Caddie: ${data?.counts?.cancellation_attempts ?? 0}`,
+          `Cancellations blocked: ${data?.counts?.cancellation_blocked ?? 0}`,
+          `Price sensitivity signals: ${data?.counts?.price_sensitivity ?? 0}`,
           `Top highlights: ${highlights.map((h) => h.label).join('; ') || 'None'}`,
         ],
       };
@@ -280,12 +290,17 @@ export const buildInsightMarshalIntent = ({ insightType, data }) => {
 };
 
 export const buildClientMarshalIntent = ({ client, company, upcomingBookings = [], pastBookings = [] }) => {
-  const clientName = getPersonName(client) || 'Unknown client';
+  const clientName = sanitize(getPersonName(client)) || 'Unknown client';
   const nextBooking = Array.isArray(upcomingBookings) && upcomingBookings.length > 0 ? upcomingBookings[0] : null;
-  const nextService = nextBooking ? getSessionServiceName(nextBooking) : 'No upcoming booking';
+  const nextService = nextBooking ? sanitize(getSessionServiceName(nextBooking)) : 'No upcoming booking';
   const nextDate = nextBooking?.start_time ? formatDateInTz(nextBooking.start_time, company, 'long') : 'No upcoming booking';
   const nextTime = nextBooking?.start_time ? formatTimeInTz(nextBooking.start_time, company) : '';
-  const membershipName = client?.membership?.plan?.name || (client?.membership?.is_active ? 'Active membership' : 'No active membership');
+  const membershipName = sanitize(client?.membership?.plan?.name) || (client?.membership?.is_active ? 'Active membership' : 'No active membership');
+  const phone = sanitize(client?.phone || client?.details?.phone) || '';
+  const email = sanitize(client?.email) || '';
+  const missingFields = [];
+  if (!phone) missingFields.push('phone number');
+  if (!email) missingFields.push('email');
   const summary = `Review follow-up needs for ${clientName}.`;
 
   const promptLines = [
@@ -293,14 +308,24 @@ export const buildClientMarshalIntent = ({ client, company, upcomingBookings = [
     'Reason: client_follow_up',
     `Client ID: ${client?.id ?? 'unknown'}`,
     `Client: ${clientName}`,
-    `Email: ${client?.email || 'Unknown email'}`,
-    `Upcoming bookings: ${Array.isArray(upcomingBookings) ? upcomingBookings.length : 0}`,
-    `Past bookings: ${Array.isArray(pastBookings) ? pastBookings.length : 0}`,
-    `Membership: ${membershipName}`,
-    `Next booking service: ${nextService}`,
-    `Next booking date: ${nextDate}`,
-    `Next booking time: ${nextTime || 'Unknown time'}`,
   ];
+
+  if (email) promptLines.push(`Email: ${email}`);
+  if (phone) promptLines.push(`Phone: ${phone}`);
+  if (missingFields.length > 0) promptLines.push(`Missing contact info: ${missingFields.join(', ')}`);
+
+  promptLines.push(`Upcoming bookings: ${Array.isArray(upcomingBookings) ? upcomingBookings.length : 0}`);
+  promptLines.push(`Past bookings: ${Array.isArray(pastBookings) ? pastBookings.length : 0}`);
+  promptLines.push(`Membership: ${membershipName}`);
+  const membership = client?.membership;
+  if (membership) {
+    if (membership.stripe_status) promptLines.push(`Membership status: ${membership.stripe_status}`);
+    if (membership.renews_at) promptLines.push(`Renews at: ${membership.renews_at}`);
+    if (membership.cancel_at_period_end) promptLines.push('Cancel at period end: yes');
+  }
+  promptLines.push(`Next booking service: ${nextService}`);
+  promptLines.push(`Next booking date: ${nextDate}`);
+  promptLines.push(`Next booking time: ${nextTime || 'Unknown time'}`);
 
   promptLines.push('Please review this client and recommend the most important facility-side follow-up. Any mutation still requires explicit human approval.');
 
