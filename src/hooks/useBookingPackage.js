@@ -20,7 +20,6 @@ const useBookingPackage = ({
   isCoach,
   membershipLoading,
   isMembershipBooking,
-  membershipRefreshKey,
 }) => {
   const shouldFetch =
     !isEditMode &&
@@ -33,8 +32,9 @@ const useBookingPackage = ({
   const {
     data: rawBenefits,
     isLoading: packageBenefitLoading,
+    isError: packageBenefitError,
   } = useQuery({
-    queryKey: [...QUERY_KEYS.PACKAGES.myBookingBenefits(serviceId), membershipRefreshKey],
+    queryKey: QUERY_KEYS.PACKAGES.myBookingBenefits(serviceId),
     queryFn: () => getMyBookingBenefits(serviceId),
     enabled: shouldFetch,
     staleTime: 30 * 1000, // 30s — packages can change mid-session
@@ -63,6 +63,7 @@ const useBookingPackage = ({
   return {
     packageBenefit,
     packageBenefitLoading: shouldFetch ? packageBenefitLoading : false,
+    packageBenefitError: shouldFetch ? packageBenefitError : false,
     isPackageBooking,
   };
 };

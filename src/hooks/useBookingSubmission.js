@@ -142,12 +142,19 @@ const useBookingSubmission = ({
   /**
    * Shared payment saga: create pending booking → execute payment → finalize.
    * Used by both new-card and saved-card flows. The caller provides a paymentFn
-   * that receives (pendingBookingId, paymentData) and handles the payment-specific logic.
+   * that receives (pendingBookingId, markCharged) and handles the payment-specific logic.
    *
-   * @param {Function} paymentFn - async (pendingBookingId, bookingResponse) => void
+   * The paymentFn MUST call markCharged() once the Stripe charge succeeds but
+   * before calling handlePaymentSuccess — this prevents the saga from cancelling
+   * a booking that was already charged if handlePaymentSuccess fails.
+   *
+   * @param {Function} paymentFn - async (pendingBookingId, markCharged) => void
    */
   const executePaymentSaga = useCallback(async (paymentFn) => {
     let pendingBookingId = null;
+    let chargeCompleted = false;
+
+    const markCharged = () => { chargeCompleted = true; };
 
     try {
       dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
@@ -159,10 +166,9 @@ const useBookingSubmission = ({
 
       // PHASE 2-3: Execute payment (new card or saved card)
       dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Processing payment...' });
-      await paymentFn(pendingBookingId, bookingResponse);
+      await paymentFn(pendingBookingId, markCharged);
 
       // PHASE 4: Fetch full booking for success screen
-      pendingBookingId = null; // Payment succeeded — don't cancel on fetch failure
       dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Finalizing...' });
 
       let confirmedBookingData;
@@ -175,7 +181,7 @@ const useBookingSubmission = ({
       }
       dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: confirmedBookingData });
     } catch (error) {
-      if (pendingBookingId) {
+      if (pendingBookingId && !chargeCompleted) {
         try {
           await cancelBooking(pendingBookingId);
         } catch (cancelErr) {
@@ -228,7 +234,7 @@ const useBookingSubmission = ({
       return;
     }
 
-    await executePaymentSaga(async (pendingBookingId) => {
+    await executePaymentSaga(async (pendingBookingId, markCharged) => {
       // Create payment intent
       dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Setting up payment...' });
       const paymentData = {
@@ -263,6 +269,9 @@ const useBookingSubmission = ({
         throw new Error(error.message || 'Payment failed.');
       }
 
+      // Stripe charged successfully — never cancel this booking from here on
+      markCharged();
+
       // Notify backend of success
       dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Finalizing...' });
       await handlePaymentSuccess(paymentIntent.id);
@@ -276,7 +285,7 @@ const useBookingSubmission = ({
       return;
     }
 
-    await executePaymentSaga(async (pendingBookingId) => {
+    await executePaymentSaga(async (pendingBookingId, markCharged) => {
       const savedPaymentData = {
         client_id: clientId,
         service_id: service?.id,
@@ -300,8 +309,10 @@ const useBookingSubmission = ({
           paymentMethodType: 'Card',
         });
         if (confirmError) throw new Error(confirmError.message || 'Payment confirmation failed.');
+        markCharged();
         await handlePaymentSuccess(piResponse.payment_intent_id);
       } else if (piResponse.status === 'succeeded') {
+        markCharged();
         await handlePaymentSuccess(piResponse.payment_intent_id);
       } else {
         throw new Error(`Unexpected payment status: ${piResponse.status}`);

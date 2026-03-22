@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { getCurrentClientMembership } from '../services/accounts.api';
 import { QUERY_KEYS } from '../constants/queryKeys.constants';
 
@@ -12,12 +12,12 @@ import { QUERY_KEYS } from '../constants/queryKeys.constants';
  * or navigating back returns cached membership data instantly.
  */
 const useBookingMembership = ({ clientId, serviceId, isEditMode }) => {
-  const queryClient = useQueryClient();
   const [refreshKey, setRefreshKey] = useState(0);
 
   const {
     data: rawMembership,
     isLoading: membershipLoading,
+    isError: membershipError,
   } = useQuery({
     queryKey: [...QUERY_KEYS.MEMBERSHIPS.my, clientId, refreshKey],
     queryFn: () => getCurrentClientMembership(clientId),
@@ -83,18 +83,17 @@ const useBookingMembership = ({ clientId, serviceId, isEditMode }) => {
   }, [membershipStatus, serviceId]);
 
   const refreshMembership = useCallback(() => {
-    // Bump refresh key to force a new query + invalidate existing cache
+    // Bump refresh key to force a new query with a fresh cache entry
     setRefreshKey((prev) => prev + 1);
-    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MEMBERSHIPS.my });
-  }, [queryClient]);
+  }, []);
 
   return {
     membershipStatus,
     membershipLoading,
+    membershipError,
     isMembershipBooking,
     memberPriceCents,
     refreshMembership,
-    membershipRefreshKey: refreshKey,
   };
 };
 

@@ -1,7 +1,13 @@
 import PropTypes from 'prop-types';
-import { QueryClient, QueryClientProvider as RQProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider as RQProvider, QueryCache } from '@tanstack/react-query';
+import logger from '../helpers/logger.helper';
 
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      logger.error(`Query failed [${query.queryKey.join(',')}]:`, error.message);
+    },
+  }),
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,

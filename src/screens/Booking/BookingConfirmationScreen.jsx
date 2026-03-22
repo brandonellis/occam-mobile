@@ -77,24 +77,23 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const {
     membershipStatus,
     membershipLoading,
+    membershipError,
     isMembershipBooking,
     memberPriceCents,
     refreshMembership,
-    membershipRefreshKey,
   } = useBookingMembership({
     clientId,
     serviceId: service?.id,
     isEditMode,
   });
 
-  const { packageBenefit, packageBenefitLoading, isPackageBooking } = useBookingPackage({
+  const { packageBenefit, packageBenefitLoading, packageBenefitError, isPackageBooking } = useBookingPackage({
     clientId,
     serviceId: service?.id,
     isEditMode,
     isCoach,
     membershipLoading,
     isMembershipBooking,
-    membershipRefreshKey,
   });
 
   const {
@@ -334,6 +333,15 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           coachNeedsPayment={coachNeedsPayment}
           skeletonAnim={skeletonAnim}
         />
+
+        {!isEditMode && (membershipError || packageBenefitError) && (
+          <View style={[styles.confirmSection, { backgroundColor: colors.warningLight }]}>
+            <Text style={{ color: colors.warning, fontSize: 14 }}>
+              Unable to verify membership/package benefits. You may be charged the full price.
+              Please try again or contact support.
+            </Text>
+          </View>
+        )}
 
         {showMembershipBanner && (
           <BookingBenefitBanner
