@@ -25,21 +25,18 @@ export const buildMarshalIntentFromHandoff = (handoff, options = {}) => {
 };
 
 export const buildBookingMarshalIntent = ({ booking, company }) => {
-  const clientName = getPersonName(booking?.client || booking?.user) || 'Unknown client';
-  const serviceName = getSessionServiceName(booking);
-  const coachNames = getSessionCoachNames(booking) || 'Unassigned';
-  const resourceNames = getSessionResourceNames(booking) || 'None assigned';
+  const clientName = sanitize(getPersonName(booking?.client || booking?.user)) || 'Unknown client';
+  const serviceName = sanitize(getSessionServiceName(booking));
+  const coachNames = sanitize(getSessionCoachNames(booking)) || 'Unassigned';
+  const resourceNames = sanitize(getSessionResourceNames(booking)) || 'None assigned';
   // Show endpoint returns flat location_name; index returns nested location.name
-  const locationName = booking?.location?.name || booking?.location_name || 'Unknown location';
+  const locationName = sanitize(booking?.location?.name || booking?.location_name) || 'Unknown location';
   const bookingDate = booking?.start_time ? formatDateInTz(booking.start_time, company, 'long') : 'Unknown date';
   const startTime = booking?.start_time ? formatTimeInTz(booking.start_time, company) : 'Unknown time';
   const endTime = booking?.end_time ? formatTimeInTz(booking.end_time, company) : '';
   const timeRange = endTime ? `${startTime} – ${endTime}` : startTime;
   const status = booking?.status || 'unknown';
-  // Strip potential LLM instruction characters from user-supplied notes to
-  // prevent prompt injection before embedding in the intent message.
-  const rawNotes = booking?.notes ? String(booking.notes).trim() : '';
-  const notes = rawNotes.replace(/[<>\[\]{}]/g, '').substring(0, 500);
+  const notes = sanitize(booking?.notes ? String(booking.notes).trim() : '');
   const summary = `Review ${serviceName} for ${clientName} on ${bookingDate}${timeRange ? ` at ${timeRange}` : ''}.`;
 
   const service = booking?.services?.[0] || booking?.service;
@@ -293,14 +290,14 @@ export const buildInsightMarshalIntent = ({ insightType, data }) => {
 };
 
 export const buildClientMarshalIntent = ({ client, company, upcomingBookings = [], pastBookings = [] }) => {
-  const clientName = getPersonName(client) || 'Unknown client';
+  const clientName = sanitize(getPersonName(client)) || 'Unknown client';
   const nextBooking = Array.isArray(upcomingBookings) && upcomingBookings.length > 0 ? upcomingBookings[0] : null;
-  const nextService = nextBooking ? getSessionServiceName(nextBooking) : 'No upcoming booking';
+  const nextService = nextBooking ? sanitize(getSessionServiceName(nextBooking)) : 'No upcoming booking';
   const nextDate = nextBooking?.start_time ? formatDateInTz(nextBooking.start_time, company, 'long') : 'No upcoming booking';
   const nextTime = nextBooking?.start_time ? formatTimeInTz(nextBooking.start_time, company) : '';
-  const membershipName = client?.membership?.plan?.name || (client?.membership?.is_active ? 'Active membership' : 'No active membership');
-  const phone = client?.phone || client?.details?.phone || '';
-  const email = client?.email || '';
+  const membershipName = sanitize(client?.membership?.plan?.name) || (client?.membership?.is_active ? 'Active membership' : 'No active membership');
+  const phone = sanitize(client?.phone || client?.details?.phone) || '';
+  const email = sanitize(client?.email) || '';
   const missingFields = [];
   if (!phone) missingFields.push('phone number');
   if (!email) missingFields.push('email');
