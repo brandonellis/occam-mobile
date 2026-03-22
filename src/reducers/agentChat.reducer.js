@@ -79,13 +79,19 @@ export const agentChatReducer = (state, action) => {
         ...state,
         suggestions: action.payload,
       };
-    case AGENT_CHAT_ACTIONS.UPDATE_MESSAGE:
+    case AGENT_CHAT_ACTIONS.UPDATE_MESSAGE: {
+      const { id, updates } = action.payload;
+      // Guard: never allow text to be set to null/undefined — use empty string as floor
+      const safeUpdates = (updates && 'text' in updates && (updates.text === null || updates.text === undefined))
+        ? { ...updates, text: '' }
+        : updates;
       return {
         ...state,
         messages: state.messages.map((m) =>
-          m.id === action.payload.id ? { ...m, ...action.payload.updates } : m
+          m.id === id ? { ...m, ...safeUpdates } : m
         ),
       };
+    }
     default:
       return state;
   }

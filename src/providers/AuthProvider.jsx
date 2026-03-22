@@ -1,4 +1,5 @@
 import React, { useReducer, useEffect, useCallback } from 'react';
+import { queryClient } from './QueryClientProvider';
 import AuthContext from '../context/Auth.context';
 import { authReducer, initialAuthState, AUTH_ACTIONS } from '../reducers/auth.reducer';
 import { ADMIN_SHELL_ROLES, COACH_ROLES } from '../constants/auth.constants';
@@ -207,6 +208,7 @@ const AuthProvider = ({ children }) => {
       // Proceed with local logout even if API call fails
     } finally {
       await clearAllStorage();
+      queryClient.clear();
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
     }
   }, []);

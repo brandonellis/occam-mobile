@@ -88,7 +88,9 @@ const CoachScheduleScreen = ({ navigation }) => {
 
   const formattedHeader = formatDateKeyLong(selectedDate.key);
 
-  const renderDateItem = ({ item }) => {
+  const dateKeyExtractor = useCallback((item) => item.key, []);
+
+  const renderDateItem = useCallback(({ item }) => {
     const isSelected = item.key === selectedDate.key;
     return (
       <TouchableOpacity
@@ -118,7 +120,7 @@ const CoachScheduleScreen = ({ navigation }) => {
         </Text>
       </TouchableOpacity>
     );
-  };
+  }, [selectedDate]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -138,7 +140,7 @@ const CoachScheduleScreen = ({ navigation }) => {
       <FlatList
         data={dates}
         renderItem={renderDateItem}
-        keyExtractor={(item) => item.key}
+        keyExtractor={dateKeyExtractor}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.dateStrip}

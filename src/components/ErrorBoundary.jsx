@@ -3,6 +3,7 @@ import { View, Platform } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { reportFrontendError } from '../services/errorReporting.api';
 import { colors, spacing } from '../theme';
+import deviceMeta from '../helpers/deviceMeta.helper';
 import logger from '../helpers/logger.helper';
 
 class ErrorBoundary extends React.Component {
@@ -27,7 +28,9 @@ class ErrorBoundary extends React.Component {
       userAgent: `${Platform.OS} ${Platform.Version}`,
       timestamp: new Date().toISOString(),
       environment: __DEV__ ? 'development' : 'production',
-      extra: { source: 'ErrorBoundary', platform: Platform.OS },
+      source: 'mobile',
+      device: deviceMeta,
+      extra: { origin: 'ErrorBoundary', platform: Platform.OS },
     });
   }
 

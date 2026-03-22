@@ -231,7 +231,7 @@ const AdminScheduleScreen = ({ navigation }) => {
   const selectedLocation = filterOptions.locations.find((location) => location.id === filters.locationId);
   const selectedService = filterOptions.services.find((service) => service.id === filters.serviceId);
 
-  const renderDateItem = ({ item }) => {
+  const renderDateItem = useCallback(({ item }) => {
     const isSelected = item.key === selectedDateKey;
     return (
       <TouchableOpacity
@@ -247,7 +247,9 @@ const AdminScheduleScreen = ({ navigation }) => {
         <Text style={[styles.dateDayNumber, isSelected && styles.dateDayNumberSelected]}>{item.dayNumber}</Text>
       </TouchableOpacity>
     );
-  };
+  }, [selectedDateKey]);
+
+  const dateKeyExtractor = useCallback((item) => item.key, []);
 
   const openFilter = useCallback((type) => {
     setFilterModal(type);
@@ -342,7 +344,7 @@ const AdminScheduleScreen = ({ navigation }) => {
           ref={dateListRef}
           data={dateStrip}
           renderItem={renderDateItem}
-          keyExtractor={(item) => item.key}
+          keyExtractor={dateKeyExtractor}
           horizontal
           showsHorizontalScrollIndicator={false}
           style={styles.dateStripList}

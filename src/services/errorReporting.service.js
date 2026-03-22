@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import { reportFrontendError } from './errorReporting.api';
+import deviceMeta from '../helpers/deviceMeta.helper';
 
 /**
  * Initialize global JS error handlers for unhandled errors and
@@ -21,8 +22,10 @@ export const initGlobalErrorHandler = () => {
       userAgent: `${Platform.OS} ${Platform.Version}`,
       timestamp: new Date().toISOString(),
       environment: __DEV__ ? 'development' : 'production',
+      source: 'mobile',
+      device: deviceMeta,
       extra: {
-        source: 'GlobalHandler',
+        origin: 'GlobalHandler',
         platform: Platform.OS,
         isFatal: !!isFatal,
       },

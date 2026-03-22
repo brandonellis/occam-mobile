@@ -23,6 +23,28 @@ import logger from '../../helpers/logger.helper';
 const PER_PAGE = 50;
 const SEARCH_DEBOUNCE_MS = 350;
 
+const ClientListItem = React.memo(({ item, onPress }) => {
+  const fullName = `${item.first_name || ''} ${item.last_name || ''}`.trim();
+  return (
+    <TouchableOpacity
+      style={styles.clientCard}
+      onPress={() => onPress(item)}
+      activeOpacity={0.7}
+    >
+      <Avatar
+        uri={item.avatar_url}
+        name={fullName}
+        size={44}
+      />
+      <View style={styles.clientInfo}>
+        <Text style={styles.clientName}>{fullName || 'Client'}</Text>
+        <Text style={styles.clientEmail}>{item.email}</Text>
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
+    </TouchableOpacity>
+  );
+});
+
 const CoachClientsScreen = ({ navigation }) => {
   const [clients, setClients] = useState([]);
   const [search, setSearch] = useState('');
@@ -124,29 +146,13 @@ const CoachClientsScreen = ({ navigation }) => {
     fetchClients({ page: currentPage + 1, searchTerm: activeSearchRef.current, append: true });
   }, [isLoadingMore, currentPage, lastPage, fetchClients]);
 
-  const renderClient = useCallback(({ item }) => {
-    const fullName = `${item.first_name || ''} ${item.last_name || ''}`.trim();
-    return (
-      <TouchableOpacity
-        style={styles.clientCard}
-        onPress={() =>
-          navigation.navigate(SCREENS.CLIENT_DETAIL, { clientId: item.id })
-        }
-        activeOpacity={0.7}
-      >
-        <Avatar
-          uri={item.avatar_url}
-          name={fullName}
-          size={44}
-        />
-        <View style={styles.clientInfo}>
-          <Text style={styles.clientName}>{fullName || 'Client'}</Text>
-          <Text style={styles.clientEmail}>{item.email}</Text>
-        </View>
-        <MaterialCommunityIcons name="chevron-right" size={18} color={colors.textTertiary} />
-      </TouchableOpacity>
-    );
+  const handleClientPress = useCallback((item) => {
+    navigation.navigate(SCREENS.CLIENT_DETAIL, { clientId: item.id });
   }, [navigation]);
+
+  const renderClient = useCallback(({ item }) => (
+    <ClientListItem item={item} onPress={handleClientPress} />
+  ), [handleClientPress]);
 
   const ListFooter = useCallback(() => {
     if (isLoadingMore) {
