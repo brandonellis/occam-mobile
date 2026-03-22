@@ -1,81 +1,76 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCurrentClientMembership } from '../services/accounts.api';
-import logger from '../helpers/logger.helper';
+import { QUERY_KEYS } from '../constants/queryKeys.constants';
 
 /**
  * Fetches and resolves membership status for a booking client.
  * Determines whether a booking qualifies as a membership booking
  * and the member price if applicable.
+ *
+ * Uses React Query internally for caching — switching between clients
+ * or navigating back returns cached membership data instantly.
  */
 const useBookingMembership = ({ clientId, serviceId, isEditMode }) => {
-  const [membershipStatus, setMembershipStatus] = useState(null);
-  const [membershipLoading, setMembershipLoading] = useState(false);
-  const [membershipRefreshKey, setMembershipRefreshKey] = useState(0);
+  const queryClient = useQueryClient();
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    if (isEditMode || !clientId || !serviceId) return;
-    let cancelled = false;
+  const {
+    data: rawMembership,
+    isLoading: membershipLoading,
+  } = useQuery({
+    queryKey: [...QUERY_KEYS.MEMBERSHIPS.my, clientId, refreshKey],
+    queryFn: () => getCurrentClientMembership(clientId),
+    enabled: !isEditMode && !!clientId && !!serviceId,
+    staleTime: 30 * 1000, // 30s — membership can change mid-session
+  });
 
-    (async () => {
-      try {
-        setMembershipLoading(true);
-        const membership = await getCurrentClientMembership(clientId);
-        if (cancelled) return;
+  // Derive membership status from raw query data
+  const membershipStatus = useMemo(() => {
+    const membership = rawMembership?.data ?? rawMembership;
+    if (!membership) return { hasActiveMembership: false, hasUsage: false };
 
-        if (membership?.data) {
-          const stripeStatus = (membership.data.stripe_status || '').toLowerCase();
-          const endDate = membership.data.end_date || membership.data.ends_at || null;
-          const now = new Date();
-          const notEnded = !endDate || new Date(endDate) >= now;
-          const isActiveForUsage =
-            stripeStatus === 'active' ||
-            ((stripeStatus === 'canceled' || stripeStatus === 'cancelled') && notEnded);
+    const stripeStatus = (membership.stripe_status || '').toLowerCase();
+    const endDate = membership.end_date || membership.ends_at || null;
+    const now = new Date();
+    const notEnded = !endDate || new Date(endDate) >= now;
+    const isActiveForUsage =
+      stripeStatus === 'active' ||
+      ((stripeStatus === 'canceled' || stripeStatus === 'cancelled') && notEnded);
 
-          // Check pause window
-          const pausedNow = !!(
-            membership.data.is_paused &&
-            (!membership.data.pause_start_at || now > new Date(membership.data.pause_start_at)) &&
-            (!membership.data.pause_end_at || now < new Date(membership.data.pause_end_at))
-          );
+    // Check pause window
+    const pausedNow = !!(
+      membership.is_paused &&
+      (!membership.pause_start_at || now > new Date(membership.pause_start_at)) &&
+      (!membership.pause_end_at || now < new Date(membership.pause_end_at))
+    );
 
-          if (isActiveForUsage && !pausedNow) {
-            const planServices = membership.data.membership_plan?.plan_services || [];
-            const serviceUsage = planServices.find((ps) => ps.service_id === serviceId);
-            const hasUsage =
-              !!serviceUsage &&
-              (serviceUsage.remaining_quantity === null || serviceUsage.remaining_quantity > 0);
+    if (isActiveForUsage && !pausedNow) {
+      const planServices = membership.membership_plan?.plan_services || [];
+      const serviceUsage = planServices.find((ps) => ps.service_id === serviceId);
+      const hasUsage =
+        !!serviceUsage &&
+        (serviceUsage.remaining_quantity === null || serviceUsage.remaining_quantity > 0);
 
-            setMembershipStatus({
-              hasActiveMembership: true,
-              hasUsage,
-              membershipId: membership.data.id,
-              membershipPlanServiceId: serviceUsage?.id || null,
-              planName: membership.data.membership_plan?.name,
-              remainingQuantity: serviceUsage?.remaining_quantity,
-              planServices,
-              isPaused: false,
-            });
-          } else {
-            setMembershipStatus({
-              hasActiveMembership: false,
-              hasUsage: false,
-              isPaused: pausedNow,
-              planName: membership.data.membership_plan?.name || null,
-            });
-          }
-        } else {
-          setMembershipStatus({ hasActiveMembership: false, hasUsage: false });
-        }
-      } catch (err) {
-        logger.error('Failed to fetch membership status:', err.message);
-        if (!cancelled) setMembershipStatus({ hasActiveMembership: false, hasUsage: false });
-      } finally {
-        if (!cancelled) setMembershipLoading(false);
-      }
-    })();
+      return {
+        hasActiveMembership: true,
+        hasUsage,
+        membershipId: membership.id,
+        membershipPlanServiceId: serviceUsage?.id || null,
+        planName: membership.membership_plan?.name,
+        remainingQuantity: serviceUsage?.remaining_quantity,
+        planServices,
+        isPaused: false,
+      };
+    }
 
-    return () => { cancelled = true; };
-  }, [clientId, isEditMode, serviceId, membershipRefreshKey]);
+    return {
+      hasActiveMembership: false,
+      hasUsage: false,
+      isPaused: pausedNow,
+      planName: membership.membership_plan?.name || null,
+    };
+  }, [rawMembership, serviceId]);
 
   const isMembershipBooking =
     membershipStatus?.hasActiveMembership && membershipStatus?.hasUsage;
@@ -88,8 +83,10 @@ const useBookingMembership = ({ clientId, serviceId, isEditMode }) => {
   }, [membershipStatus, serviceId]);
 
   const refreshMembership = useCallback(() => {
-    setMembershipRefreshKey((prev) => prev + 1);
-  }, []);
+    // Bump refresh key to force a new query + invalidate existing cache
+    setRefreshKey((prev) => prev + 1);
+    queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MEMBERSHIPS.my });
+  }, [queryClient]);
 
   return {
     membershipStatus,
@@ -97,7 +94,7 @@ const useBookingMembership = ({ clientId, serviceId, isEditMode }) => {
     isMembershipBooking,
     memberPriceCents,
     refreshMembership,
-    membershipRefreshKey,
+    membershipRefreshKey: refreshKey,
   };
 };
 

@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { getMyBookingBenefits } from '../services/packages.api';
-import logger from '../helpers/logger.helper';
+import { QUERY_KEYS } from '../constants/queryKeys.constants';
 
 /**
  * Fetches package benefit status for the authenticated client.
@@ -8,6 +9,9 @@ import logger from '../helpers/logger.helper';
  * covered by membership, package check is skipped.
  *
  * Coach bookings skip package check (packages are client-facing).
+ *
+ * Uses React Query internally for caching — navigating back to the
+ * booking screen returns cached package data instantly.
  */
 const useBookingPackage = ({
   clientId,
@@ -18,61 +22,47 @@ const useBookingPackage = ({
   isMembershipBooking,
   membershipRefreshKey,
 }) => {
-  const [packageBenefit, setPackageBenefit] = useState(null);
-  const [packageBenefitLoading, setPackageBenefitLoading] = useState(false);
+  const shouldFetch =
+    !isEditMode &&
+    !!clientId &&
+    !!serviceId &&
+    !isCoach &&
+    !membershipLoading &&
+    !isMembershipBooking;
 
-  useEffect(() => {
-    if (isEditMode || !clientId || !serviceId) return;
-    // Wait for membership to finish loading before checking packages
-    if (membershipLoading) return;
-    // If membership covers this service, skip package check
-    if (isMembershipBooking) {
-      setPackageBenefit(null);
-      setPackageBenefitLoading(false);
-      return;
+  const {
+    data: rawBenefits,
+    isLoading: packageBenefitLoading,
+  } = useQuery({
+    queryKey: [...QUERY_KEYS.PACKAGES.myBookingBenefits(serviceId), membershipRefreshKey],
+    queryFn: () => getMyBookingBenefits(serviceId),
+    enabled: shouldFetch,
+    staleTime: 30 * 1000, // 30s — packages can change mid-session
+  });
+
+  // Derive package benefit from raw query data
+  const packageBenefit = useMemo(() => {
+    if (!shouldFetch) return null;
+    if (!rawBenefits) return null;
+
+    const packages = rawBenefits?.packages || [];
+    if (packages.length > 0) {
+      return {
+        hasPackage: true,
+        bestPackage: packages[0],
+        client_package_id: packages[0].client_package_id,
+        package_name: packages[0].package_name,
+        remaining: packages[0].remaining,
+      };
     }
-    // Only check for the authenticated client (not coach booking for others)
-    if (isCoach) {
-      setPackageBenefit(null);
-      setPackageBenefitLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        setPackageBenefitLoading(true);
-        const data = await getMyBookingBenefits(serviceId);
-        if (cancelled) return;
-        const packages = data?.packages || [];
-        if (packages.length > 0) {
-          setPackageBenefit({
-            hasPackage: true,
-            bestPackage: packages[0],
-            client_package_id: packages[0].client_package_id,
-            package_name: packages[0].package_name,
-            remaining: packages[0].remaining,
-          });
-        } else {
-          setPackageBenefit({ hasPackage: false });
-        }
-      } catch (err) {
-        logger.error('Failed to fetch booking benefits:', err.message);
-        if (!cancelled) setPackageBenefit({ hasPackage: false });
-      } finally {
-        if (!cancelled) setPackageBenefitLoading(false);
-      }
-    })();
-
-    return () => { cancelled = true; };
-  }, [clientId, isEditMode, serviceId, isCoach, membershipLoading, isMembershipBooking, membershipRefreshKey]);
+    return { hasPackage: false };
+  }, [rawBenefits, shouldFetch]);
 
   const isPackageBooking = !isMembershipBooking && !!packageBenefit?.hasPackage;
 
   return {
     packageBenefit,
-    packageBenefitLoading,
+    packageBenefitLoading: shouldFetch ? packageBenefitLoading : false,
     isPackageBooking,
   };
 };

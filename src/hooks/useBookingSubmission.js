@@ -139,6 +139,55 @@ const useBookingSubmission = ({
     return payload;
   }, [bookingNotes, bookingStatus, timeSlot?.start_time, timeSlot?.end_time, selectedResource?.id, isStaffEditor, service?.id, location?.id, client?.id, coach?.id]);
 
+  /**
+   * Shared payment saga: create pending booking → execute payment → finalize.
+   * Used by both new-card and saved-card flows. The caller provides a paymentFn
+   * that receives (pendingBookingId, paymentData) and handles the payment-specific logic.
+   *
+   * @param {Function} paymentFn - async (pendingBookingId, bookingResponse) => void
+   */
+  const executePaymentSaga = useCallback(async (paymentFn) => {
+    let pendingBookingId = null;
+
+    try {
+      dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
+
+      // PHASE 1: Create pending booking
+      const payload = buildBookingPayload('pending');
+      const bookingResponse = await createBooking(payload);
+      pendingBookingId = bookingResponse?.data?.id || bookingResponse?.id;
+
+      // PHASE 2-3: Execute payment (new card or saved card)
+      dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Processing payment...' });
+      await paymentFn(pendingBookingId, bookingResponse);
+
+      // PHASE 4: Fetch full booking for success screen
+      pendingBookingId = null; // Payment succeeded — don't cancel on fetch failure
+      dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Finalizing...' });
+
+      let confirmedBookingData;
+      try {
+        const full = await getBooking(bookingResponse?.data?.id || bookingResponse?.id);
+        confirmedBookingData = full?.data || full;
+      } catch (fetchErr) {
+        logger.warn('Failed to fetch booking details for success screen:', fetchErr.message);
+        confirmedBookingData = bookingResponse?.data || bookingResponse;
+      }
+      dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: confirmedBookingData });
+    } catch (error) {
+      if (pendingBookingId) {
+        try {
+          await cancelBooking(pendingBookingId);
+        } catch (cancelErr) {
+          logger.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
+        }
+      }
+      Alert.alert('Payment Failed', extractErrorMessage(error));
+    } finally {
+      dispatch({ type: ACTIONS.SUBMIT_END });
+    }
+  }, [buildBookingPayload]);
+
   // Handle direct booking (membership or no-payment — no Stripe involved)
   const handleDirectConfirm = useCallback(async () => {
     try {
@@ -172,24 +221,15 @@ const useBookingSubmission = ({
     }
   }, [bookingId, buildUpdatePayload]);
 
-  // Handle one-off payment booking (Stripe card)
+  // Handle one-off payment booking (new Stripe card)
   const handlePaymentConfirm = useCallback(async () => {
     if (!cardComplete) {
       Alert.alert('Card Required', 'Please enter your card details to proceed.');
       return;
     }
 
-    let pendingBookingId = null;
-
-    try {
-      dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
-
-      // PHASE 1: Create pending booking
-      const payload = buildBookingPayload('pending');
-      const bookingResponse = await createBooking(payload);
-      pendingBookingId = bookingResponse?.data?.id || bookingResponse?.id;
-
-      // PHASE 2: Create payment intent
+    await executePaymentSaga(async (pendingBookingId) => {
+      // Create payment intent
       dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Setting up payment...' });
       const paymentData = {
         client_id: clientId,
@@ -205,7 +245,7 @@ const useBookingSubmission = ({
         throw new Error(piResponse.error || 'Failed to create payment.');
       }
 
-      // PHASE 3: Confirm payment with Stripe
+      // Confirm payment with Stripe
       dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Processing payment...' });
       const { error, paymentIntent } = await confirmPayment(piResponse.client_secret, {
         paymentMethodType: 'Card',
@@ -223,36 +263,11 @@ const useBookingSubmission = ({
         throw new Error(error.message || 'Payment failed.');
       }
 
-      // PHASE 4: Notify backend of success
+      // Notify backend of success
       dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Finalizing...' });
       await handlePaymentSuccess(paymentIntent.id);
-
-      const confirmedBookingId = pendingBookingId;
-      pendingBookingId = null;
-
-      // Fetch full booking for success screen
-      let confirmedBookingData;
-      try {
-        const full = await getBooking(confirmedBookingId);
-        confirmedBookingData = full?.data || full;
-      } catch (fetchErr) {
-        logger.warn('Failed to fetch booking details for success screen:', fetchErr.message);
-        confirmedBookingData = bookingResponse?.data || bookingResponse;
-      }
-      dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: confirmedBookingData });
-    } catch (error) {
-      if (pendingBookingId) {
-        try {
-          await cancelBooking(pendingBookingId);
-        } catch (cancelErr) {
-          logger.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
-        }
-      }
-      Alert.alert('Payment Failed', extractErrorMessage(error));
-    } finally {
-      dispatch({ type: ACTIONS.SUBMIT_END });
-    }
-  }, [cardComplete, buildBookingPayload, clientId, service, client, user, isCoach, confirmPayment, appliedPromo]);
+    });
+  }, [cardComplete, executePaymentSaga, clientId, service, client, user, isCoach, confirmPayment, appliedPromo]);
 
   // Handle saved card payment
   const handleSavedCardPayment = useCallback(async () => {
@@ -261,18 +276,7 @@ const useBookingSubmission = ({
       return;
     }
 
-    let pendingBookingId = null;
-
-    try {
-      dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
-
-      // PHASE 1: Create pending booking
-      const payload = buildBookingPayload('pending');
-      const bookingResponse = await createBooking(payload);
-      pendingBookingId = bookingResponse?.data?.id || bookingResponse?.id;
-
-      // PHASE 2: Create payment intent with saved card
-      dispatch({ type: ACTIONS.SET_LOADING_MESSAGE, payload: 'Processing payment...' });
+    await executePaymentSaga(async (pendingBookingId) => {
       const savedPaymentData = {
         client_id: clientId,
         service_id: service?.id,
@@ -302,32 +306,8 @@ const useBookingSubmission = ({
       } else {
         throw new Error(`Unexpected payment status: ${piResponse.status}`);
       }
-
-      pendingBookingId = null;
-
-      // Fetch full booking for success screen
-      let fetchedBooking;
-      try {
-        const full = await getBooking(bookingResponse?.data?.id || bookingResponse?.id);
-        fetchedBooking = full?.data || full;
-      } catch (fetchErr) {
-        logger.warn('Failed to fetch booking details for success screen:', fetchErr.message);
-        fetchedBooking = bookingResponse?.data || bookingResponse;
-      }
-      dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: fetchedBooking });
-    } catch (error) {
-      if (pendingBookingId) {
-        try {
-          await cancelBooking(pendingBookingId);
-        } catch (cancelErr) {
-          logger.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
-        }
-      }
-      Alert.alert('Payment Failed', extractErrorMessage(error));
-    } finally {
-      dispatch({ type: ACTIONS.SUBMIT_END });
-    }
-  }, [selectedSavedMethodId, buildBookingPayload, clientId, service, confirmPayment, appliedPromo]);
+    });
+  }, [selectedSavedMethodId, executePaymentSaga, clientId, service, confirmPayment, appliedPromo]);
 
   // Main confirm handler — routes to the appropriate flow
   const handleConfirm = useCallback(() => {
