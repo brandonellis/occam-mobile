@@ -323,6 +323,25 @@ export const bookingStyles = StyleSheet.create({
   editNotesInput: {
     backgroundColor: colors.surface,
   },
+
+  // Recurrence section
+  recurrenceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  recurrenceFields: {
+    marginTop: spacing.md,
+    gap: spacing.md,
+  },
+  recurrenceLabelSpaced: {
+    marginBottom: spacing.xs,
+  },
+  recurrenceHint: {
+    color: colors.textTertiary,
+    fontSize: 12,
+    marginTop: spacing.xs,
+  },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

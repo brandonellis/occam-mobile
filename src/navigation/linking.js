@@ -104,6 +104,7 @@ const linking = {
       },
 
       // ----- Root-level stack screens -----
+      [SCREENS.PAYMENT_LINK]: 'pay/:token',
       [SCREENS.BOOKING_DETAIL]: 'bookings/:bookingId',
       [SCREENS.NOTIFICATIONS]: 'notifications',
       [SCREENS.NOTIFICATION_PREFERENCES]: 'notifications/preferences',

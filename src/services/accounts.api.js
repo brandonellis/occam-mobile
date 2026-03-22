@@ -150,6 +150,20 @@ export const getMyMembership = async () => {
   return response.data;
 };
 
+export const pauseMembership = async (membershipId, { pause_start_at, pause_end_at, reason }) => {
+  const response = await apiClient.post(`/memberships/${membershipId}/pause`, {
+    pause_start_at,
+    pause_end_at,
+    reason,
+  });
+  return response.data;
+};
+
+export const resumeMembership = async (membershipId) => {
+  const response = await apiClient.post(`/memberships/${membershipId}/resume`);
+  return response.data;
+};
+
 export const getAllowedCoachesForService = async (clientId, serviceId) => {
   const response = await apiClient.get(
     `/clients/${clientId}/coach-assignments/allowed/${serviceId}`

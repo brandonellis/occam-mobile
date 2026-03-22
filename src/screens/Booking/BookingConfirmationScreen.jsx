@@ -1,7 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
-import { Text, SegmentedButtons, TextInput } from 'react-native-paper';
+import { Text, SegmentedButtons, TextInput, Switch, Menu } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+const FREQUENCY_OPTIONS = [
+  { value: 'weekly', label: 'Weekly' },
+  { value: 'biweekly', label: 'Every 2 Weeks' },
+  { value: 'monthly', label: 'Monthly (4 Weeks)' },
+];
 import { useConfirmPayment, StripeProvider } from '@stripe/stripe-react-native';
 import config from '../../config';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -47,6 +53,14 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const [bookingStatus, setBookingStatus] = useState(bookingData.status || 'confirmed');
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [feeBreakdownVisible, setFeeBreakdownVisible] = useState(false);
+
+  // Recurrence state (coach only, non-class, non-edit)
+  const [recurrenceEnabled, setRecurrenceEnabled] = useState(false);
+  const [recurrenceFrequency, setRecurrenceFrequency] = useState('weekly');
+  const [recurrenceOccurrences, setRecurrenceOccurrences] = useState(4);
+  const [frequencyMenuVisible, setFrequencyMenuVisible] = useState(false);
+  const isClassBooking = Boolean(bookingData.selectedClassSession);
+  const canShowRecurrence = isCoach && !isEditMode && !isClassBooking;
 
   // Skeleton pulse animation (shared across sub-components)
   const skeletonAnim = useRef(new Animated.Value(0.3)).current;
@@ -134,6 +148,9 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     selectedResource,
     bookingNotes, bookingStatus,
     appliedPromo,
+    recurrenceEnabled: canShowRecurrence && recurrenceEnabled,
+    recurrenceFrequency,
+    recurrenceOccurrences,
     membershipLoading, packageBenefitLoading, ecommerceLoading, isPaymentNotRequired,
   });
 
@@ -159,13 +176,15 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   const buttonLabel = isEditMode
     ? 'Update Booking'
-    : isMembershipBooking || isPackageBooking
-      ? 'Confirm Session'
-      : isCoach && !coachNeedsPayment
-        ? 'Book Session'
-        : isPaymentNotRequired || !paymentsEnabled
-          ? 'Confirm Booking'
-          : `Pay ${summary.totalFormatted}`;
+    : canShowRecurrence && recurrenceEnabled && recurrenceOccurrences > 1
+      ? `Book ${recurrenceOccurrences} Sessions`
+      : isMembershipBooking || isPackageBooking
+        ? 'Confirm Session'
+        : isCoach && !coachNeedsPayment
+          ? 'Book Session'
+          : isPaymentNotRequired || !paymentsEnabled
+            ? 'Confirm Booking'
+            : `Pay ${summary.totalFormatted}`;
 
   // ── Success screen ──
 
@@ -294,6 +313,69 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             {timeSlot?.end_time ? ` — ${formatTimeInTz(timeSlot.end_time, company)}` : ''}
           </Text>
         </View>
+
+        {/* Recurrence options (coach only, non-class, non-edit) */}
+        {canShowRecurrence && (
+          <View style={styles.confirmSection}>
+            <View style={styles.recurrenceHeader}>
+              <Text style={styles.confirmLabel}>REPEAT BOOKING</Text>
+              <Switch
+                value={recurrenceEnabled}
+                onValueChange={setRecurrenceEnabled}
+                color={colors.accent}
+              />
+            </View>
+            {recurrenceEnabled && (
+              <View style={styles.recurrenceFields}>
+                <View>
+                  <Text style={[styles.confirmLabel, styles.recurrenceLabelSpaced]}>FREQUENCY</Text>
+                  <Menu
+                    visible={frequencyMenuVisible}
+                    onDismiss={() => setFrequencyMenuVisible(false)}
+                    anchor={
+                      <TextInput
+                        mode="outlined"
+                        value={FREQUENCY_OPTIONS.find((o) => o.value === recurrenceFrequency)?.label || ''}
+                        onFocus={() => setFrequencyMenuVisible(true)}
+                        showSoftInputOnFocus={false}
+                        right={<TextInput.Icon icon="chevron-down" onPress={() => setFrequencyMenuVisible(true)} />}
+                        dense
+                      />
+                    }
+                  >
+                    {FREQUENCY_OPTIONS.map((opt) => (
+                      <Menu.Item
+                        key={opt.value}
+                        title={opt.label}
+                        onPress={() => {
+                          setRecurrenceFrequency(opt.value);
+                          setFrequencyMenuVisible(false);
+                        }}
+                      />
+                    ))}
+                  </Menu>
+                </View>
+                <View>
+                  <Text style={[styles.confirmLabel, styles.recurrenceLabelSpaced]}>OCCURRENCES</Text>
+                  <TextInput
+                    mode="outlined"
+                    keyboardType="number-pad"
+                    value={String(recurrenceOccurrences)}
+                    onChangeText={(v) => {
+                      const num = parseInt(v, 10);
+                      if (!isNaN(num)) setRecurrenceOccurrences(Math.max(2, Math.min(26, num)));
+                      else if (v === '') setRecurrenceOccurrences(2);
+                    }}
+                    dense
+                  />
+                  <Text style={styles.recurrenceHint}>
+                    Total sessions including this one (2–26)
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
+        )}
 
         {/* Edit mode: status + notes */}
         {isEditMode && (

@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ListSkeleton } from '../../components/SkeletonLoader';
@@ -14,7 +15,7 @@ import EmptyState from '../../components/EmptyState';
 import ServiceUsageCard from '../../components/ServiceUsageCard';
 import { membershipStyles as styles } from '../../styles/membership.styles';
 import { globalStyles } from '../../styles/global.styles';
-import { getMembershipPlans, getMyMembership } from '../../services/accounts.api';
+import { getMembershipPlans, getMyMembership, pauseMembership, resumeMembership } from '../../services/accounts.api';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { getBillingCycleLabel } from '../../constants/billing.constants';
 import {
@@ -28,7 +29,7 @@ import { SCREENS } from '../../constants/navigation.constants';
 import logger from '../../helpers/logger.helper';
 
 // ─── Active Membership View ─────────────────────────────────────────────────
-const ActiveMembershipView = ({ membership, onUpgrade }) => {
+const ActiveMembershipView = ({ membership, onUpgrade, onPause, onResume }) => {
   const { membership_plan, billing_cycle, start_date, end_date } = membership;
   const planServices = membership_plan?.plan_services || [];
   const planName = membership_plan?.name || 'Membership';
@@ -41,6 +42,7 @@ const ActiveMembershipView = ({ membership, onUpgrade }) => {
   );
 
   const showUpgrade = !isPaused && mStatus !== 'expired' && mStatus !== 'inactive';
+  const showActions = mStatus !== 'expired' && mStatus !== 'inactive';
 
   return (
     <>
@@ -113,15 +115,38 @@ const ActiveMembershipView = ({ membership, onUpgrade }) => {
           </View>
         )}
 
-        {showUpgrade && (
-          <TouchableOpacity
-            style={styles.upgradeButton}
-            onPress={onUpgrade}
-            activeOpacity={0.8}
-          >
-            <MaterialCommunityIcons name="arrow-up-bold-outline" size={18} color={colors.accent} />
-            <Text style={styles.upgradeButtonText}>Change Plan</Text>
-          </TouchableOpacity>
+        {showActions && (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {showUpgrade && (
+              <TouchableOpacity
+                style={[styles.upgradeButton, { flex: 1 }]}
+                onPress={onUpgrade}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons name="arrow-up-bold-outline" size={18} color={colors.accent} />
+                <Text style={styles.upgradeButtonText}>Change Plan</Text>
+              </TouchableOpacity>
+            )}
+            {isPaused ? (
+              <TouchableOpacity
+                style={[styles.upgradeButton, { flex: 1 }]}
+                onPress={onResume}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons name="play-circle-outline" size={18} color={colors.success} />
+                <Text style={[styles.upgradeButtonText, { color: colors.success }]}>Resume</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[styles.upgradeButton, { flex: 1 }]}
+                onPress={onPause}
+                activeOpacity={0.8}
+              >
+                <MaterialCommunityIcons name="pause-circle-outline" size={18} color={colors.warning} />
+                <Text style={[styles.upgradeButtonText, { color: colors.warning }]}>Pause</Text>
+              </TouchableOpacity>
+            )}
+          </View>
         )}
       </View>
 
@@ -285,23 +310,21 @@ const MembershipPlansScreen = ({ navigation, route }) => {
       else setIsLoading(true);
       setError(null);
 
-      if (!showPlansOnly) {
-        // Try to fetch active membership first
-        try {
-          const membershipRes = await getMyMembership();
-          const membershipData = membershipRes?.data || null;
-          setMembership(membershipData);
-          if (membershipData) {
-            setViewMode('details');
-            return;
-          }
-        } catch (membershipErr) {
-          // 404 = no membership, which is fine — show plans
-          if (membershipErr?.response?.status !== 404) {
-            logger.warn('Failed to fetch membership:', membershipErr?.message);
-          }
-          setMembership(null);
+      // Always fetch current membership (needed for conflict checking even in plans view)
+      try {
+        const membershipRes = await getMyMembership();
+        const membershipData = membershipRes?.data || null;
+        setMembership(membershipData);
+        if (!showPlansOnly && membershipData) {
+          setViewMode('details');
+          return;
         }
+      } catch (membershipErr) {
+        // 404 = no membership, which is fine — show plans
+        if (membershipErr?.response?.status !== 404) {
+          logger.warn('Failed to fetch membership:', membershipErr?.message);
+        }
+        setMembership(null);
       }
 
       // No active membership (or showPlansOnly) — load available plans
@@ -340,14 +363,104 @@ const MembershipPlansScreen = ({ navigation, route }) => {
   const handleSelectPlan = useCallback(
     (plan) => {
       const billingCycle = selectedCycles[plan.id];
+
+      // Conflict check: if user already has an active membership, warn before proceeding
+      if (membership) {
+        const currentPlan = membership.membership_plan;
+        const currentCycle = membership.billing_cycle;
+
+        // Duplicate: same plan and same billing cycle
+        if (currentPlan?.id === plan.id && currentCycle?.id === billingCycle?.id) {
+          Alert.alert(
+            'Duplicate Membership',
+            'You already have this exact membership active.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+
+        // Determine change type for messaging
+        const currentPrice = parseFloat(currentCycle?.price || 0);
+        const selectedPrice = parseFloat(billingCycle?.price || 0);
+        let changeType = 'replace';
+        if (currentPlan?.id === plan.id) changeType = 'change billing cycle';
+        else if (selectedPrice > currentPrice) changeType = 'upgrade';
+        else if (selectedPrice < currentPrice) changeType = 'downgrade';
+
+        Alert.alert(
+          'Membership Change',
+          `You currently have the ${currentPlan?.name || 'current'} plan. Proceeding will ${changeType} your membership to ${plan.name}. Your current membership will be cancelled.`,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Continue',
+              onPress: () => navigation.navigate(SCREENS.MEMBERSHIP_CHECKOUT, {
+                plan,
+                billingCycle,
+                existingMembership: membership,
+              }),
+            },
+          ]
+        );
+        return;
+      }
+
       navigation.navigate(SCREENS.MEMBERSHIP_CHECKOUT, { plan, billingCycle });
     },
-    [navigation, selectedCycles]
+    [navigation, selectedCycles, membership]
   );
 
   const handleUpgrade = useCallback(() => {
     navigation.push(SCREENS.MEMBERSHIP_PLANS, { showPlansOnly: true });
   }, [navigation]);
+
+  const handlePause = useCallback(() => {
+    if (!membership?.id) return;
+    Alert.alert(
+      'Pause Membership',
+      'Are you sure you want to pause your membership? You will not be able to use membership benefits while paused.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Pause Now',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await pauseMembership(membership.id, {
+                pause_start_at: new Date().toISOString(),
+                reason: 'Paused from mobile app',
+              });
+              loadData();
+            } catch (err) {
+              Alert.alert('Error', err?.response?.data?.message || 'Failed to pause membership.');
+            }
+          },
+        },
+      ]
+    );
+  }, [membership?.id, loadData]);
+
+  const handleResume = useCallback(() => {
+    if (!membership?.id) return;
+    Alert.alert(
+      'Resume Membership',
+      'Resume your membership and regain access to all benefits?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Resume',
+          onPress: async () => {
+            try {
+              await resumeMembership(membership.id);
+              loadData();
+            } catch (err) {
+              Alert.alert('Error', err?.response?.data?.message || 'Failed to resume membership.');
+            }
+          },
+        },
+      ]
+    );
+  }, [membership?.id, loadData]);
 
   const screenTitle = viewMode === 'plans' ? 'Membership Plans' : 'Membership';
 
@@ -382,6 +495,8 @@ const MembershipPlansScreen = ({ navigation, route }) => {
             <ActiveMembershipView
               membership={membership}
               onUpgrade={handleUpgrade}
+              onPause={handlePause}
+              onResume={handleResume}
             />
           ) : viewMode === 'plans' && plans.length > 0 ? (
             <PlansListView

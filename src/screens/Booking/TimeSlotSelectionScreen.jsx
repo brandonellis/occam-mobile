@@ -520,7 +520,8 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
                     const isAttending = slot.already_attending;
                     const isOnWaitlist = slot.on_waitlist;
                     const waitlistCount = slot.waitlist_count ?? 0;
-                    const waitlistAvailable = isFull && !isOnWaitlist && waitlistCount < 10;
+                    const maxWaitlist = slot.max_waitlist_size ?? 10;
+                    const waitlistAvailable = isFull && !isOnWaitlist && waitlistCount < maxWaitlist;
                     const isWaitlistBusy = waitlistLoading === slot.class_session_id;
 
                     // Disable: past, already attending, or fully capped (no waitlist space)

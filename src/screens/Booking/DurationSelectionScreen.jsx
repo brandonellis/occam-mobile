@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Text, TouchableRipple } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -19,9 +19,20 @@ const DurationSelectionScreen = ({ route, navigation }) => {
   const { user, activeRole } = useAuth();
   const isCoach = COACH_ROLES.includes(activeRole);
 
-  const [selectedDuration, setSelectedDuration] = useState(null);
+  // If this will be a membership booking, the backend forces base duration.
+  // Lock the UI to base duration to prevent a confusing mismatch.
+  const isMembershipBooking = bookingData.isMembershipBooking;
+  const baseDuration = service?.duration_minutes;
 
-  const allowedDurations = service?.allowed_durations || [];
+  const [selectedDuration, setSelectedDuration] = useState(
+    isMembershipBooking && baseDuration ? baseDuration : null
+  );
+
+  const allowedDurations = useMemo(() => {
+    const durations = service?.allowed_durations || [];
+    if (isMembershipBooking && baseDuration) return [baseDuration];
+    return durations;
+  }, [service?.allowed_durations, isMembershipBooking, baseDuration]);
 
   const handleContinue = useCallback(() => {
     if (!selectedDuration) return;
@@ -65,6 +76,12 @@ const DurationSelectionScreen = ({ route, navigation }) => {
         <Text style={styles.sectionHeader}>
           Choose a duration for {service?.name}
         </Text>
+
+        {isMembershipBooking && baseDuration && (
+          <Text style={styles.membershipDurationNote}>
+            Membership bookings use the base duration ({formatDuration(baseDuration)}).
+          </Text>
+        )}
 
         {allowedDurations.map((minutes) => {
           const isSelected = selectedDuration === minutes;

@@ -17,6 +17,7 @@ import VideoRecordingScreen from '../screens/Coach/VideoRecordingScreen';
 import VideoReviewScreen from '../screens/Coach/VideoReviewScreen';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 import NotificationPreferencesScreen from '../screens/Shared/NotificationPreferencesScreen';
+import PaymentLinkScreen from '../screens/Shared/PaymentLinkScreen';
 import BookingDetailScreen from '../screens/Client/BookingDetailScreen';
 import { bookingScreens } from './BookingScreens';
 
@@ -102,6 +103,13 @@ const RootNavigator = () => {
             name={SCREENS.VIDEO_REVIEW}
             component={VideoReviewScreen}
             options={{ animation: 'slide_from_right', gestureEnabled: false }}
+          />
+
+          {/* Payment link — deep link from payment request email */}
+          <Stack.Screen
+            name={SCREENS.PAYMENT_LINK}
+            component={PaymentLinkScreen}
+            options={{ animation: 'slide_from_bottom' }}
           />
 
           {/* Booking detail — accessed from direct tab screens (Dashboard, Bookings) */}

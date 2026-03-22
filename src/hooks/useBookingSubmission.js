@@ -2,6 +2,7 @@ import { useReducer, useCallback, useMemo } from 'react';
 import { Alert } from 'react-native';
 import {
   createBooking,
+  createRecurringBooking,
   updateBooking,
   cancelBooking,
   getBooking,
@@ -55,6 +56,10 @@ const useBookingSubmission = ({
   bookingStatus,
   // Promo
   appliedPromo,
+  // Recurrence (coach only)
+  recurrenceEnabled,
+  recurrenceFrequency,
+  recurrenceOccurrences,
   // Loading states
   membershipLoading,
   packageBenefitLoading,
@@ -210,6 +215,33 @@ const useBookingSubmission = ({
     }
   }, [buildBookingPayload, refreshMembership]);
 
+  // Handle recurring booking (coach only — creates a series of bookings)
+  const handleRecurringConfirm = useCallback(async () => {
+    try {
+      dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating recurring bookings...' });
+      const payload = {
+        ...buildBookingPayload('confirmed'),
+        frequency: recurrenceFrequency,
+        occurrences: recurrenceOccurrences,
+      };
+      const result = await createRecurringBooking(payload);
+      const created = result?.created_count || 0;
+      const failed = result?.failed_count || 0;
+      if (failed > 0) {
+        Alert.alert(
+          'Recurring Bookings',
+          `${created} booking${created !== 1 ? 's' : ''} created, ${failed} could not be scheduled (conflicts or unavailability).`,
+        );
+      }
+      refreshMembership();
+      dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: result });
+    } catch (error) {
+      Alert.alert('Booking Failed', extractErrorMessage(error));
+    } finally {
+      dispatch({ type: ACTIONS.SUBMIT_END });
+    }
+  }, [buildBookingPayload, recurrenceFrequency, recurrenceOccurrences, refreshMembership]);
+
   const handleUpdateConfirm = useCallback(async () => {
     if (!bookingId) {
       Alert.alert('Error', 'Booking information is missing.');
@@ -337,6 +369,11 @@ const useBookingSubmission = ({
       );
       return;
     }
+    // Recurring booking flow (coach only)
+    if (recurrenceEnabled && recurrenceOccurrences > 1) {
+      handleRecurringConfirm();
+      return;
+    }
     if (isMembershipBooking || isPackageBooking) {
       handleDirectConfirm();
     } else if (isPaymentNotRequired || (isCoach && !paymentsEnabled)) {
@@ -348,7 +385,7 @@ const useBookingSubmission = ({
     } else {
       handleDirectConfirm();
     }
-  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, handleDirectConfirm, handlePaymentConfirm, handleSavedCardPayment]);
+  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, recurrenceEnabled, recurrenceOccurrences, handleDirectConfirm, handleRecurringConfirm, handlePaymentConfirm, handleSavedCardPayment]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {

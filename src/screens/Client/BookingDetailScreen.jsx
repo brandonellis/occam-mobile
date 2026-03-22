@@ -10,6 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from 'react-native-paper';
 import { getBooking, cancelBooking } from '../../services/bookings.api';
+import { collectBookingPayment, handlePaymentSuccess } from '../../services/billing.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
@@ -35,6 +36,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
 
   const [booking, setBooking] = useState(passedBooking || null);
   const [isLoading, setIsLoading] = useState(!passedBooking);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const loadBooking = useCallback(async () => {
     if (!bookingId && !passedBooking) return;
@@ -58,9 +60,15 @@ const BookingDetailScreen = ({ navigation, route }) => {
   const handleCancel = useCallback(() => {
     if (!booking) return;
     const isStaffView = isStaffBookingRole(activeRole) || activeRole === 'coach';
+    const bookingType = booking.booking_type;
+    const reversalNote = bookingType === 'membership'
+      ? '\n\nYour membership allotment will be restored.'
+      : bookingType === 'package'
+        ? '\n\nYour package credit will be restored.'
+        : '';
     Alert.alert(
       'Cancel Booking',
-      `Are you sure you want to cancel ${isStaffView ? 'this' : 'your'} ${booking.services?.[0]?.name || 'booking'}?`,
+      `Are you sure you want to cancel ${isStaffView ? 'this' : 'your'} ${booking.services?.[0]?.name || 'booking'}?${reversalNote}`,
       [
         { text: 'Keep', style: 'cancel' },
         {
@@ -92,6 +100,42 @@ const BookingDetailScreen = ({ navigation, route }) => {
       bookingData: buildBookingEditData(booking),
     });
   }, [activeRole, booking, navigation]);
+
+  const handleCollectPayment = useCallback(() => {
+    if (!booking) return;
+    Alert.alert(
+      'Collect Payment',
+      'This will charge the client for this booking. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Collect Payment',
+          onPress: async () => {
+            setPaymentLoading(true);
+            try {
+              const result = await collectBookingPayment(booking.id);
+              if (result.success && result.payment_intent_id) {
+                if (result.status === 'succeeded') {
+                  await handlePaymentSuccess(result.payment_intent_id);
+                  Alert.alert('Success', 'Payment collected successfully.');
+                  loadBooking();
+                } else {
+                  Alert.alert('Payment Pending', 'Payment intent created. Client will need to complete payment.');
+                }
+              } else {
+                Alert.alert('Error', result.error || 'Failed to collect payment.');
+              }
+            } catch (err) {
+              const msg = err?.response?.data?.error || err?.message || 'Failed to collect payment.';
+              Alert.alert('Payment Failed', msg);
+            } finally {
+              setPaymentLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  }, [booking, loadBooking]);
 
   const { deliverIntent } = useMarshalIntent();
 
@@ -135,6 +179,12 @@ const BookingDetailScreen = ({ navigation, route }) => {
   const canCancel = (isStaffView || !isWithinCancellationWindow) &&
     (booking.status === 'confirmed' || booking.status === 'pending');
   const canEdit = canEditBooking({ booking, activeRole, user });
+  const canCollectPayment = isStaffView &&
+    booking.booking_type === 'one_off' &&
+    service?.payment_required === false &&
+    booking.status === 'confirmed' &&
+    !booking.paid_at &&
+    !booking.class_session_id;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -228,8 +278,21 @@ const BookingDetailScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {(isStaffView || canEdit || canCancel) && (
+        {(isStaffView || canEdit || canCancel || canCollectPayment) && (
           <View style={styles.actionGroup}>
+            {canCollectPayment && (
+              <Button
+                mode="contained"
+                icon="currency-usd"
+                onPress={handleCollectPayment}
+                loading={paymentLoading}
+                disabled={paymentLoading}
+                buttonColor={colors.accent}
+                textColor={colors.textInverse}
+              >
+                Collect Payment
+              </Button>
+            )}
             {isStaffView && (
               <Button
                 mode="contained-tonal"

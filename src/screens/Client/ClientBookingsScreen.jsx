@@ -138,9 +138,15 @@ const ClientBookingsScreen = ({ navigation }) => {
   }, [activeTab, dateFilter, loadBookings]);
 
   const handleCancel = useCallback((booking) => {
+    const bookingType = booking.booking_type;
+    const reversalNote = bookingType === 'membership'
+      ? '\n\nYour membership allotment will be restored.'
+      : bookingType === 'package'
+        ? '\n\nYour package credit will be restored.'
+        : '';
     Alert.alert(
       'Cancel Booking',
-      `Are you sure you want to cancel your ${booking.services?.[0]?.name || 'booking'}?`,
+      `Are you sure you want to cancel your ${booking.services?.[0]?.name || 'booking'}?${reversalNote}`,
       [
         { text: 'Keep', style: 'cancel' },
         {

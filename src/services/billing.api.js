@@ -55,3 +55,43 @@ export const getClientPaymentMethods = async (clientId) => {
   const response = await apiClient.get(`/clients/${clientId}/payment-methods`);
   return response.data;
 };
+
+/**
+ * Resolve a booking payment token to booking details.
+ * Public endpoint — no auth required.
+ *
+ * @param {string} token - 64-char payment token (72-hour TTL)
+ * @returns {Promise<Object>} { success, data: { service_name, start_time, end_time, ... } }
+ */
+export const resolvePaymentToken = async (token) => {
+  const response = await apiClient.get(`/public/billing/payment-link/${token}`);
+  return response.data;
+};
+
+/**
+ * Create a PaymentIntent for a tokenized booking payment.
+ *
+ * @param {string} token
+ * @returns {Promise<Object>} { success, client_secret, payment_intent_id, service_amount, platform_fee, total_amount, connect_account }
+ */
+export const createTokenPayment = async (token) => {
+  const response = await apiClient.post(`/public/billing/payment-link/${token}/pay`);
+  return response.data;
+};
+
+/**
+ * Collect payment for an existing unpaid booking (staff/coach action).
+ *
+ * @param {number} bookingId
+ * @param {Object} [options]
+ * @param {boolean} [options.useSavedPaymentMethod]
+ * @param {string} [options.paymentMethodId]
+ * @returns {Promise<Object>} { success, client_secret, payment_intent_id, service_amount, total_amount, status, connect_account }
+ */
+export const collectBookingPayment = async (bookingId, options = {}) => {
+  const payload = {};
+  if (options.useSavedPaymentMethod) payload.use_saved_payment_method = true;
+  if (options.paymentMethodId) payload.payment_method_id = options.paymentMethodId;
+  const response = await apiClient.post(`/billing/bookings/${bookingId}/collect-payment`, payload);
+  return response.data;
+};
