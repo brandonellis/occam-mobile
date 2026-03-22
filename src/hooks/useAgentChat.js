@@ -237,7 +237,7 @@ const useAgentChat = ({
         }
         dispatch({ type: AGENT_CHAT_ACTIONS.SET_SUGGESTIONS, payload: transformed.suggestions });
       } else {
-        const responseText = result?.response || fallbackMessage;
+        const responseText = result?.response || '';
         const suggestions = normalizeSuggestions(result?.suggested_actions, initialSuggestions);
         const messageData = {
           text: responseText,

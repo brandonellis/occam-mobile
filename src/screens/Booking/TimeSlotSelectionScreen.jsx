@@ -430,7 +430,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
     [availabilityMap]
   );
 
-  const renderDateItem = ({ item }) => {
+  const renderDateItem = useCallback(({ item }) => {
     const isSelected = item.key === selectedDate?.key;
     const indicatorColor = getDateIndicatorColor(item.key);
     return (
@@ -464,7 +464,9 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
         />
       </TouchableOpacity>
     );
-  };
+  }, [selectedDate, getDateIndicatorColor]);
+
+  const dateKeyExtractor = useCallback((item) => item.key, []);
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
@@ -481,7 +483,7 @@ const TimeSlotSelectionScreen = ({ route, navigation }) => {
       <FlatList
         data={dates}
         renderItem={renderDateItem}
-        keyExtractor={(item) => item.key}
+        keyExtractor={dateKeyExtractor}
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.dateSelector}

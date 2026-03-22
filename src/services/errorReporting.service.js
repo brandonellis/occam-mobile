@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
 import { reportFrontendError } from './errorReporting.api';
+import { buildFingerprint, shouldReport } from '../helpers/errorThrottle.helper';
+import deviceMeta from '../helpers/deviceMeta.helper';
 
 /**
  * Initialize global JS error handlers for unhandled errors and
@@ -12,21 +14,26 @@ export const initGlobalErrorHandler = () => {
   const defaultHandler = ErrorUtils.getGlobalHandler();
 
   ErrorUtils.setGlobalHandler((error, isFatal) => {
-    reportFrontendError({
-      message: error?.message || error?.toString() || 'Unknown error',
-      name: error?.name || 'Error',
-      stack: error?.stack || null,
-      componentStack: null,
-      url: null,
-      userAgent: `${Platform.OS} ${Platform.Version}`,
-      timestamp: new Date().toISOString(),
-      environment: __DEV__ ? 'development' : 'production',
-      extra: {
-        source: 'GlobalHandler',
-        platform: Platform.OS,
-        isFatal: !!isFatal,
-      },
-    });
+    const fingerprint = buildFingerprint(error?.name, error?.message, error?.stack);
+    if (shouldReport(fingerprint)) {
+      reportFrontendError({
+        message: error?.message || error?.toString() || 'Unknown error',
+        name: error?.name || 'Error',
+        stack: error?.stack || null,
+        componentStack: null,
+        url: null,
+        userAgent: `${Platform.OS} ${Platform.Version}`,
+        timestamp: new Date().toISOString(),
+        environment: __DEV__ ? 'development' : 'production',
+        source: 'mobile',
+        device: deviceMeta,
+        extra: {
+          origin: 'GlobalHandler',
+          platform: Platform.OS,
+          isFatal: !!isFatal,
+        },
+      });
+    }
 
     // Call the default handler so the red screen still shows in dev
     if (defaultHandler) {

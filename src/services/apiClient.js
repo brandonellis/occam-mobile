@@ -1,6 +1,7 @@
 import axios from 'axios';
 import config, { getTenantApiUrl } from '../config';
 import { getToken, getTenantId, clearAllStorage } from '../helpers/storage.helper';
+import { queryClient } from '../providers/QueryClientProvider';
 
 // ---------------------------------------------------------------------------
 // Retry helpers
@@ -116,6 +117,7 @@ apiClient.interceptors.response.use(
   async (error) => {
     if (error.response?.status === 401) {
       await clearAllStorage();
+      queryClient.clear();
     }
     return Promise.reject(error);
   }

@@ -229,10 +229,16 @@ HandoffCard.propTypes = {
 };
 
 const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction, onHandoffAction, handoffActionLabel, onSlotSelect, onBookingLinkPress, onSendEmail, onDiscardEmail }) => {
+  const isUser = message.sender === 'user';
+
   // Hide streaming placeholder until first token arrives
   if (message.streaming && !message.text) return null;
 
-  const isUser = message.sender === 'user';
+  // Guard: never render a completely empty assistant bubble
+  const hasText = message.text && message.text.trim().length > 0;
+  const hasStructuredContent = !!(message.availability || message.bookings || message.bookingLink || message.card || message.handoff || message.emailPreview);
+  if (!isUser && !hasText && !hasStructuredContent && !message.streaming) return null;
+
   const isActionResult = message.type === 'action_result';
   const bubbleStyle = [
     styles.messageBubble,
@@ -275,7 +281,7 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
           ) : null}
           {isUser ? (
             <Text style={styles.userText}>{message.text}</Text>
-          ) : message.type === 'handoff' || message.bookings || message.availability ? null : (
+          ) : message.type === 'handoff' ? null : (
             <FormattedResponseText text={stripContextBlocks(message.text)} style={styles.assistantText} />
           )}
           {message.type === 'confirmation' && Array.isArray(message.pendingActions) ? (
@@ -418,4 +424,4 @@ AgentChatBubble.defaultProps = {
   handoffActionLabel: 'Open in Marshal',
 };
 
-export default AgentChatBubble;
+export default React.memo(AgentChatBubble);

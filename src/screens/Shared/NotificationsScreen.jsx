@@ -35,6 +35,42 @@ const ICON_MAP = {
 
 const PER_PAGE = 25;
 
+const NotificationItem = React.memo(({ item, onPress }) => {
+  const isUnread = !item.read_at;
+  const iconName = ICON_MAP[item.data?.type] || ICON_MAP.default;
+
+  return (
+    <TouchableRipple
+      style={[
+        styles.notificationItem,
+        isUnread && styles.notificationUnread,
+      ]}
+      onPress={() => onPress(item)}
+      borderless
+    >
+      <View style={styles.notificationRow}>
+        <View style={styles.iconContainer}>
+          <MaterialCommunityIcons name={iconName} size={18} color={colors.primary} />
+        </View>
+        <View style={styles.notificationContent}>
+          <Text style={styles.notificationTitle}>
+            {item.data?.title || 'Notification'}
+          </Text>
+          {item.data?.body && (
+            <Text style={styles.notificationBody} numberOfLines={2}>
+              {item.data.body}
+            </Text>
+          )}
+          <Text style={styles.notificationTime}>
+            {getTimeAgo(item.created_at)}
+          </Text>
+        </View>
+        {isUnread && <View style={styles.unreadDot} />}
+      </View>
+    </TouchableRipple>
+  );
+});
+
 const NotificationsScreen = ({ navigation }) => {
   const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -116,41 +152,11 @@ const NotificationsScreen = ({ navigation }) => {
 
   const hasUnread = notifications.some((n) => !n.read_at);
 
-  const renderNotification = ({ item }) => {
-    const isUnread = !item.read_at;
-    const iconName = ICON_MAP[item.data?.type] || ICON_MAP.default;
+  const renderNotification = useCallback(({ item }) => (
+    <NotificationItem item={item} onPress={handleMarkRead} />
+  ), [handleMarkRead]);
 
-    return (
-      <TouchableRipple
-        style={[
-          styles.notificationItem,
-          isUnread && styles.notificationUnread,
-        ]}
-        onPress={() => handleMarkRead(item)}
-        borderless
-      >
-        <View style={styles.notificationRow}>
-          <View style={styles.iconContainer}>
-            <MaterialCommunityIcons name={iconName} size={18} color={colors.primary} />
-          </View>
-          <View style={styles.notificationContent}>
-            <Text style={styles.notificationTitle}>
-              {item.data?.title || 'Notification'}
-            </Text>
-            {item.data?.body && (
-              <Text style={styles.notificationBody} numberOfLines={2}>
-                {item.data.body}
-              </Text>
-            )}
-            <Text style={styles.notificationTime}>
-              {getTimeAgo(item.created_at)}
-            </Text>
-          </View>
-          {isUnread && <View style={styles.unreadDot} />}
-        </View>
-      </TouchableRipple>
-    );
-  };
+  const keyExtractor = useCallback((item) => String(item.id), []);
 
   const rightAction = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -183,7 +189,7 @@ const NotificationsScreen = ({ navigation }) => {
         <FlatList
           data={notifications}
           renderItem={renderNotification}
-          keyExtractor={(item) => String(item.id)}
+          keyExtractor={keyExtractor}
           contentContainerStyle={[
             styles.listContent,
             notifications.length === 0 && { flex: 1 },
