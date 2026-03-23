@@ -67,6 +67,9 @@ export const SCREENS = {
   // Booking detail
   BOOKING_DETAIL: 'BookingDetail',
 
+  // Calendar sync
+  CALENDAR_SYNC: 'CalendarSync',
+
   // Shared stacks
   VIDEO_PLAYER: 'VideoPlayer',
   NOTIFICATIONS: 'Notifications',
