@@ -6,7 +6,6 @@ import {
   Switch,
   Button,
   TextInput,
-  Divider,
   ActivityIndicator,
   List,
   Chip,
@@ -31,6 +30,7 @@ import logger from '../../helpers/logger.helper';
 
 const CalendarSyncScreen = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
   const [feedEnabled, setFeedEnabled] = useState(false);
   const [feedUrl, setFeedUrl] = useState('');
   const [googleConnected, setGoogleConnected] = useState(false);
@@ -41,6 +41,7 @@ const CalendarSyncScreen = ({ navigation }) => {
   const fetchStatus = useCallback(async () => {
     try {
       setLoading(true);
+      setFetchError(false);
       const result = await getCalendarSyncStatus();
       if (result?.data) {
         setFeedEnabled(result.data.feed?.enabled || false);
@@ -51,6 +52,7 @@ const CalendarSyncScreen = ({ navigation }) => {
       }
     } catch (error) {
       logger.warn('Failed to fetch calendar sync status', error);
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
@@ -162,6 +164,24 @@ const CalendarSyncScreen = ({ navigation }) => {
       <SafeAreaView style={globalStyles.loadingContainer} edges={['top']}>
         <ScreenHeader title="Calendar Sync" navigation={navigation} />
         <ActivityIndicator size="large" style={styles.loadingIndicator} />
+      </SafeAreaView>
+    );
+  }
+
+  if (fetchError) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScreenHeader title="Calendar Sync" navigation={navigation} />
+        <View style={styles.scrollContent}>
+          <Surface style={styles.surface} elevation={1}>
+            <Text variant="bodyMedium" style={styles.sectionDescription}>
+              Failed to load calendar sync settings.
+            </Text>
+            <Button mode="outlined" icon="refresh" onPress={fetchStatus}>
+              Retry
+            </Button>
+          </Surface>
+        </View>
       </SafeAreaView>
     );
   }

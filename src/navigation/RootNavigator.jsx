@@ -19,6 +19,7 @@ import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 import NotificationPreferencesScreen from '../screens/Shared/NotificationPreferencesScreen';
 import PaymentLinkScreen from '../screens/Shared/PaymentLinkScreen';
 import BookingDetailScreen from '../screens/Client/BookingDetailScreen';
+import CalendarSyncScreen from '../screens/Client/CalendarSyncScreen';
 import { bookingScreens } from './BookingScreens';
 
 const Stack = createNativeStackNavigator();
@@ -131,6 +132,11 @@ const RootNavigator = () => {
           <Stack.Screen
             name={SCREENS.NOTIFICATION_PREFERENCES}
             component={NotificationPreferencesScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+          <Stack.Screen
+            name={SCREENS.CALENDAR_SYNC}
+            component={CalendarSyncScreen}
             options={{ animation: 'slide_from_right' }}
           />
         </>
