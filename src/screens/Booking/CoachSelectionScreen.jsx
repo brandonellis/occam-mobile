@@ -8,10 +8,9 @@ import { ListSkeleton } from '../../components/SkeletonLoader';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { getCoaches } from '../../services/bookings.api';
-import { getAllowedCoachesForService, getMyAllowedCoachesForService } from '../../services/accounts.api';
+import { getMyAllowedCoachesForService } from '../../services/accounts.api';
 import useAuth from '../../hooks/useAuth';
 import { COACH_ROLES } from '../../constants/auth.constants';
-import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import { getBookingSteps, getBookingStepIndex } from '../../helpers/booking.helper';
@@ -61,13 +60,11 @@ const CoachSelectionScreen = ({ route, navigation }) => {
         });
       }
 
-      // Feature 1: Filter coaches by client-coach assignment
-      const clientId = bookingData.client?.id;
-      if (clientId && service?.id) {
+      // Filter coaches by client-coach assignment (client-facing only;
+      // staff/admin/coach roles can book any coach)
+      if (!isCoach && service?.id) {
         try {
-          const assignmentRes = isCoach
-            ? await getAllowedCoachesForService(clientId, service.id)
-            : await getMyAllowedCoachesForService(service.id);
+          const assignmentRes = await getMyAllowedCoachesForService(service.id);
           const allowedIds = assignmentRes?.allowed_coach_ids || [];
           if (allowedIds.length > 0) {
             coachList = coachList.filter((c) => allowedIds.includes(c.id));
@@ -87,7 +84,7 @@ const CoachSelectionScreen = ({ route, navigation }) => {
         error: 'Failed to load coaches.',
       }));
     }
-  }, [service?.coach_ids, service?.location_ids, bookingData.location]);
+  }, [service?.coach_ids, service?.location_ids, service?.id, bookingData.location, isCoach]);
 
   useEffect(() => {
     loadCoaches();
