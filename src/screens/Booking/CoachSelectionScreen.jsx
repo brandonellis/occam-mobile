@@ -11,7 +11,6 @@ import { getCoaches } from '../../services/bookings.api';
 import { getMyAllowedCoachesForService } from '../../services/accounts.api';
 import useAuth from '../../hooks/useAuth';
 import { COACH_ROLES } from '../../constants/auth.constants';
-import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import { getBookingSteps, getBookingStepIndex } from '../../helpers/booking.helper';
@@ -85,7 +84,7 @@ const CoachSelectionScreen = ({ route, navigation }) => {
         error: 'Failed to load coaches.',
       }));
     }
-  }, [service?.coach_ids, service?.location_ids, bookingData.location]);
+  }, [service?.coach_ids, service?.location_ids, service?.id, bookingData.location, isCoach]);
 
   useEffect(() => {
     loadCoaches();
