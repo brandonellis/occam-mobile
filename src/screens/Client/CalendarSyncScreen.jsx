@@ -16,7 +16,8 @@ import * as Clipboard from 'expo-clipboard';
 import * as WebBrowser from 'expo-web-browser';
 import ScreenHeader from '../../components/ScreenHeader';
 import { globalStyles } from '../../styles/global.styles';
-import { colors, spacing } from '../../theme';
+import { calendarSyncStyles as styles } from '../../styles/calendarSync.styles';
+import { colors } from '../../theme';
 import {
   getCalendarSyncStatus,
   enableCalendarFeed,
@@ -160,17 +161,17 @@ const CalendarSyncScreen = ({ navigation }) => {
     return (
       <SafeAreaView style={globalStyles.loadingContainer} edges={['top']}>
         <ScreenHeader title="Calendar Sync" navigation={navigation} />
-        <ActivityIndicator size="large" style={{ marginTop: spacing.xl }} />
+        <ActivityIndicator size="large" style={styles.loadingIndicator} />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader title="Calendar Sync" navigation={navigation} />
-      <ScrollView contentContainerStyle={{ padding: spacing.md }}>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* ICS Feed Section */}
-        <Surface style={{ padding: spacing.md, borderRadius: spacing.borderRadius, marginBottom: spacing.md }} elevation={1}>
+        <Surface style={styles.surface} elevation={1}>
           <List.Item
             title="Calendar Subscription Feed"
             description="Subscribe from Google Calendar, Apple Calendar, Outlook, or any calendar app"
@@ -180,15 +181,15 @@ const CalendarSyncScreen = ({ navigation }) => {
           />
 
           {feedEnabled && feedUrl ? (
-            <View style={{ paddingHorizontal: spacing.md, paddingBottom: spacing.md }}>
+            <View style={styles.feedUrlContainer}>
               <TextInput
                 mode="outlined"
                 value={feedUrl}
                 editable={false}
                 dense
-                style={{ fontSize: 12, marginBottom: spacing.xs }}
+                style={styles.feedUrlInput}
               />
-              <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+              <View style={styles.buttonRow}>
                 <Button mode="outlined" icon="content-copy" compact onPress={handleCopyUrl}>
                   Copy URL
                 </Button>
@@ -201,26 +202,27 @@ const CalendarSyncScreen = ({ navigation }) => {
         </Surface>
 
         {/* Google Calendar Section */}
-        <Surface style={{ padding: spacing.md, borderRadius: spacing.borderRadius }} elevation={1}>
-          <Text variant="titleMedium" style={{ marginBottom: spacing.xs }}>
+        <Surface style={styles.surface} elevation={1}>
+          <Text variant="titleMedium" style={styles.sectionTitle}>
             Google Calendar
           </Text>
-          <Text variant="bodySmall" style={{ color: colors.textSecondary, marginBottom: spacing.md }}>
+          <Text variant="bodySmall" style={styles.sectionDescription}>
             Connect for real-time sync. New bookings, changes, and cancellations are pushed instantly.
           </Text>
 
           {googleConnected ? (
-            <View style={{ gap: spacing.sm }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+            <View style={styles.connectedSection}>
+              <View style={styles.chipRow}>
                 <Chip icon="check-circle" mode="flat" compact>Connected</Chip>
-                <Text variant="bodySmall" style={{ color: colors.textSecondary }}>{googleEmail}</Text>
+                <Text variant="bodySmall" style={styles.emailText}>{googleEmail}</Text>
               </View>
               {googleError ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: spacing.xs }}>
+                <View style={styles.chipRow}>
                   <Chip icon="alert-circle" mode="flat" compact>Sync Error</Chip>
+                  <Text variant="bodySmall" style={styles.errorText}>{googleError}</Text>
                 </View>
               ) : null}
-              <View style={{ flexDirection: 'row', gap: spacing.xs }}>
+              <View style={styles.buttonRow}>
                 <Button
                   mode="outlined"
                   icon="sync"
