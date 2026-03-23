@@ -248,6 +248,14 @@ const ClientProfileScreen = ({ navigation }) => {
             onPress={() => navigation.navigate(SCREENS.NOTIFICATION_PREFERENCES)}
             style={styles.settingsRow}
           />
+          <List.Item
+            title="Calendar Sync"
+            description="Sync bookings to your calendar"
+            left={(props) => <List.Icon {...props} icon="calendar-sync-outline" color={colors.textSecondary} />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" color={colors.textTertiary} />}
+            onPress={() => navigation.navigate(SCREENS.CALENDAR_SYNC)}
+            style={styles.settingsRow}
+          />
         </View>
 
         {/* Sign Out */}
