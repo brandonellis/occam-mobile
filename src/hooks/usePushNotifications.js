@@ -66,7 +66,7 @@ const usePushNotifications = () => {
         await registerPushToken(token, Platform.OS);
       }
     } catch (error) {
-      logger.error('Failed to register push token:', error);
+      logger.warn('Failed to register push token:', error.message);
     }
   };
 
