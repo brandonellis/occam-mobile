@@ -154,9 +154,13 @@ const ClientBookingsScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
+              // Optimistically remove from list for instant feedback
+              setBookings((prev) => prev.filter((b) => b.id !== booking.id));
               await cancelBooking(booking.id);
               loadBookings();
             } catch (err) {
+              // Revert optimistic removal on error
+              loadBookings();
               const status = err?.response?.status;
               const serverMsg = err?.response?.data?.message;
               if (status === 403 && serverMsg) {

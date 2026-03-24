@@ -58,13 +58,29 @@ const usePaymentSaga = ({ buildPayload, dispatch, ACTIONS }) => {
       dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: confirmedBookingData });
     } catch (error) {
       if (pendingBookingId && !chargeCompleted) {
+        // Payment never went through — safe to cancel the pending booking
         try {
           await cancelBooking(pendingBookingId);
         } catch (cancelErr) {
           logger.warn('Failed to cancel pending booking after payment failure:', cancelErr.message);
+          Alert.alert(
+            'Action Needed',
+            'Payment failed and the pending booking could not be cancelled automatically. Please contact support.',
+          );
+          return; // finally block will dispatch SUBMIT_END
         }
+        Alert.alert('Payment Failed', extractErrorMessage(error));
+      } else if (chargeCompleted) {
+        // Payment succeeded but post-payment processing failed — do NOT cancel
+        logger.error('Payment succeeded but post-payment step failed:', error.message);
+        Alert.alert(
+          'Payment Processed',
+          'Your payment was successful but we encountered an issue finalizing the booking. Your booking is confirmed — please check your bookings list.',
+        );
+      } else {
+        // Booking creation itself failed (no pending ID, no charge)
+        Alert.alert('Booking Failed', extractErrorMessage(error));
       }
-      Alert.alert('Payment Failed', extractErrorMessage(error));
     } finally {
       dispatch({ type: ACTIONS.SUBMIT_END });
     }
