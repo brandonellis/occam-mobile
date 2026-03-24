@@ -29,6 +29,7 @@ const EmailDraftCard = ({ action, onSent, onDiscard }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [campaignId, setCampaignId] = useState(null);
+  const [recipientEmail, setRecipientEmail] = useState(null);
   const [webViewHeight, setWebViewHeight] = useState(INITIAL_HEIGHT);
   const [expanded, setExpanded] = useState(false);
   const webViewRef = useRef(null);
@@ -114,6 +115,9 @@ const EmailDraftCard = ({ action, onSent, onDiscard }) => {
 
         // Store in case send fails and user retries
         setCampaignId(sendCampaignId);
+        if (result?.email_preview?.to_email) {
+          setRecipientEmail(result.email_preview.to_email);
+        }
       }
 
       await sendClientEmail(sendCampaignId);
@@ -151,7 +155,7 @@ const EmailDraftCard = ({ action, onSent, onDiscard }) => {
     return (
       <View style={styles.sentContainer}>
         <Icon source="check-circle" size={16} color={colors.success} />
-        <Text style={styles.sentText}>Email sent to {clientName}</Text>
+        <Text style={styles.sentText}>Email sent to {clientName}{recipientEmail ? ` (${recipientEmail})` : ''}</Text>
       </View>
     );
   }
