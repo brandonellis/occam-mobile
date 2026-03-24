@@ -33,7 +33,7 @@ const EmailDraftCard = ({ action, onSent, onDiscard }) => {
   const [expanded, setExpanded] = useState(false);
   const webViewRef = useRef(null);
 
-  const clientName = action.args?.clientName || 'Recipient';
+  const clientName = action.args?.clientName || action.args?.client_name || 'Recipient';
 
   const handleMessage = useCallback((event) => {
     try {
