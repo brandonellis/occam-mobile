@@ -253,7 +253,8 @@ const EmailDraftCard = ({ action, onSent, onDiscard }) => {
               scrollEnabled={expanded}
               injectedJavaScript={injectedJS}
               onMessage={handleMessage}
-              originWhitelist={['*']}
+              originWhitelist={['https:', 'http:', 'about:']}
+              onShouldStartLoadWithRequest={(req) => req.url === 'about:blank' || req.url.startsWith('data:')}
               showsVerticalScrollIndicator={false}
               javaScriptEnabled
             />
