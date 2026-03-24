@@ -76,7 +76,7 @@ export const emailDraftStyles = StyleSheet.create({
     flex: 1,
   },
   actionButton: {
-    // inherits Paper Button defaults
+    minHeight: 44,
   },
   webViewContainer: {
     marginHorizontal: spacing.sm,
@@ -100,7 +100,7 @@ export const emailDraftStyles = StyleSheet.create({
     justifyContent: 'flex-end',
     alignItems: 'center',
     paddingBottom: spacing.xs,
-    backgroundColor: 'rgba(255, 255, 255, 0.85)',
+    backgroundColor: colors.whiteOverlay85,
   },
   sentContainer: {
     flexDirection: 'row',
