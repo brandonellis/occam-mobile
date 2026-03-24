@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Dimensions, ScrollView, View } from 'react-native';
+import { Dimensions, View } from 'react-native';
 import { Button, Icon, Text, TextInput } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
 import { colors } from '../../theme';
@@ -21,7 +21,7 @@ const WEBVIEW_WIDTH = SCREEN_WIDTH - 100;
  * Email draft card for Marshal confirmation step.
  * Flow: Edit → Preview (blade template) → Send
  */
-const EmailDraftCard = ({ action, onResolved }) => {
+const EmailDraftCard = ({ action, onSent, onDiscard }) => {
   const [mode, setMode] = useState('edit'); // edit | preview | sent | discarded
   const [subject, setSubject] = useState(action.args?.subject || '');
   const [body, setBody] = useState(action.args?.body || '');
@@ -92,7 +92,6 @@ const EmailDraftCard = ({ action, onResolved }) => {
 
       if (!result?.success) {
         setError(result?.message || 'Failed to create email draft.');
-        setLoading(false);
         return;
       }
 
@@ -100,13 +99,12 @@ const EmailDraftCard = ({ action, onResolved }) => {
       const campaignId = result?.email_preview?.campaign_id;
       if (!campaignId) {
         setError('Draft created but could not determine campaign ID.');
-        setLoading(false);
         return;
       }
 
       await sendClientEmail(campaignId);
       setMode('sent');
-      onResolved?.();
+      onSent?.();
     } catch (err) {
       logger.warn('EmailDraftCard send failed:', err?.message || err);
       setError('Failed to send email. Please try again.');
@@ -117,7 +115,7 @@ const EmailDraftCard = ({ action, onResolved }) => {
 
   const handleDiscard = () => {
     setMode('discarded');
-    onResolved?.();
+    onDiscard?.();
   };
 
   const wrappedHtml = `
@@ -308,7 +306,8 @@ EmailDraftCard.propTypes = {
       clientId: PropTypes.number,
     }),
   }).isRequired,
-  onResolved: PropTypes.func,
+  onSent: PropTypes.func,
+  onDiscard: PropTypes.func,
 };
 
 export default EmailDraftCard;

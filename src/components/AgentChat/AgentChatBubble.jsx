@@ -294,7 +294,8 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
                     <EmailDraftCard
                       key={action.action_id}
                       action={action}
-                      onResolved={() => onDeclineAction?.()}
+                      onSent={() => onConfirmAction?.(action)}
+                      onDiscard={() => onDeclineAction?.()}
                     />
                   );
                 }
