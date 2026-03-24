@@ -262,6 +262,8 @@ const useBookingSubmission = ({
     // Recurring booking flow (coach only)
     if (recurrenceEnabled && recurrenceOccurrences > 1) {
       // Pre-flight allotment warning for membership bookings
+      // Note: allotment is checked per billing cycle on the backend, so bookings
+      // spanning multiple cycles will use each cycle's allotment independently.
       if (
         isMembershipBooking &&
         membershipStatus?.remainingQuantity != null &&
@@ -270,7 +272,7 @@ const useBookingSubmission = ({
         const remaining = membershipStatus.remainingQuantity;
         Alert.alert(
           'Allotment Warning',
-          `This client has ${remaining} session${remaining !== 1 ? 's' : ''} remaining on their membership, but you're scheduling ${recurrenceOccurrences} recurring bookings. Sessions beyond the allotment may fail or require separate payment.`,
+          `This client has ${remaining} session${remaining !== 1 ? 's' : ''} remaining in the current billing cycle, but you're scheduling ${recurrenceOccurrences} recurring bookings. Sessions in future cycles will use that cycle's allotment. Any sessions beyond available allotment may fail.`,
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Continue Anyway', onPress: () => handleRecurringConfirm() },

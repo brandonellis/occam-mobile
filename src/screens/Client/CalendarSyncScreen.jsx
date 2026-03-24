@@ -162,7 +162,7 @@ const CalendarSyncScreen = ({ navigation }) => {
   if (loading) {
     return (
       <SafeAreaView style={globalStyles.loadingContainer} edges={['top']}>
-        <ScreenHeader title="Calendar Sync" navigation={navigation} />
+        <ScreenHeader title="Calendar Sync" onBack={() => navigation.goBack()} />
         <ActivityIndicator size="large" style={styles.loadingIndicator} />
       </SafeAreaView>
     );
@@ -171,7 +171,7 @@ const CalendarSyncScreen = ({ navigation }) => {
   if (fetchError) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <ScreenHeader title="Calendar Sync" navigation={navigation} />
+        <ScreenHeader title="Calendar Sync" onBack={() => navigation.goBack()} />
         <View style={styles.scrollContent}>
           <Surface style={styles.surface} elevation={1}>
             <Text variant="bodyMedium" style={styles.sectionDescription}>
@@ -188,7 +188,7 @@ const CalendarSyncScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <ScreenHeader title="Calendar Sync" navigation={navigation} />
+      <ScreenHeader title="Calendar Sync" onBack={() => navigation.goBack()} />
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* ICS Feed Section */}
         <Surface style={styles.surface} elevation={1}>
