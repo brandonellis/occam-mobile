@@ -67,8 +67,7 @@ const usePaymentSaga = ({ buildPayload, dispatch, ACTIONS }) => {
             'Action Needed',
             'Payment failed and the pending booking could not be cancelled automatically. Please contact support.',
           );
-          dispatch({ type: ACTIONS.SUBMIT_END });
-          return;
+          return; // finally block will dispatch SUBMIT_END
         }
         Alert.alert('Payment Failed', extractErrorMessage(error));
       } else if (chargeCompleted) {
