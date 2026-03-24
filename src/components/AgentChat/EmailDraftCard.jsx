@@ -28,6 +28,7 @@ const EmailDraftCard = ({ action, onSent, onDiscard }) => {
   const [previewHtml, setPreviewHtml] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [campaignId, setCampaignId] = useState(null);
   const [webViewHeight, setWebViewHeight] = useState(INITIAL_HEIGHT);
   const [expanded, setExpanded] = useState(false);
   const webViewRef = useRef(null);
@@ -35,9 +36,13 @@ const EmailDraftCard = ({ action, onSent, onDiscard }) => {
   const clientName = action.args?.clientName || 'Recipient';
 
   const handleMessage = useCallback((event) => {
-    const data = JSON.parse(event.nativeEvent.data);
-    if (data.height) {
-      setWebViewHeight(Math.min(data.height, expanded ? data.height : MAX_HEIGHT));
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.height) {
+        setWebViewHeight(Math.min(data.height, expanded ? data.height : MAX_HEIGHT));
+      }
+    } catch {
+      // Ignore non-JSON messages from WebView
     }
   }, [expanded]);
 
@@ -54,6 +59,7 @@ const EmailDraftCard = ({ action, onSent, onDiscard }) => {
   `;
 
   const handlePreview = async () => {
+    if (loading) return;
     setLoading(true);
     setError(null);
     try {
@@ -81,28 +87,36 @@ const EmailDraftCard = ({ action, onSent, onDiscard }) => {
   };
 
   const handleSend = async () => {
+    if (loading) return;
     setLoading(true);
     setError(null);
     try {
-      // Confirm the pending action with edited args → creates campaign draft
-      const result = await confirmMarshalAction(action.action_id, {
-        subject,
-        body,
-      });
+      // If we already have a campaignId from a previous partial success, skip confirm
+      let sendCampaignId = campaignId;
 
-      if (!result?.success) {
-        setError(result?.message || 'Failed to create email draft.');
-        return;
+      if (!sendCampaignId) {
+        // Confirm the pending action with edited args → creates campaign draft
+        const result = await confirmMarshalAction(action.action_id, {
+          subject,
+          body,
+        });
+
+        if (!result?.success) {
+          setError(result?.message || 'Failed to create email draft.');
+          return;
+        }
+
+        sendCampaignId = result?.email_preview?.campaign_id;
+        if (!sendCampaignId) {
+          setError('Draft created but could not determine campaign ID.');
+          return;
+        }
+
+        // Store in case send fails and user retries
+        setCampaignId(sendCampaignId);
       }
 
-      // Get campaign ID and send immediately
-      const campaignId = result?.email_preview?.campaign_id;
-      if (!campaignId) {
-        setError('Draft created but could not determine campaign ID.');
-        return;
-      }
-
-      await sendClientEmail(campaignId);
+      await sendClientEmail(sendCampaignId);
       setMode('sent');
       onSent?.();
     } catch (err) {
