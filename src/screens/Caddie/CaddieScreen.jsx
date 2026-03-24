@@ -144,7 +144,7 @@ const CaddieScreen = () => {
         >
           <Surface style={styles.heroCard} elevation={1}>
             <MaterialCommunityIcons name="golf" size={32} color={colors.aquaLight} style={styles.heroIcon} />
-            <Text style={styles.heroEyebrow}>Client booking concierge</Text>
+            <Text style={styles.heroEyebrow}>Booking concierge</Text>
             <View style={styles.heroTitleRow}>
               <Text style={styles.heroTitle}>Caddie</Text>
               <View style={[
@@ -154,9 +154,6 @@ const CaddieScreen = () => {
                     : styles.statusUnknown,
               ]} />
             </View>
-            <Text style={styles.heroBody}>
-              Ask for availability, upcoming bookings, memberships, or the best next step for your practice schedule.
-            </Text>
           </Surface>
 
           {nudges.length > 0 ? (

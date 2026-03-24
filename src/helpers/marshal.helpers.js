@@ -10,7 +10,7 @@ export const INITIAL_MESSAGES = [
   {
     id: 'marshal-welcome',
     sender: 'assistant',
-    text: 'I\u2019m Marshal. I can help you review operational priorities, summarize schedule pressure, and surface next actions for your facility.',
+    text: 'What do you need? I can pull up today\u2019s schedule, flag priorities, or run an action.',
   },
 ];
 

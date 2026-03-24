@@ -36,7 +36,7 @@ const INITIAL_MESSAGES = [
   {
     id: 'caddie-welcome',
     sender: 'assistant',
-    text: "I'm Caddie. I can help you book sessions, review upcoming bookings, and answer questions about memberships or packages.",
+    text: "What are you looking for today — a lesson, booking details, or membership info?",
   },
 ];
 

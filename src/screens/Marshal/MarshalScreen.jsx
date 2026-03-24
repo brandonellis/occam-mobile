@@ -114,9 +114,6 @@ const MarshalScreen = ({ route }) => {
                     : styles.statusUnknown,
               ]} />
             </View>
-            <Text style={styles.heroBody}>
-              Review operational priorities, ask questions about the schedule, and surface the next best actions for your facility.
-            </Text>
           </Surface>
 
           <View onLayout={(e) => { conversationYRef.current = e.nativeEvent.layout.y; }} style={styles.section}>
