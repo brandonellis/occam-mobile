@@ -170,9 +170,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const formattedDate = timeSlot?.start_time
     ? formatDateInTz(timeSlot.start_time, company, 'long')
     : date
-      ? new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
-          weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
-        })
+      ? formatDateInTz(date + 'T12:00:00Z', company, 'long')
       : '';
 
   const buttonLabel = isEditMode
