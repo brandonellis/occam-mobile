@@ -8,6 +8,7 @@ import { formatEligibilityLabel, stripContextBlocks } from '../../helpers/agentC
 import AvailabilityCard from './AvailabilityCard';
 import BookingsCard from './BookingsCard';
 import EmailPreviewCard from './EmailPreviewCard';
+import EmailDraftCard from './EmailDraftCard';
 import FormattedResponseText from './FormattedResponseText';
 
 const ACTION_LABELS = {
@@ -286,25 +287,37 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
           )}
           {message.type === 'confirmation' && Array.isArray(message.pendingActions) ? (
             <View style={styles.confirmationList}>
-              {message.pendingActions.map((action) => (
-                <Surface key={action.action_id} style={styles.confirmationCard} elevation={0}>
-                  <Text style={styles.confirmationEyebrow}>Requires your approval</Text>
-                  <Text style={styles.confirmationTitle}>{formatToolName(action.tool)}</Text>
-                  {action.description ? (
-                    <Text style={styles.confirmationDescription}>{action.description}</Text>
-                  ) : null}
-                  <View style={styles.confirmationActions}>
-                    <Button mode="contained" compact onPress={() => onConfirmAction?.(action)}
-                      buttonColor={colors.success} textColor={colors.textInverse}
-                    >
-                      Confirm
-                    </Button>
-                    <Button mode="text" compact onPress={() => onDeclineAction?.()}>
-                      Cancel
-                    </Button>
-                  </View>
-                </Surface>
-              ))}
+              {message.pendingActions.map((action) => {
+                // Email drafts get their own editable card
+                if (action.tool === 'draft_client_email' && action.args) {
+                  return (
+                    <EmailDraftCard
+                      key={action.action_id}
+                      action={action}
+                      onResolved={() => onDeclineAction?.()}
+                    />
+                  );
+                }
+                return (
+                  <Surface key={action.action_id} style={styles.confirmationCard} elevation={0}>
+                    <Text style={styles.confirmationEyebrow}>Requires your approval</Text>
+                    <Text style={styles.confirmationTitle}>{formatToolName(action.tool)}</Text>
+                    {action.description ? (
+                      <Text style={styles.confirmationDescription}>{action.description}</Text>
+                    ) : null}
+                    <View style={styles.confirmationActions}>
+                      <Button mode="contained" compact onPress={() => onConfirmAction?.(action)}
+                        buttonColor={colors.success} textColor={colors.textInverse}
+                      >
+                        Confirm
+                      </Button>
+                      <Button mode="text" compact onPress={() => onDeclineAction?.()}>
+                        Cancel
+                      </Button>
+                    </View>
+                  </Surface>
+                );
+              })}
             </View>
           ) : null}
           {isActionResult && message.nextStep ? (

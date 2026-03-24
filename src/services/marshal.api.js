@@ -47,12 +47,23 @@ export const sendMarshalMessage = async (message, history = [], { onToken, onCar
   };
 };
 
-export const confirmMarshalAction = async (actionId) => {
-  const response = await apiClient.post('/marshal/confirm', {
-    action_id: actionId,
-  });
-
+export const confirmMarshalAction = async (actionId, argsOverride) => {
+  const body = { action_id: actionId };
+  if (argsOverride && Object.keys(argsOverride).length > 0) {
+    body.args = argsOverride;
+  }
+  const response = await apiClient.post('/marshal/confirm', body);
   return response.data?.data || response.data;
+};
+
+export const previewCampaignEmail = async ({ subject, body, sampleRecipient }) => {
+  const response = await apiClient.post('/communications/preview', {
+    subject,
+    body,
+    sample_recipient: sampleRecipient,
+    marketing: false,
+  });
+  return response.data?.html || response.data?.data?.html || '';
 };
 
 export const sendClientEmail = async (campaignId) => {
