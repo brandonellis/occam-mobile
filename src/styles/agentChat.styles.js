@@ -627,4 +627,16 @@ export const sharedAgentStyles = StyleSheet.create({
   statusUnknown: {
     backgroundColor: colors.gray400,
   },
+  betaBadge: {
+    backgroundColor: colors.whiteOverlay12,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+  },
+  betaBadgeText: {
+    ...typography.labelSmall,
+    color: colors.textInverseMuted,
+    fontSize: 10,
+    letterSpacing: 0.5,
+  },
 });

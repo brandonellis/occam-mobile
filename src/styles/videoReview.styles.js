@@ -27,16 +27,13 @@ export const videoReviewStyles = StyleSheet.create({
 
   // Video preview
   videoContainer: {
-    width: '100%',
-    aspectRatio: 9 / 16,
-    borderRadius: borderRadius.lg,
-    overflow: 'hidden',
-    backgroundColor: colors.darkSurface,
+    alignItems: 'center',
     marginBottom: spacing.xl,
-    maxHeight: 400,
   },
   video: {
-    flex: 1,
+    width: 250,
+    aspectRatio: 9 / 16,
+    borderRadius: borderRadius.lg,
   },
 
   // Form fields

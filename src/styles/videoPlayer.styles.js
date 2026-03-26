@@ -168,6 +168,16 @@ export const videoPlayerStyles = StyleSheet.create({
     backgroundColor: colors.gray800,
     overflow: 'hidden',
   },
+  drawingPreviewThumbnail: {
+    ...StyleSheet.absoluteFillObject,
+    width: 60,
+    height: 34,
+  },
+  drawingPreviewSvg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+  },
   annotationAuthor: {
     ...typography.bodySmall,
     color: colors.textTertiary,

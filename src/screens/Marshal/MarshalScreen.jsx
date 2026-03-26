@@ -107,6 +107,7 @@ const MarshalScreen = ({ route }) => {
             </View>
             <View style={styles.heroTitleRow}>
               <Text style={styles.heroTitle}>Marshal</Text>
+              <View style={styles.betaBadge}><Text style={styles.betaBadgeText}>Beta</Text></View>
               <View style={[
                 styles.statusDot,
                 isConnected === true ? styles.statusConnected

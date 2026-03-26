@@ -147,6 +147,7 @@ const CaddieScreen = () => {
             <Text style={styles.heroEyebrow}>Booking concierge</Text>
             <View style={styles.heroTitleRow}>
               <Text style={styles.heroTitle}>Caddie</Text>
+              <View style={styles.betaBadge}><Text style={styles.betaBadgeText}>Beta</Text></View>
               <View style={[
                 styles.statusDot,
                 isConnected === true ? styles.statusConnected

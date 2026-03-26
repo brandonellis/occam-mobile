@@ -191,7 +191,7 @@ const useClientDetail = ({ clientId, navigation, company }) => {
       upcomingBookings,
       pastBookings,
     }));
-    navigation.navigate(SCREENS.COACH_TABS, { screen: SCREENS.MARSHAL });
+    navigation.getParent()?.navigate(SCREENS.MARSHAL);
   }, [client, company, deliverIntent, upcomingBookings, pastBookings, navigation]);
 
   const handleUnshare = useCallback((sharedMediaId) => {

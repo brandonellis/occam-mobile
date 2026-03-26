@@ -60,6 +60,8 @@ export const caddieStyles = StyleSheet.create({
   statusConnected: sharedAgentStyles.statusConnected,
   statusDisconnected: sharedAgentStyles.statusDisconnected,
   statusUnknown: sharedAgentStyles.statusUnknown,
+  betaBadge: sharedAgentStyles.betaBadge,
+  betaBadgeText: sharedAgentStyles.betaBadgeText,
   nudgesSection: {
     marginBottom: spacing.xl,
   },

@@ -8,6 +8,8 @@ import { typography } from '../theme/typography';
 import { spacing, borderRadius, shadows } from '../theme/spacing';
 import { SCREENS } from '../constants/navigation.constants';
 
+const BETA_TABS = new Set([SCREENS.CADDIE, SCREENS.MARSHAL]);
+
 const PILL_PADDING_H = 2;
 const PILL_PADDING_V = 2;
 const BAR_MARGIN_H = spacing.lg;
@@ -83,6 +85,7 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
             const icons = tabIcons[route.name];
             const iconName = isFocused ? icons?.focused : icons?.unfocused;
             const badgeCount = (badges && badges[route.name]) || 0;
+            const isBeta = BETA_TABS.has(route.name);
 
             const onPress = () => {
               const event = navigation.emit({
@@ -139,6 +142,11 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
                   >
                     {label}
                   </Text>
+                  {isBeta && (
+                    <Text style={[styles.betaLabel, isFocused ? styles.betaLabelFocused : styles.betaLabelUnfocused]}>
+                      Beta
+                    </Text>
+                  )}
                 </View>
               </TouchableOpacity>
             );
@@ -240,6 +248,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 2,
+  },
+  betaLabel: {
+    fontFamily: typography.fontFamily,
+    fontSize: 7,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  betaLabelFocused: {
+    color: colors.accent,
+  },
+  betaLabelUnfocused: {
+    color: colors.textInverseMuted,
   },
 });
 

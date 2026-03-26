@@ -11,7 +11,9 @@ import {
   Platform,
   Dimensions,
   PanResponder,
+  Image,
 } from 'react-native';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -26,7 +28,7 @@ import { videoAnnotationStyles as styles } from '../../styles/videoAnnotation.st
 import { globalStyles } from '../../styles/global.styles';
 import { colors } from '../../theme';
 import { getToken, getTenantId } from '../../helpers/storage.helper';
-import { buildVideoSource } from '../../helpers/media.helper';
+import { buildVideoSource, resolveMediaUrl } from '../../helpers/media.helper';
 import { formatVideoTimestamp, VIDEO_HEIGHT } from '../../helpers/video.helper';
 import logger from '../../helpers/logger.helper';
 
@@ -106,18 +108,51 @@ const VideoAnnotationContent = ({ initialSource, uploadId, videoUrl, videoTitle,
     return () => sub?.remove();
   }, [player]);
 
+  // Thumbnail cache: annotation id → local thumbnail URI
+  const [thumbnailCache, setThumbnailCache] = useState({});
+  const resolvedVideoUrl = resolveMediaUrl(videoUrl);
+
+  const generateThumbnail = useCallback(async (timestampSec) => {
+    if (!resolvedVideoUrl) return null;
+    try {
+      const { uri } = await VideoThumbnails.getThumbnailAsync(resolvedVideoUrl, {
+        time: Math.round(timestampSec * 1000),
+      });
+      return uri;
+    } catch {
+      return null;
+    }
+  }, [resolvedVideoUrl]);
+
   const loadAnnotations = useCallback(async () => {
     try {
       setIsLoading(true);
       const res = await getAnnotations(uploadId, { targetType, targetId });
-      setAnnotations(res.data || []);
+      const items = res.data || [];
+      setAnnotations(items);
+
+      // Generate thumbnails for annotations that have drawings
+      const drawingAnnotations = items.filter(
+        (a) => a.drawing_data?.paths?.length > 0,
+      );
+      if (drawingAnnotations.length > 0) {
+        const entries = await Promise.all(
+          drawingAnnotations.map(async (a) => {
+            const uri = await generateThumbnail(Number(a.timestamp));
+            return [a.id, uri];
+          }),
+        );
+        const cache = {};
+        entries.forEach(([id, uri]) => { if (uri) cache[id] = uri; });
+        setThumbnailCache((prev) => ({ ...prev, ...cache }));
+      }
     } catch (err) {
       logger.warn('[VideoAnnotation] Failed to load annotations:', err?.message);
       setAnnotations([]);
     } finally {
       setIsLoading(false);
     }
-  }, [uploadId, targetType, targetId]);
+  }, [uploadId, targetType, targetId, generateThumbnail]);
 
   useEffect(() => {
     loadAnnotations();
@@ -341,10 +376,17 @@ const VideoAnnotationContent = ({ initialSource, uploadId, videoUrl, videoTitle,
           )}
           {hasDrawing && (
             <View style={styles.drawingPreview}>
+              {thumbnailCache[item.id] && (
+                <Image
+                  source={{ uri: thumbnailCache[item.id] }}
+                  style={styles.drawingPreviewThumbnail}
+                />
+              )}
               <Svg
                 width={60}
                 height={34}
                 viewBox={`0 0 ${item.drawing_data.viewWidth || SCREEN_WIDTH} ${item.drawing_data.viewHeight || VIDEO_HEIGHT}`}
+                style={styles.drawingPreviewSvg}
               >
                 {item.drawing_data.paths.map((p, i) => (
                   <Path

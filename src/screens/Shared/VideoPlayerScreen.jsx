@@ -7,7 +7,9 @@ import {
   ActivityIndicator,
   FlatList,
   Dimensions,
+  Image,
 } from 'react-native';
+import * as VideoThumbnails from 'expo-video-thumbnails';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useVideoPlayer, VideoView } from 'expo-video';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -48,7 +50,9 @@ const VideoPlayerContent = ({
   const [annotationsLoading, setAnnotationsLoading] = useState(false);
   const [activeAnnotation, setActiveAnnotation] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [thumbnailCache, setThumbnailCache] = useState({});
   const hasAnnotations = uploadId && annotations.length > 0;
+  const resolvedVideoUrl = resolveMediaUrl(videoUrl);
 
   // Fetch annotations when uploadId is provided
   useEffect(() => {
@@ -58,7 +62,33 @@ const VideoPlayerContent = ({
       setAnnotationsLoading(true);
       try {
         const res = await getAnnotations(uploadId, { targetType, targetId });
-        if (!cancelled) setAnnotations(res.data || []);
+        const items = res.data || [];
+        if (!cancelled) setAnnotations(items);
+
+        // Generate thumbnails for annotations with drawings
+        const drawingAnnotations = items.filter(
+          (a) => a.drawing_data?.paths?.length > 0,
+        );
+        if (drawingAnnotations.length > 0 && resolvedVideoUrl) {
+          const entries = await Promise.all(
+            drawingAnnotations.map(async (a) => {
+              try {
+                const { uri } = await VideoThumbnails.getThumbnailAsync(
+                  resolvedVideoUrl,
+                  { time: Math.round(Number(a.timestamp) * 1000) },
+                );
+                return [a.id, uri];
+              } catch {
+                return [a.id, null];
+              }
+            }),
+          );
+          if (!cancelled) {
+            const cache = {};
+            entries.forEach(([id, uri]) => { if (uri) cache[id] = uri; });
+            setThumbnailCache((prev) => ({ ...prev, ...cache }));
+          }
+        }
       } catch (err) {
         logger.warn('[VideoPlayer] Failed to load annotations:', err?.message);
         if (!cancelled) setAnnotations([]);
@@ -67,7 +97,7 @@ const VideoPlayerContent = ({
       }
     })();
     return () => { cancelled = true; };
-  }, [uploadId, targetType, targetId]);
+  }, [uploadId, targetType, targetId, resolvedVideoUrl]);
 
   // Create the player with a guaranteed non-null source
   const player = useVideoPlayer(initialSource, (p) => {
@@ -181,10 +211,17 @@ const VideoPlayerContent = ({
           )}
           {hasDrawing && (
             <View style={styles.drawingPreview}>
+              {thumbnailCache[item.id] && (
+                <Image
+                  source={{ uri: thumbnailCache[item.id] }}
+                  style={styles.drawingPreviewThumbnail}
+                />
+              )}
               <Svg
                 width={60}
                 height={34}
                 viewBox={`0 0 ${item.drawing_data.viewWidth || SCREEN_WIDTH} ${item.drawing_data.viewHeight || VIDEO_HEIGHT}`}
+                style={styles.drawingPreviewSvg}
               >
                 {item.drawing_data.paths.map((p, i) => (
                   <Path

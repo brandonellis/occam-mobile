@@ -180,7 +180,6 @@ const VideoReviewScreen = ({ route, navigation }) => {
             <VideoView
               player={player}
               style={styles.video}
-              contentFit="contain"
               nativeControls
             />
           </View>
