@@ -169,6 +169,12 @@ const useBookingSubmission = ({
       }
       const piResponse = await createServicePayment(paymentData);
 
+      // Zero-amount payments skip Stripe entirely — booking already confirmed by backend
+      if (piResponse.zero_amount) {
+        markCharged();
+        return;
+      }
+
       if (!piResponse.success || !piResponse.client_secret) {
         throw new Error(piResponse.error || 'Failed to create payment.');
       }
@@ -219,6 +225,12 @@ const useBookingSubmission = ({
         savedPaymentData.promotion_code = appliedPromo.code;
       }
       const piResponse = await createServicePayment(savedPaymentData);
+
+      // Zero-amount payments skip Stripe entirely — booking already confirmed by backend
+      if (piResponse?.zero_amount) {
+        markCharged();
+        return;
+      }
 
       if (!piResponse?.success || !piResponse?.payment_intent_id) {
         throw new Error(piResponse?.error || piResponse?.message || 'Failed to create payment.');
