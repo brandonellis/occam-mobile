@@ -14,6 +14,7 @@ import logger from '../../helpers/logger.helper';
 
 const EVENT_LABELS = {
   booking_confirmed: 'Booking Confirmed',
+  booking_updated: 'Booking Updated',
   booking_cancelled: 'Booking Cancelled',
   booking_reminder: 'Booking Reminder',
   booking_payment_requested: 'Payment Requested',
