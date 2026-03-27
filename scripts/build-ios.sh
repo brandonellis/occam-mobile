@@ -142,8 +142,6 @@ if [ "$BUILD" = true ]; then
     -archivePath "$ARCHIVE_PATH" \
     archive \
     COMPILER_INDEX_STORE_ENABLE=NO \
-    CODE_SIGN_IDENTITY="Apple Distribution" \
-    CODE_SIGN_STYLE=Automatic \
     DEVELOPMENT_TEAM="86P5XHSDSV" \
     -quiet
 
