@@ -7,6 +7,9 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
+    "build:ios": "./scripts/build-ios.sh",
+    "build:ios:only": "./scripts/build-ios.sh --build-only",
+    "submit:ios": "./scripts/build-ios.sh --submit",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
