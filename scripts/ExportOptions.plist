@@ -11,9 +11,14 @@
 	<key>uploadSymbols</key>
 	<true/>
 	<key>signingStyle</key>
-	<string>automatic</string>
+	<string>manual</string>
 	<key>signingCertificate</key>
 	<string>Apple Distribution</string>
+	<key>provisioningProfiles</key>
+	<dict>
+		<key>com.occamgolf.app</key>
+		<string>Occam Golf AppStore Local</string>
+	</dict>
 	<key>destination</key>
 	<string>upload</string>
 </dict>
