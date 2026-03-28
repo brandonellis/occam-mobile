@@ -11,8 +11,13 @@ import logger from '../helpers/logger.helper';
  * @param {Object}   options  - Optional { onToken, onCard, pageContext }
  * @returns {Promise<Object>} Final response: { response, suggested_actions, pending_actions, card }
  */
-export const sendMarshalMessage = async (message, history = [], { onToken, onCard, pageContext } = {}) => {
-  const body = { message, history, ...(pageContext ? { page_context: pageContext } : {}) };
+export const sendMarshalMessage = async (message, history = [], { onToken, onCard, pageContext, sessionId } = {}) => {
+  const body = {
+    message,
+    history,
+    ...(pageContext ? { page_context: pageContext } : {}),
+    ...(sessionId ? { session_id: sessionId } : {}),
+  };
 
   // ── Attempt SSE streaming first ──
   try {
