@@ -1,0 +1,47 @@
+# Shared login sub-flow for ADMIN/OWNER accounts.
+# Uses the e2e-staff user who has both owner and admin roles.
+#
+# Requires env vars: ADMIN_EMAIL, ADMIN_PASSWORD, TEST_ORG
+#
+# Admin lands on Dashboard with "Hello, {firstName}" greeting.
+appId: com.occamgolf.app
+
+---
+
+# Wait for the login screen to load
+- waitForAnimationToEnd
+
+# Step 1: Search and select organization
+- tapOn: "Search your organization..."
+- eraseText: 20
+- inputText: ${TEST_ORG}
+
+# Wait for search results dropdown
+- extendedWaitUntil:
+    visible:
+      id: "org-result-${TEST_ORG}"
+    timeout: 30000
+- tapOn:
+    id: "org-result-${TEST_ORG}"
+- waitForAnimationToEnd
+
+# Dismiss keyboard by tapping a static label
+- tapOn: "Organization"
+
+# Step 2: Enter email
+- tapOn: "Enter your email"
+- eraseText: 50
+- inputText: ${ADMIN_EMAIL}
+
+# Step 3: Enter password
+- tapOn: "Enter your password"
+- eraseText: 50
+- inputText: ${ADMIN_PASSWORD}
+
+# Step 4: Sign in
+- tapOn: "Sign In"
+
+# Wait for admin dashboard (admin sees "Hello, {firstName}")
+- extendedWaitUntil:
+    visible: ".*Hello.*"
+    timeout: 150000

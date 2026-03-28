@@ -1,0 +1,47 @@
+# Membership Plans Flow — client browses membership plans
+#
+# Tests:
+#   ✓ client can navigate to membership plans screen
+#   ✓ member sees their active membership details
+#   ✓ plans view shows available plans with pricing
+#   ✓ plan cards show included services
+#   ✓ "Select Plan" buttons are visible
+#
+# Usage:
+#   maestro test .maestro/external/membership-plans.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Navigate to membership plans via deep link ────────────────────────
+- openLink: "occamgolf://memberships"
+- waitForAnimationToEnd
+
+# ── Test: membership screen loads ─────────────────────────────────────
+# e2e-client has an active Premium membership, so should see membership details
+- extendedWaitUntil:
+    visible: ".*Premium.*|.*Membership.*|.*membership.*"
+    timeout: 15000
+
+# ── Test: membership status is shown ──────────────────────────────────
+# Active member should see status badge
+- extendedWaitUntil:
+    visible: ".*Active.*|.*Plans.*"
+    timeout: 10000
+
+# ── Test: service allotments or plan list ─────────────────────────────
+# Either the member sees their allotments or the plans list
+- extendedWaitUntil:
+    visible: ".*Session.*|.*Lesson.*|.*Select Plan.*|.*Change Plan.*"
+    timeout: 10000

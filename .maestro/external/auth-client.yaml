@@ -1,0 +1,47 @@
+# Client Auth Flow — login, verify home screen, logout, verify login screen
+#
+# Tests:
+#   ✓ client can log in via org search + credentials
+#   ✓ client lands on home screen with welcome greeting
+#   ✓ client home shows expected quick actions
+#   ✓ client can log out and returns to login screen
+#
+# Usage:
+#   maestro test .maestro/external/auth-client.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login ──────────────────────────────────────────────────────────────
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Test: client lands on home screen ──────────────────────────────────
+- extendedWaitUntil:
+    visible: "Welcome"
+    timeout: 30000
+
+# ── Test: home screen shows quick actions ──────────────────────────────
+- assertVisible:
+    id: "book-session-button"
+
+# ── Test: client tabs are visible ──────────────────────────────────────
+# Verify the client tab bar labels exist
+- assertVisible: "Home"
+- assertVisible: "Bookings"
+- assertVisible: "Caddie"
+
+# ── Test: logout ───────────────────────────────────────────────────────
+- runFlow: ../helpers/logout.yaml
+
+# ── Test: back on login screen ─────────────────────────────────────────
+- assertVisible: "Sign In"
+- assertVisible: "Search your organization..."

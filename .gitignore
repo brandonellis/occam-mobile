@@ -44,3 +44,6 @@ yarn-error.*
 credentials.json
 credentials/
 build/
+
+# local build number tracker
+.build-number

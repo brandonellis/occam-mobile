@@ -1,84 +1,63 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IconButton, TouchableRipple } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
-import { getBookings } from '../../services/bookings.api';
-import { getMyMembership } from '../../services/accounts.api';
 import { isMembershipActive } from '../../helpers/membership.helper';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
 import { DashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import useUnreadNotifications from '../../hooks/useUnreadNotifications';
+import useBookingsQuery from '../../hooks/useBookingsQuery';
+import useMyMembershipSelfQuery from '../../hooks/useMyMembershipSelfQuery';
+import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
 import { colors } from '../../theme';
-import logger from '../../helpers/logger.helper';
 
 const ClientHomeScreen = ({ navigation }) => {
   const { user, company } = useAuth();
   const firstName = user?.first_name || user?.name?.split(' ')[0] || '';
 
-  const [sessions, setSessions] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState(null);
-  const [hasMembership, setHasMembership] = useState(false);
   const { unreadCount } = useUnreadNotifications();
 
   const todayKey = useMemo(() => getTodayKey(company), [company]);
   const futureKey = useMemo(() => getFutureDateKey(company, 30), [company]);
 
-  const loadBookings = useCallback(async (showRefresh = false) => {
-    if (!user?.id) return;
-    try {
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
-      const { data } = await getBookings({
-        client_id: user.id,
-        start_date: todayKey,
-        end_date: futureKey,
-      });
-      const sorted = (data || []).sort((a, b) =>
-        (a.start_time || '').localeCompare(b.start_time || '')
-      );
-      setSessions(sorted);
-      setError(null);
-    } catch (err) {
-      logger.warn('Failed to load bookings:', err?.message || err);
-      setError('Unable to load your sessions. Pull down to retry.');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [user?.id, todayKey, futureKey]);
+  const bookingParams = useMemo(() => ({
+    client_id: user?.id,
+    start_date: todayKey,
+    end_date: futureKey,
+  }), [user?.id, todayKey, futureKey]);
 
-  const checkMembership = useCallback(async () => {
-    try {
-      const result = await getMyMembership();
-      setHasMembership(isMembershipActive(result?.data || result));
-    } catch (err) {
-      logger.warn('Failed to check membership:', err?.message || err);
-    }
-  }, []);
+  const { data: rawSessions, isLoading, refetch: refetchBookings, isRefetching: bookingsRefetching, error } = useBookingsQuery(bookingParams, { enabled: !!user?.id });
+  const { data: membershipData, refetch: refetchMembership, isRefetching: membershipRefetching } = useMyMembershipSelfQuery();
 
-  // Refetch every time the screen comes into focus (e.g. after booking)
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadBookings();
-      checkMembership();
-    });
-    return unsubscribe;
-  }, [navigation, loadBookings, checkMembership]);
+  const refetch = useCallback(() => {
+    refetchBookings();
+    refetchMembership();
+  }, [refetchBookings, refetchMembership]);
+
+  useRefetchOnFocus(refetch);
+
+  const isRefreshing = bookingsRefetching || membershipRefetching;
+  const hasMembership = isMembershipActive(membershipData);
+
+  const sessions = useMemo(() => {
+    const list = rawSessions || [];
+    return [...list].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+  }, [rawSessions]);
 
   // Filter to only upcoming sessions using native Date (Hermes-safe)
-  const nowMs = Date.now();
-  const upcomingSessions = sessions.filter((s) => {
-    if (!s.start_time) return true;
-    const cutoff = s.end_time || s.start_time;
-    return new Date(cutoff).getTime() >= nowMs;
-  });
+  const upcomingSessions = useMemo(() => {
+    const nowMs = Date.now();
+    return sessions.filter((s) => {
+      if (!s.start_time) return true;
+      const cutoff = s.end_time || s.start_time;
+      return new Date(cutoff).getTime() >= nowMs;
+    });
+  }, [sessions]);
 
   if (isLoading) {
     return (
@@ -96,7 +75,7 @@ const ClientHomeScreen = ({ navigation }) => {
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadBookings(true)}
+              onRefresh={refetch}
               tintColor={colors.primary}
             />
           }
@@ -107,9 +86,9 @@ const ClientHomeScreen = ({ navigation }) => {
           <EmptyState
             icon="cloud-offline-outline"
             title="Couldn't Load Sessions"
-            message={error}
+            message="Unable to load your sessions. Pull down to retry."
             actionLabel="Retry"
-            onAction={() => loadBookings()}
+            onAction={refetch}
           />
         </ScrollView>
       </SafeAreaView>
@@ -123,7 +102,7 @@ const ClientHomeScreen = ({ navigation }) => {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={() => loadBookings(true)}
+            onRefresh={refetch}
             tintColor={colors.primary}
           />
         }

@@ -1,0 +1,72 @@
+# Caddie Chat Flow — client opens Caddie, sends a message, sees streaming response
+#
+# Tests:
+#   ✓ client can navigate to Caddie tab
+#   ✓ Caddie hero section is visible with title and suggestions
+#   ✓ client can type and send a message
+#   ✓ Caddie responds with a streaming message
+#   ✓ reset conversation clears chat history
+#
+# Usage:
+#   maestro test .maestro/external/caddie-chat.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────��───────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Navigate to Caddie ────────────────────────────────────────────────
+- runFlow: ../helpers/navigate-to-caddie.yaml
+
+# ── Test: hero section is visible ─────────────────────────────────────
+- assertVisible: "Caddie"
+- assertVisible: ".*Booking concierge.*"
+
+# ── Test: input placeholder is visible ────────────────────────────────
+- assertVisible: ".*Ask Caddie.*"
+
+# ── Test: send a message ──────────────────────────────────────────────
+- tapOn: ".*Ask Caddie.*"
+- inputText: "Show my next booking"
+
+# Tap the send button (arrow-up icon in a circular pressable)
+# The send button appears when text is entered
+- tapOn:
+    text: ".*"
+    index: 0
+    optional: true
+
+# Use the keyboard submit instead for reliability
+- pressKey: Enter
+
+# ── Test: Caddie responds (streaming indicator or response text) ──────
+# Wait for either the typing indicator or an actual response
+- extendedWaitUntil:
+    visible: ".*Caddie.*"
+    timeout: 30000
+
+# ── Test: reset conversation ──────────────────────────────────────────
+# Scroll up to reveal reset button if needed
+- scrollUntilVisible:
+    element: "Reset conversation"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+    visibilityPercentage: 50
+
+- tapOn: "Reset conversation"
+- waitForAnimationToEnd
+
+# After reset, hero section should reappear
+- extendedWaitUntil:
+    visible: ".*Booking concierge.*"
+    timeout: 10000

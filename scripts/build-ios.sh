@@ -71,15 +71,23 @@ fi
 
 ok "Preflight checks passed"
 
-# ── Version bump prompt ───────────────────────────────────────
+# ── Version & build number ──────────────────────────────────────
+# Build number is persisted in a local file so it survives
+# `expo prebuild --clean` (which wipes the ios/ directory).
+BUILD_NUMBER_FILE="$PROJECT_DIR/.build-number"
+
 if [ "$BUILD" = true ]; then
   CURRENT_VERSION=$(cd "$PROJECT_DIR" && node -e "console.log(require('./app.json').expo.version)")
   log "Current app version: $CURRENT_VERSION"
 
-  # Read current build number from Xcode project
-  CURRENT_BUILD=$(xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -showBuildSettings 2>/dev/null \
-    | grep "CURRENT_PROJECT_VERSION" | head -1 | awk '{print $NF}')
-  CURRENT_BUILD="${CURRENT_BUILD:-1}"
+  # Read build number from our persistent file (fallback to Xcode project, then 0)
+  if [ -f "$BUILD_NUMBER_FILE" ]; then
+    CURRENT_BUILD=$(cat "$BUILD_NUMBER_FILE")
+  else
+    CURRENT_BUILD=$(xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -showBuildSettings 2>/dev/null \
+      | grep "CURRENT_PROJECT_VERSION" | head -1 | awk '{print $NF}')
+    CURRENT_BUILD="${CURRENT_BUILD:-0}"
+  fi
   NEXT_BUILD=$((CURRENT_BUILD + 1))
 
   log "Current build number: $CURRENT_BUILD"
@@ -91,12 +99,6 @@ if [ "$BUILD" = true ]; then
   read -rp "$(echo -e "${YELLOW}Build number $NEXT_BUILD ok? Enter different number or press Enter:${NC} ")" CUSTOM_BUILD
   NEXT_BUILD="${CUSTOM_BUILD:-$NEXT_BUILD}"
 
-  # Update build number in Xcode project
-  log "Setting build number to $NEXT_BUILD..."
-  cd "$IOS_DIR"
-  agvtool new-version -all "$NEXT_BUILD" >/dev/null 2>&1
-  cd "$PROJECT_DIR"
-
   # Update version in app.json if changed
   if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
     log "Updating app.json version to $NEW_VERSION..."
@@ -106,14 +108,8 @@ if [ "$BUILD" = true ]; then
       config.expo.version = '$NEW_VERSION';
       fs.writeFileSync('app.json', JSON.stringify(config, null, 2) + '\n');
     "
-    # Update Xcode marketing version
-    cd "$IOS_DIR"
-    agvtool new-marketing-version "$NEW_VERSION" >/dev/null 2>&1
-    cd "$PROJECT_DIR"
     ok "Version updated to $NEW_VERSION"
   fi
-
-  ok "Build number set to $NEXT_BUILD"
 fi
 
 # ── Prebuild (regenerate native project) ─────────────────────
@@ -128,6 +124,20 @@ if [ "$BUILD" = true ]; then
   cd "$PROJECT_DIR"
 
   ok "Prebuild complete"
+
+  # ── Apply build number AFTER prebuild ────────────────────────
+  # prebuild --clean wipes ios/, so we must set the build number after.
+  log "Setting build number to $NEXT_BUILD..."
+  cd "$IOS_DIR"
+  agvtool new-version -all "$NEXT_BUILD" >/dev/null 2>&1
+  if [ "$NEW_VERSION" != "$CURRENT_VERSION" ]; then
+    agvtool new-marketing-version "$NEW_VERSION" >/dev/null 2>&1
+  fi
+  cd "$PROJECT_DIR"
+
+  # Persist build number so it survives the next --clean prebuild
+  echo "$NEXT_BUILD" > "$BUILD_NUMBER_FILE"
+  ok "Build number set to $NEXT_BUILD (saved to .build-number)"
 fi
 
 # ── Build archive ─────────────────────────────────────────────

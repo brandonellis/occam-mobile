@@ -1,0 +1,71 @@
+# Membership Booking Discount Flow — member books a covered service, verifies pricing
+#
+# Tests:
+#   ✓ member client starts a booking for a membership-covered service
+#   ✓ confirmation screen shows membership coverage (discounted or $0 price)
+#   ✓ membership badge or coverage indicator is visible
+#
+# This extends booking-flow-auth.yaml by focusing on the pricing aspect.
+#
+# Usage:
+#   maestro test .maestro/external/membership-booking-discount.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login as member ────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Navigate to booking ───────────────────────────────────────────────
+- runFlow: ../helpers/navigate-to-booking.yaml
+
+# ── Select a membership-covered service ───────────────────────────────
+# "1:1 Coaching Session" is covered by the Premium membership
+- tapOn:
+    text: ".*1:1 Coaching Session.*"
+- waitForAnimationToEnd
+
+# Handle location selection if shown
+- runFlow: ../helpers/handle-location-selection.yaml
+
+# Select coach
+- extendedWaitUntil:
+    visible: "Select a Coach"
+    timeout: 15000
+- runFlow: ../helpers/handle-coach-selection.yaml
+
+# Select timeslot
+- extendedWaitUntil:
+    visible: "Select Date & Time"
+    timeout: 15000
+- extendedWaitUntil:
+    visible: ".*AVAILABLE TIMES.*"
+    timeout: 30000
+- tapOn:
+    id: "time-slot-.*"
+    index: 0
+- waitForAnimationToEnd
+- tapOn:
+    id: "continue-button"
+- waitForAnimationToEnd
+
+# ── Test: confirmation shows membership coverage ──────────────────────
+- extendedWaitUntil:
+    visible: ".*Total.*"
+    timeout: 15000
+
+# Membership coverage should show $0 or "Covered" or "Membership" indicator
+- extendedWaitUntil:
+    visible: ".*\\$0.*|.*Covered.*|.*Membership.*|.*Member.*"
+    timeout: 10000
+
+- assertVisible:
+    id: "confirm-booking-button"

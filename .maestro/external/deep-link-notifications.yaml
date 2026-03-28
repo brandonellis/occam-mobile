@@ -1,0 +1,41 @@
+# Deep Link — Notifications — verifies deep linking to notifications
+#
+# Tests:
+#   ✓ opening occamgolf://notifications navigates to notifications screen
+#   ✓ notifications screen loads correctly from deep link
+#
+# Usage:
+#   maestro test .maestro/external/deep-link-notifications.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Ensure we're on home screen first ─────────────────────────────────
+- extendedWaitUntil:
+    visible: "Welcome"
+    timeout: 30000
+
+# ── Test: deep link to notifications ──────────────────────────────────
+- openLink: "occamgolf://notifications"
+- waitForAnimationToEnd
+
+# ── Test: notifications screen loads ──────────────────────────────────
+- extendedWaitUntil:
+    visible: "Notifications"
+    timeout: 15000
+
+# Content should load (notifications or empty state)
+- extendedWaitUntil:
+    visible: ".*No Notifications.*|.*ago.*|.*Read All.*"
+    timeout: 10000

@@ -5,6 +5,7 @@
 #   1. Reset keychain → login as member client → run member flows
 #   2. Reset keychain → login as non-member client → run non-member flows
 #   3. Reset keychain → login as coach → run coach flows
+#   4. Reset keychain → login as admin → run admin flows
 #
 # Usage:
 #   cd occam-mobile && .maestro/run-all.sh
@@ -20,15 +21,17 @@ APP_ID="com.occamgolf.app"
 DEVICE_ID="${MAESTRO_DEVICE_ID:-booted}"
 MAESTRO="${MAESTRO_BIN:-maestro}"
 
-# ── Env vars ─────────────────────────────────────────────────────────
-MEMBER_EMAIL="e2e-client@occam.test"
-MEMBER_PASSWORD="password"
-GUEST_EMAIL="e2e-guest@occam.test"
-GUEST_PASSWORD="password"
-COACH_EMAIL="coach.alpha@e2e-golf.test"
-COACH_PASSWORD="password"
-TEST_ORG="e2e"
-TEST_CLIENT_NAME="E2E Client"
+# ── Env vars (override via environment or .env file) ─────────────────
+MEMBER_EMAIL="${E2E_MEMBER_EMAIL:-e2e-client@occam.test}"
+MEMBER_PASSWORD="${E2E_MEMBER_PASSWORD:-password}"
+GUEST_EMAIL="${E2E_GUEST_EMAIL:-e2e-guest@occam.test}"
+GUEST_PASSWORD="${E2E_GUEST_PASSWORD:-password}"
+COACH_EMAIL="${E2E_COACH_EMAIL:-coach.alpha@e2e-golf.test}"
+COACH_PASSWORD="${E2E_COACH_PASSWORD:-password}"
+ADMIN_EMAIL="${E2E_ADMIN_EMAIL:-e2e-staff@occam.test}"
+ADMIN_PASSWORD="${E2E_ADMIN_PASSWORD:-password}"
+TEST_ORG="${E2E_TEST_ORG:-e2e}"
+TEST_CLIENT_NAME="${E2E_TEST_CLIENT_NAME:-E2E Client}"
 
 PASSED=0
 FAILED=0
@@ -69,6 +72,20 @@ echo "════════════════════════�
 
 reset_keychain
 
+run_flow "auth-client" \
+  .maestro/external/auth-client.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+reset_keychain
+
+run_flow "booking-flow" \
+  .maestro/external/booking-flow.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
 run_flow "booking-flow-auth" \
   .maestro/external/booking-flow-auth.yaml \
   -e CLIENT_EMAIL="$MEMBER_EMAIL" \
@@ -93,6 +110,60 @@ run_flow "online-booking-controls" \
   -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
   -e TEST_ORG="$TEST_ORG"
 
+run_flow "membership-booking-discount" \
+  .maestro/external/membership-booking-discount.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "caddie-chat" \
+  .maestro/external/caddie-chat.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "client-bookings" \
+  .maestro/external/client-bookings.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "membership-plans" \
+  .maestro/external/membership-plans.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "notifications" \
+  .maestro/external/notifications.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "client-profile" \
+  .maestro/external/client-profile.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "tab-navigation-client" \
+  .maestro/external/tab-navigation-client.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "deep-link-booking" \
+  .maestro/external/deep-link-booking.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "deep-link-notifications" \
+  .maestro/external/deep-link-notifications.yaml \
+  -e CLIENT_EMAIL="$MEMBER_EMAIL" \
+  -e CLIENT_PASSWORD="$MEMBER_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
 # ── Phase 2: Non-member client flows ─────────────────────────────────
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
@@ -107,11 +178,25 @@ run_flow "booking-visibility" \
   -e CLIENT_PASSWORD="$GUEST_PASSWORD" \
   -e TEST_ORG="$TEST_ORG"
 
+run_flow "package-list" \
+  .maestro/external/package-list.yaml \
+  -e CLIENT_EMAIL="$GUEST_EMAIL" \
+  -e CLIENT_PASSWORD="$GUEST_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
 # ── Phase 3: Coach flows ─────────────────────────────────────────────
 echo ""
 echo "═══════════════════════════════════════════════════════════════"
 echo "  Phase 3: Coach Flows (${COACH_EMAIL})"
 echo "═══════════════════════════════════════════════════════════════"
+
+reset_keychain
+
+run_flow "auth-coach" \
+  .maestro/external/auth-coach.yaml \
+  -e COACH_EMAIL="$COACH_EMAIL" \
+  -e COACH_PASSWORD="$COACH_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
 
 reset_keychain
 
@@ -121,6 +206,58 @@ run_flow "booking-flow-coach" \
   -e COACH_PASSWORD="$COACH_PASSWORD" \
   -e TEST_ORG="$TEST_ORG" \
   -e TEST_CLIENT_NAME="$TEST_CLIENT_NAME"
+
+run_flow "marshal-chat" \
+  .maestro/external/marshal-chat.yaml \
+  -e COACH_EMAIL="$COACH_EMAIL" \
+  -e COACH_PASSWORD="$COACH_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "coach-schedule" \
+  .maestro/external/coach-schedule.yaml \
+  -e COACH_EMAIL="$COACH_EMAIL" \
+  -e COACH_PASSWORD="$COACH_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "coach-profile" \
+  .maestro/external/coach-profile.yaml \
+  -e COACH_EMAIL="$COACH_EMAIL" \
+  -e COACH_PASSWORD="$COACH_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "tab-navigation-coach" \
+  .maestro/external/tab-navigation-coach.yaml \
+  -e COACH_EMAIL="$COACH_EMAIL" \
+  -e COACH_PASSWORD="$COACH_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+# ── Phase 4: Admin flows ─────────────────────────────────────────────
+echo ""
+echo "═══════════════════════════════════════════════════════════════"
+echo "  Phase 4: Admin Flows (${ADMIN_EMAIL})"
+echo "═══════════════════════════════════════════════════════════════"
+
+reset_keychain
+
+run_flow "auth-admin" \
+  .maestro/external/auth-admin.yaml \
+  -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+  -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+reset_keychain
+
+run_flow "marshal-admin-chat" \
+  .maestro/external/marshal-admin-chat.yaml \
+  -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+  -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
+
+run_flow "admin-schedule" \
+  .maestro/external/admin-schedule.yaml \
+  -e ADMIN_EMAIL="$ADMIN_EMAIL" \
+  -e ADMIN_PASSWORD="$ADMIN_PASSWORD" \
+  -e TEST_ORG="$TEST_ORG"
 
 # ── Summary ──────────────────────────────────────────────────────────
 echo ""

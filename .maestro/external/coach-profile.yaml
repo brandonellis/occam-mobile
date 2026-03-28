@@ -1,0 +1,43 @@
+# Coach Profile Flow — coach views profile and settings
+#
+# Tests:
+#   ✓ coach can navigate to profile tab
+#   ✓ profile shows coach name/email
+#   ✓ sign out button is visible
+#
+# Usage:
+#   maestro test .maestro/external/coach-profile.yaml \
+#     -e COACH_EMAIL=coach.alpha@e2e-golf.test \
+#     -e COACH_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login-coach.yaml
+
+# ── Navigate to Profile tab via deep link ─────────────────────────────
+- openLink: "occamgolf://coach/profile"
+- waitForAnimationToEnd
+
+# ── Test: profile screen loads ────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Coach.*Alpha.*|.*coach.*alpha.*"
+    timeout: 15000
+
+# ── Test: sign out button visible ─────────────────────────────────────
+- scrollUntilVisible:
+    element:
+      id: "sign-out-button"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+
+- assertVisible:
+    id: "sign-out-button"

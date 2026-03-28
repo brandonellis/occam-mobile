@@ -1,0 +1,58 @@
+# Tab Navigation — Client — verifies all client tabs load correctly
+#
+# Tests:
+#   ✓ Home tab loads with welcome greeting
+#   ✓ Bookings tab loads with upcoming/past tabs
+#   ✓ Activity tab loads
+#   ✓ Caddie tab loads with hero section
+#   ✓ Profile tab loads with user info
+#
+# Usage:
+#   maestro test .maestro/external/tab-navigation-client.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Test: Home tab (default) ──────────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Welcome"
+    timeout: 30000
+
+# ── Test: Bookings tab ────────────────────────────────────────────────
+- openLink: "occamgolf://bookings"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Upcoming"
+    timeout: 15000
+
+# ── Test: Activity tab ────────────────────────────────────────────────
+- openLink: "occamgolf://activity"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: ".*Activity.*|.*Progress.*|.*Feed.*"
+    timeout: 15000
+
+# ── Test: Caddie tab ──────────────────────────────────────────────────
+- openLink: "occamgolf://caddie"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Caddie"
+    timeout: 15000
+
+# ── Test: Profile tab ─────────────────────────────────────────────────
+- openLink: "occamgolf://profile"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: ".*e2e-client.*|.*E2E.*"
+    timeout: 15000

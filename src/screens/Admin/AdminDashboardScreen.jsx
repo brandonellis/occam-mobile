@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import useAuth from '../../hooks/useAuth';
 import useProactiveInsights from '../../hooks/useProactiveInsights';
 import { SCREENS } from '../../constants/navigation.constants';
 import { formatDateKeyLong, formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
-import { getBookings } from '../../services/bookings.api';
 import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
 import {
   getSessionCoachNames,
@@ -28,8 +27,9 @@ import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import ProactiveInsightsSection from '../../components/Dashboard/ProactiveInsightsSection';
 import useUnreadNotifications from '../../hooks/useUnreadNotifications';
+import useBookingsQuery from '../../hooks/useBookingsQuery';
+import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
 import { colors } from '../../theme';
-import logger from '../../helpers/logger.helper';
 
 const QUICK_ACTIONS = [
   {
@@ -69,10 +69,6 @@ const QUICK_ACTIONS = [
 const AdminDashboardScreen = ({ navigation }) => {
   const { user, company } = useAuth();
   const firstName = user?.first_name || user?.name?.split(' ')[0] || 'Admin';
-  const [bookings, setBookings] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState(null);
   const { unreadCount } = useUnreadNotifications();
   const insights = useProactiveInsights();
   const { deliverIntent } = useMarshalIntent();
@@ -84,47 +80,20 @@ const AdminDashboardScreen = ({ navigation }) => {
 
   const todayKey = getTodayKey(company);
 
-  const loadDashboard = useCallback(async (showRefresh = false) => {
-    try {
-      if (showRefresh) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
+  const bookingParams = useMemo(() => ({
+    start_date: todayKey,
+    end_date: todayKey,
+    no_paginate: true,
+    status: 'all',
+  }), [todayKey]);
 
-      const [bookingsRes] = await Promise.allSettled([
-        getBookings({ start_date: todayKey, end_date: todayKey, no_paginate: true, status: 'all' }),
-      ]);
+  const { data: rawBookings, isLoading, refetch, isRefetching: isRefreshing, error } = useBookingsQuery(bookingParams);
+  useRefetchOnFocus(refetch);
 
-      setError(null);
-
-      if (bookingsRes.status === 'fulfilled') {
-        const data = bookingsRes.value?.data || [];
-        const sorted = [...data].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
-        setBookings(sorted);
-      } else {
-        setBookings([]);
-      }
-
-    } catch (err) {
-      logger.warn('Failed to load admin dashboard:', err?.message || err);
-      setError('Unable to load the admin dashboard. Pull down to retry.');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [todayKey]);
-
-  useEffect(() => {
-    loadDashboard();
-  }, [loadDashboard]);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadDashboard();
-    });
-    return unsubscribe;
-  }, [navigation, loadDashboard]);
+  const bookings = useMemo(() => {
+    const list = rawBookings || [];
+    return [...list].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+  }, [rawBookings]);
 
   const upcomingBookings = useMemo(() => {
     const now = Date.now();
@@ -174,7 +143,7 @@ const AdminDashboardScreen = ({ navigation }) => {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={() => loadDashboard(true)}
+            onRefresh={refetch}
             tintColor={colors.primary}
           />
         }
@@ -185,9 +154,9 @@ const AdminDashboardScreen = ({ navigation }) => {
           <EmptyState
             icon="cloud-off-outline"
             title="Couldn't Load Dashboard"
-            message={error}
+            message="Unable to load the admin dashboard. Pull down to retry."
             actionLabel="Retry"
-            onAction={() => loadDashboard()}
+            onAction={refetch}
           />
         ) : (
           <>

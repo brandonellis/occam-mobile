@@ -1,0 +1,53 @@
+# Admin Auth Flow — login, verify dashboard, verify tabs, logout
+#
+# Tests:
+#   ✓ admin can log in via org search + credentials
+#   ✓ admin lands on dashboard with greeting
+#   ✓ admin dashboard shows metrics and quick actions
+#   ✓ admin tabs include Schedule, Clients, Marshal
+#   ✓ admin can log out and returns to login screen
+#
+# Seeded data:
+#   - e2e-staff@occam.test / password (owner + admin roles)
+#
+# Usage:
+#   maestro test .maestro/external/auth-admin.yaml \
+#     -e ADMIN_EMAIL=e2e-staff@occam.test \
+#     -e ADMIN_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login as admin ─────────────────────────────────────────────────────
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login-admin.yaml
+
+# ── Test: admin lands on dashboard ─────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Hello.*"
+    timeout: 30000
+
+# ── Test: admin dashboard shows ops badge ──────────────────────────────
+- assertVisible: "Admin Operations"
+
+# ── Test: dashboard shows quick action cards ───────────────────────────
+- assertVisible: ".*New Booking.*"
+- assertVisible: ".*Today's Schedule.*"
+
+# ── Test: admin tabs are visible ───────────────────────────────────────
+- assertVisible: "Dashboard"
+- assertVisible: "Schedule"
+- assertVisible: "Clients"
+- assertVisible: "Marshal"
+
+# ── Test: logout ───────────────────────────────────────────────────────
+- runFlow: ../helpers/logout.yaml
+
+# ── Test: back on login screen ─────────────────────────────────────────
+- assertVisible: "Sign In"

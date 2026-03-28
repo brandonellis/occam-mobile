@@ -15,7 +15,7 @@ import EmptyState from '../../components/EmptyState';
 import ServiceUsageCard from '../../components/ServiceUsageCard';
 import { membershipStyles as styles } from '../../styles/membership.styles';
 import { globalStyles } from '../../styles/global.styles';
-import { getMembershipPlans, getMyMembership, pauseMembership, resumeMembership } from '../../services/accounts.api';
+import { pauseMembership, resumeMembership } from '../../services/accounts.api';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { getBillingCycleLabel } from '../../constants/billing.constants';
 import {
@@ -26,7 +26,9 @@ import {
 } from '../../helpers/membership.helper';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
-import logger from '../../helpers/logger.helper';
+import useMyMembershipSelfQuery from '../../hooks/useMyMembershipSelfQuery';
+import useMembershipPlansQuery from '../../hooks/useMembershipPlansQuery';
+import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
 
 // ─── Active Membership View ─────────────────────────────────────────────────
 const ActiveMembershipView = ({ membership, onUpgrade, onPause, onResume }) => {
@@ -296,65 +298,45 @@ const PlansListView = ({ plans, selectedCycles, onSelectCycle, onSelectPlan }) =
 const MembershipPlansScreen = ({ navigation, route }) => {
   const showPlansOnly = route.params?.showPlansOnly || false;
 
-  const [membership, setMembership] = useState(null);
-  const [plans, setPlans] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState(null);
+  const { data: membership, isLoading: membershipLoading, refetch: refetchMembership, isRefetching: membershipRefetching, error: membershipError } = useMyMembershipSelfQuery();
+
+  // Show plans if: showPlansOnly flag, or no active membership
+  const shouldShowPlans = showPlansOnly || (!membershipLoading && !membership);
+  const { data: plans = [], isLoading: plansLoading, refetch: refetchPlans, isRefetching: plansRefetching, error: plansError } = useMembershipPlansQuery({
+    enabled: shouldShowPlans,
+  });
+
+  const refetch = useCallback(() => {
+    refetchMembership();
+    if (shouldShowPlans) refetchPlans();
+  }, [refetchMembership, refetchPlans, shouldShowPlans]);
+
+  useRefetchOnFocus(refetch);
+
+  const isLoading = membershipLoading || (shouldShowPlans && plansLoading);
+  const isRefreshing = membershipRefetching || plansRefetching;
+  const error = membershipError || plansError;
+
+  const viewMode = (!membershipLoading && membership && !showPlansOnly) ? 'details' : 'plans';
+
   const [selectedCycles, setSelectedCycles] = useState({});
-  const [viewMode, setViewMode] = useState(showPlansOnly ? 'plans' : null); // null = auto-detect
 
-  const loadData = useCallback(async (showRefresh = false) => {
-    try {
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
-      setError(null);
-
-      // Always fetch current membership (needed for conflict checking even in plans view)
-      try {
-        const membershipRes = await getMyMembership();
-        const membershipData = membershipRes?.data || null;
-        setMembership(membershipData);
-        if (!showPlansOnly && membershipData) {
-          setViewMode('details');
-          return;
-        }
-      } catch (membershipErr) {
-        // 404 = no membership, which is fine — show plans
-        if (membershipErr?.response?.status !== 404) {
-          logger.warn('Failed to fetch membership:', membershipErr?.message);
-        }
-        setMembership(null);
-      }
-
-      // No active membership (or showPlansOnly) — load available plans
-      setViewMode('plans');
-      const { data } = await getMembershipPlans();
-      const planList = data || [];
-      setPlans(planList);
-
-      const defaults = {};
-      planList.forEach((plan) => {
-        const cycles = plan.billing_cycles || plan.billingCycles || [];
-        const defaultCycle = cycles.find((c) => c.is_default) || cycles[0];
-        if (defaultCycle) defaults[plan.id] = defaultCycle;
-      });
-      setSelectedCycles(defaults);
-    } catch (err) {
-      logger.warn('Failed to load membership data:', err?.message || err);
-      setError('Failed to load membership information.');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [showPlansOnly]);
-
+  // Initialize default billing cycles when plans load
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadData();
-    });
-    return unsubscribe;
-  }, [navigation, loadData]);
+    if (plans.length > 0) {
+      setSelectedCycles((prev) => {
+        const defaults = { ...prev };
+        plans.forEach((plan) => {
+          if (!defaults[plan.id]) {
+            const cycles = plan.billing_cycles || plan.billingCycles || [];
+            const defaultCycle = cycles.find((c) => c.is_default) || cycles[0];
+            if (defaultCycle) defaults[plan.id] = defaultCycle;
+          }
+        });
+        return defaults;
+      });
+    }
+  }, [plans]);
 
   const handleSelectCycle = useCallback((planId, cycle) => {
     setSelectedCycles((prev) => ({ ...prev, [planId]: cycle }));
@@ -430,7 +412,7 @@ const MembershipPlansScreen = ({ navigation, route }) => {
                 pause_start_at: new Date().toISOString(),
                 reason: 'Paused from mobile app',
               });
-              loadData();
+              refetchMembership();
             } catch (err) {
               Alert.alert('Error', err?.response?.data?.message || 'Failed to pause membership.');
             }
@@ -438,7 +420,7 @@ const MembershipPlansScreen = ({ navigation, route }) => {
         },
       ]
     );
-  }, [membership?.id, loadData]);
+  }, [membership?.id, refetchMembership]);
 
   const handleResume = useCallback(() => {
     if (!membership?.id) return;
@@ -452,7 +434,7 @@ const MembershipPlansScreen = ({ navigation, route }) => {
           onPress: async () => {
             try {
               await resumeMembership(membership.id);
-              loadData();
+              refetchMembership();
             } catch (err) {
               Alert.alert('Error', err?.response?.data?.message || 'Failed to resume membership.');
             }
@@ -460,7 +442,7 @@ const MembershipPlansScreen = ({ navigation, route }) => {
         },
       ]
     );
-  }, [membership?.id, loadData]);
+  }, [membership?.id, refetchMembership]);
 
   const screenTitle = viewMode === 'plans' ? 'Membership Plans' : 'Membership';
 
@@ -475,8 +457,8 @@ const MembershipPlansScreen = ({ navigation, route }) => {
         <ListSkeleton count={4} />
       ) : error ? (
         <View style={globalStyles.errorContainer}>
-          <Text style={globalStyles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => loadData()} style={globalStyles.retryButton}>
+          <Text style={globalStyles.errorText}>Failed to load membership information.</Text>
+          <TouchableOpacity onPress={refetch} style={globalStyles.retryButton}>
             <Text style={globalStyles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -486,7 +468,7 @@ const MembershipPlansScreen = ({ navigation, route }) => {
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadData(true)}
+              onRefresh={refetch}
               tintColor={colors.primary}
             />
           }

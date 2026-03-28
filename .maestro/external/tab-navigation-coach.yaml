@@ -1,0 +1,58 @@
+# Tab Navigation — Coach — verifies all coach tabs load correctly
+#
+# Tests:
+#   ✓ Dashboard tab loads with greeting and stats
+#   ✓ Schedule tab loads with date selector
+#   ✓ Clients tab loads
+#   ✓ Marshal tab loads with hero section
+#   ✓ Profile tab loads with coach info
+#
+# Usage:
+#   maestro test .maestro/external/tab-navigation-coach.yaml \
+#     -e COACH_EMAIL=coach.alpha@e2e-golf.test \
+#     -e COACH_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login-coach.yaml
+
+# ── Test: Dashboard tab (default) ────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Hello.*Coach.*"
+    timeout: 30000
+
+# ── Test: Schedule tab ────────────────────────────────────────────────
+- openLink: "occamgolf://coach/schedule"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Schedule"
+    timeout: 15000
+
+# ── Test: Clients tab ─────────────────────────────────────────────────
+- openLink: "occamgolf://coach/clients"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: ".*Client.*"
+    timeout: 15000
+
+# ── Test: Marshal tab ─────────────────────────────────────────────────
+- openLink: "occamgolf://marshal"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: "Marshal"
+    timeout: 15000
+
+# ── Test: Profile tab ─────────────────────────────────────────────────
+- openLink: "occamgolf://coach/profile"
+- waitForAnimationToEnd
+- extendedWaitUntil:
+    visible: ".*Coach.*Alpha.*|.*coach.*alpha.*"
+    timeout: 15000

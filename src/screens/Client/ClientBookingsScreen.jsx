@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState, useMemo, useRef } from 'react';
+import React, { useCallback, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,13 +11,15 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TouchableRipple, Button as PaperButton } from 'react-native-paper';
 import { SCREENS } from '../../constants/navigation.constants';
-import { getBookings, cancelBooking } from '../../services/bookings.api';
+import { cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, formatDateInTz, getTodayKey, getFutureDateKey } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 import { bookingsListStyles as styles } from '../../styles/bookingsList.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { ListSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
+import useBookingsQuery from '../../hooks/useBookingsQuery';
+import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
 import { colors } from '../../theme';
 import logger from '../../helpers/logger.helper';
 
@@ -46,9 +48,6 @@ const ClientBookingsScreen = ({ navigation }) => {
   const { user, company } = useAuth();
   const [activeTab, setActiveTab] = useState(TABS.UPCOMING);
   const [dateFilter, setDateFilter] = useState('all');
-  const [bookings, setBookings] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const dateRange = useMemo(() => {
     if (dateFilter === 'all') return {};
@@ -66,76 +65,40 @@ const ClientBookingsScreen = ({ navigation }) => {
       start_date: getFutureDateKey(company, -days),
       end_date: todayStr,
     };
-  }, [company?.timezone, dateFilter, activeTab]);
+  }, [company, dateFilter, activeTab]);
 
-  const loadBookings = useCallback(async (showRefresh = false) => {
-    if (!company?.timezone || !user?.id) {
-      // Wait for company + user data before loading
-      return;
+  const bookingParams = useMemo(() => ({
+    client_id: user?.id,
+    per_page: 50,
+    ...dateRange,
+  }), [user?.id, dateRange]);
+
+  const { data: rawBookings, isLoading, refetch, isRefetching: isRefreshing, error } = useBookingsQuery(bookingParams, {
+    enabled: !!company?.timezone && !!user?.id,
+  });
+  useRefetchOnFocus(refetch);
+
+  const bookings = useMemo(() => {
+    const all = rawBookings || [];
+    const nowMs = Date.now();
+
+    if (activeTab === TABS.UPCOMING) {
+      return all
+        .filter((b) => {
+          if (!b.start_time) return false;
+          const cutoff = b.end_time || b.start_time;
+          return new Date(cutoff).getTime() >= nowMs;
+        })
+        .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
     }
-    try {
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
-
-      const nowMs = Date.now();
-
-      const params = { client_id: user.id, per_page: 50, ...dateRange };
-      const { data } = await getBookings(params);
-      const all = data || [];
-
-      if (activeTab === TABS.UPCOMING) {
-        const upcoming = all
-          .filter((b) => {
-            if (!b.start_time) return false;
-            // Use end_time if available so in-progress bookings stay in upcoming
-            // until they finish; fall back to start_time
-            const cutoff = b.end_time || b.start_time;
-            return new Date(cutoff).getTime() >= nowMs;
-          })
-          .sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
-        setBookings(upcoming);
-      } else {
-        const past = all
-          .filter((b) => {
-            if (!b.start_time) return true;
-            const cutoff = b.end_time || b.start_time;
-            return new Date(cutoff).getTime() < nowMs;
-          })
-          .sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
-        setBookings(past);
-      }
-    } catch (err) {
-      logger.warn('Failed to load bookings:', err?.message || err);
-      setBookings([]);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [user?.id, company?.timezone, activeTab, dateRange]);
-
-  // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
-  const hasLoaded = useRef(false);
-  const isFocused = useRef(false);
-
-  useEffect(() => {
-    const onFocus = () => {
-      isFocused.current = true;
-      loadBookings(hasLoaded.current);
-      hasLoaded.current = true;
-    };
-    const onBlur = () => { isFocused.current = false; };
-
-    const unsubFocus = navigation.addListener('focus', onFocus);
-    const unsubBlur = navigation.addListener('blur', onBlur);
-    return () => { unsubFocus(); unsubBlur(); };
-  }, [navigation, loadBookings]);
-
-  // Re-fetch when tab or date filter changes while screen is visible
-  useEffect(() => {
-    if (hasLoaded.current && isFocused.current) {
-      loadBookings();
-    }
-  }, [activeTab, dateFilter, loadBookings]);
+    return all
+      .filter((b) => {
+        if (!b.start_time) return true;
+        const cutoff = b.end_time || b.start_time;
+        return new Date(cutoff).getTime() < nowMs;
+      })
+      .sort((a, b) => (b.start_time || '').localeCompare(a.start_time || ''));
+  }, [rawBookings, activeTab]);
 
   const handleCancel = useCallback((booking) => {
     const bookingType = booking.booking_type;
@@ -154,13 +117,10 @@ const ClientBookingsScreen = ({ navigation }) => {
           style: 'destructive',
           onPress: async () => {
             try {
-              // Optimistically remove from list for instant feedback
-              setBookings((prev) => prev.filter((b) => b.id !== booking.id));
               await cancelBooking(booking.id);
-              loadBookings();
+              refetch();
             } catch (err) {
-              // Revert optimistic removal on error
-              loadBookings();
+              refetch();
               const status = err?.response?.status;
               const serverMsg = err?.response?.data?.message;
               if (status === 403 && serverMsg) {
@@ -174,7 +134,7 @@ const ClientBookingsScreen = ({ navigation }) => {
         },
       ]
     );
-  }, [loadBookings]);
+  }, [refetch]);
 
 
   const renderBooking = useCallback(({ item }) => {
@@ -330,6 +290,14 @@ const ClientBookingsScreen = ({ navigation }) => {
 
       {isLoading ? (
         <ListSkeleton count={5} />
+      ) : error ? (
+        <EmptyState
+          icon="cloud-offline-outline"
+          title="Couldn't Load Bookings"
+          message="Unable to load your bookings. Pull down to retry."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
       ) : (
         <FlatList
           data={bookings}
@@ -342,7 +310,7 @@ const ClientBookingsScreen = ({ navigation }) => {
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadBookings(true)}
+              onRefresh={refetch}
               tintColor={colors.primary}
             />
           }
