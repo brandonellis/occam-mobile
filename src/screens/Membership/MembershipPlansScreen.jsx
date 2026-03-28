@@ -18,6 +18,7 @@ import { globalStyles } from '../../styles/global.styles';
 import { pauseMembership, resumeMembership } from '../../services/accounts.api';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { getBillingCycleLabel } from '../../constants/billing.constants';
+import logger from '../../helpers/logger.helper';
 import {
   getMembershipStatus,
   isMembershipPausedNow,
@@ -414,7 +415,8 @@ const MembershipPlansScreen = ({ navigation, route }) => {
               });
               refetchMembership();
             } catch (err) {
-              Alert.alert('Error', err?.response?.data?.message || 'Failed to pause membership.');
+              logger.warn('Failed to pause membership:', err?.response?.data?.message || err?.message);
+              Alert.alert('Error', 'Failed to pause membership. Please try again.');
             }
           },
         },
@@ -436,7 +438,8 @@ const MembershipPlansScreen = ({ navigation, route }) => {
               await resumeMembership(membership.id);
               refetchMembership();
             } catch (err) {
-              Alert.alert('Error', err?.response?.data?.message || 'Failed to resume membership.');
+              logger.warn('Failed to resume membership:', err?.response?.data?.message || err?.message);
+              Alert.alert('Error', 'Failed to resume membership. Please try again.');
             }
           },
         },
