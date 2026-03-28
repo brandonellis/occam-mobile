@@ -61,10 +61,31 @@ const useMarshalActions = ({ chat, dispatch, screenContext }) => {
     }
   }, [chat.isLoading, chat.messages, dispatch]);
 
-  const declineAction = useCallback(() => {
-    // Mark the confirmation message as resolved
-    const pending = findPendingConfirmation(chat.messages);
-    if (pending) {
+  const declineAction = useCallback((action = null, sourceMessageId = null) => {
+    // Find the confirmation message — prefer explicit source, fall back to search
+    const pending = sourceMessageId
+      ? { message: chat.messages.find((m) => m.id === sourceMessageId) }
+      : findPendingConfirmation(chat.messages);
+
+    if (!pending?.message) {
+      logger.warn('declineAction: no matching confirmation message found', { sourceMessageId, actionId: action?.action_id });
+      return;
+    }
+
+    if (action?.action_id) {
+      // Decline only the specific action, keep others
+      const remaining = (pending.message.pendingActions || []).filter(
+        (a) => a.action_id !== action.action_id
+      );
+      dispatch({
+        type: AGENT_CHAT_ACTIONS.UPDATE_MESSAGE,
+        payload: {
+          id: pending.message.id,
+          updates: { pendingActions: remaining, resolved: remaining.length === 0 },
+        },
+      });
+    } else {
+      // No specific action — decline all (legacy behavior)
       dispatch({
         type: AGENT_CHAT_ACTIONS.UPDATE_MESSAGE,
         payload: {
@@ -196,7 +217,7 @@ const useMarshalActions = ({ chat, dispatch, screenContext }) => {
   }, [chat.messages, chat.sendMessage, confirmAction, declineAction, dispatch, screenContext]);
 
   const selectSuggestion = useCallback((suggestion) => {
-    sendMessage(suggestion);
+    sendMessage(suggestion, { fromSuggestedAction: true });
   }, [sendMessage]);
 
   const sendCurrentMessage = useCallback(() => {

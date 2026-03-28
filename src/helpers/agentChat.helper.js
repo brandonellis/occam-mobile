@@ -15,14 +15,14 @@ export const buildMessage = (sender, text, extras = {}) => ({
  */
 export const buildHistory = (messages) =>
   messages
-    .filter((message) => ['assistant', 'user'].includes(message.sender) && typeof message.text === 'string')
+    .filter((message) => (['assistant', 'user'].includes(message.sender) || ['action_result', 'confirmation', 'error'].includes(message.type)) && typeof message.text === 'string')
     .map((message) => {
       let content = message.text;
 
       // Marshal-specific message types need system note annotations
       if (message.type === 'action_result') {
-        const failReason = !message.success && message.text ? ` Reason: ${message.text}` : '';
-        content = `(System note: the action "${message.text}" has already been ${message.success ? 'executed and completed' : `attempted but failed.${failReason}`} Do not re-propose it.)`;
+        const status = message.success ? 'executed and completed' : 'attempted but failed';
+        content = `(System note: an action was ${status}. Result: ${message.text || 'no details'}. Do not re-propose it.)`;
       } else if (message.type === 'confirmation') {
         const actionDesc = message.pendingActions?.map((a) => a.description || a.tool).join(', ') || 'unknown';
         content = `(System note: a mutation was proposed: ${actionDesc}. The user either confirmed or declined it — check subsequent messages for the result.)`;
@@ -41,6 +41,12 @@ export const buildHistory = (messages) =>
         if (message.card) cardAnnotations.push(`${message.card.type || 'data'} card`);
         if (cardAnnotations.length) {
           content += `\n[CARDS SHOWN: ${cardAnnotations.join(', ')}]`;
+        }
+
+        // Annotate suggested actions shown
+        if (message.suggestedActions?.length) {
+          const labels = message.suggestedActions.map((a) => a.label || a.prompt || a).filter(Boolean).join(', ');
+          if (labels) content += `\n[SUGGESTED ACTIONS SHOWN: ${labels}]`;
         }
 
         // Annotate pending actions proposed
