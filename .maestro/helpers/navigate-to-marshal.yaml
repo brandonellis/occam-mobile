@@ -1,0 +1,16 @@
+# Shared helper: navigate to the Marshal AI chat tab.
+# Assumes user is already logged in as a coach or admin.
+#
+# Deep link is used because Maestro taps on React Navigation custom tab bars
+# do NOT reliably trigger onPress on iOS.
+appId: com.occamgolf.app
+
+---
+
+- openLink: "occamgolf://marshal"
+- waitForAnimationToEnd
+
+# Wait for the Marshal screen hero or input to appear
+- extendedWaitUntil:
+    visible: "Marshal"
+    timeout: 15000

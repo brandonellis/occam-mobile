@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   Text,
@@ -14,11 +14,12 @@ import EmptyState from '../../components/EmptyState';
 import ServiceUsageCard from '../../components/ServiceUsageCard';
 import { packageStyles as styles } from '../../styles/packages.styles';
 import { globalStyles } from '../../styles/global.styles';
-import { getPackages, getMyPackages } from '../../services/packages.api';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
-import logger from '../../helpers/logger.helper';
+import usePackagesQuery from '../../hooks/usePackagesQuery';
+import useMyPackagesQuery from '../../hooks/useMyPackagesQuery';
+import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
 
 // ─── Owned Package Card ──────────────────────────────────────────────────────
 const OwnedPackageCard = ({ clientPackage }) => {
@@ -144,53 +145,19 @@ const PackageCard = ({ pkg, onSelect }) => {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 const PackageListScreen = ({ navigation }) => {
-  const [packages, setPackages] = useState([]);
-  const [myPackages, setMyPackages] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState(null);
+  const { data: packages = [], isLoading: packagesLoading, refetch: refetchPackages, isRefetching: packagesRefetching, error: packagesError } = usePackagesQuery();
+  const { data: myPackages = [], isLoading: myPackagesLoading, refetch: refetchMyPackages, isRefetching: myPackagesRefetching } = useMyPackagesQuery();
 
-  const loadData = useCallback(async (showRefresh = false) => {
-    try {
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
-      setError(null);
+  const refetch = useCallback(() => {
+    refetchPackages();
+    refetchMyPackages();
+  }, [refetchPackages, refetchMyPackages]);
 
-      const [packagesResult, myPackagesResult] = await Promise.allSettled([
-        getPackages(),
-        getMyPackages(),
-      ]);
+  useRefetchOnFocus(refetch);
 
-      if (packagesResult.status === 'fulfilled') {
-        const list = packagesResult.value;
-        setPackages(Array.isArray(list) ? list : []);
-      } else {
-        logger.warn('Failed to load packages:', packagesResult.reason?.message);
-        setPackages([]);
-      }
-
-      if (myPackagesResult.status === 'fulfilled') {
-        const list = myPackagesResult.value;
-        setMyPackages(Array.isArray(list) ? list : []);
-      } else {
-        // Non-fatal — user may not have any packages
-        setMyPackages([]);
-      }
-    } catch (err) {
-      logger.warn('Failed to load package data:', err?.message || err);
-      setError('Failed to load packages.');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadData();
-    });
-    return unsubscribe;
-  }, [navigation, loadData]);
+  const isLoading = packagesLoading || myPackagesLoading;
+  const isRefreshing = packagesRefetching || myPackagesRefetching;
+  const error = packagesError;
 
   const handleSelectPackage = useCallback(
     (pkg) => {
@@ -212,8 +179,8 @@ const PackageListScreen = ({ navigation }) => {
         <ListSkeleton count={3} />
       ) : error ? (
         <View style={globalStyles.errorContainer}>
-          <Text style={globalStyles.errorText}>{error}</Text>
-          <TouchableOpacity onPress={() => loadData()} style={globalStyles.retryButton}>
+          <Text style={globalStyles.errorText}>Failed to load packages.</Text>
+          <TouchableOpacity onPress={refetch} style={globalStyles.retryButton}>
             <Text style={globalStyles.retryText}>Retry</Text>
           </TouchableOpacity>
         </View>
@@ -223,7 +190,7 @@ const PackageListScreen = ({ navigation }) => {
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadData(true)}
+              onRefresh={refetch}
               tintColor={colors.primary}
             />
           }

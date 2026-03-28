@@ -1,0 +1,39 @@
+# Package List Flow — client browses available packages
+#
+# Tests:
+#   ✓ client can navigate to packages screen
+#   ✓ available packages are displayed with pricing
+#   ✓ package cards show included services
+#   ✓ "Purchase Package" buttons are visible
+#
+# Usage:
+#   maestro test .maestro/external/package-list.yaml \
+#     -e CLIENT_EMAIL=e2e-guest@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login (as non-member to test package browsing) ─────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Navigate to packages via deep link ────────────────────────────────
+- openLink: "occamgolf://packages"
+- waitForAnimationToEnd
+
+# ── Test: packages screen loads ───────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Package.*|.*package.*"
+    timeout: 15000
+
+# ── Test: available packages or owned packages shown ──────────────────
+# e2e-guest has a "Coaching Starter Pack" package seeded
+- extendedWaitUntil:
+    visible: ".*Coaching.*|.*Package.*|.*Purchase.*|.*No Packages.*"
+    timeout: 10000

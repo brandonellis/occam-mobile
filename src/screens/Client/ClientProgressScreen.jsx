@@ -1,22 +1,16 @@
-import React, { useEffect, useCallback, useState, useRef } from 'react';
+import React, { useEffect, useCallback, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
-  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TouchableRipple } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
-import {
-  getClientPerformanceCurriculum,
-  getClientPerformanceSnapshots,
-  getClientSharedMedia,
-} from '../../services/accounts.api';
 import { progressStyles as styles } from '../../styles/progress.styles';
 import { ListSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
@@ -25,7 +19,10 @@ import { colors } from '../../theme';
 import { resolveMediaUrl } from '../../helpers/media.helper';
 import AuthImage from '../../components/AuthImage';
 import { ActivityFeedContent } from './ClientActivityFeedScreen';
-import logger from '../../helpers/logger.helper';
+import useCurriculumQuery from '../../hooks/useCurriculumQuery';
+import useReportsQuery from '../../hooks/useReportsQuery';
+import useResourcesQuery from '../../hooks/useResourcesQuery';
+import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
 
 const TABS = { FEED: 'feed', CURRICULUM: 'curriculum', REPORTS: 'reports', RESOURCES: 'resources' };
 
@@ -148,63 +145,34 @@ const ClientProgressScreen = () => {
     });
     return unsubscribe;
   }, [navigation, route.params?.initialTab]);
-  const [curriculum, setCurriculum] = useState({ program: null, modules: [] });
-  const [reports, setReports] = useState([]);
-  const [resources, setResources] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState({});
-  const hasLoaded = useRef(false);
+
+  const isCurriculum = activeTab === TABS.CURRICULUM;
+  const isReports = activeTab === TABS.REPORTS;
+  const isResources = activeTab === TABS.RESOURCES;
+
+  const { data: curriculum = { program: null, modules: [] }, isLoading: curriculumLoading, refetch: refetchCurriculum, isRefetching: curriculumRefetching, error: curriculumError } =
+    useCurriculumQuery(clientId, { enabled: !!clientId && isCurriculum });
+  const { data: reports = [], isLoading: reportsLoading, refetch: refetchReports, isRefetching: reportsRefetching, error: reportsError } =
+    useReportsQuery(clientId, { enabled: !!clientId && isReports });
+  const { data: resources = [], isLoading: resourcesLoading, refetch: refetchResources, isRefetching: resourcesRefetching, error: resourcesError } =
+    useResourcesQuery(clientId, { enabled: !!clientId && isResources });
+
+  const isLoading = (isCurriculum && curriculumLoading) || (isReports && reportsLoading) || (isResources && resourcesLoading);
+  const activeError = (isCurriculum && curriculumError) || (isReports && reportsError) || (isResources && resourcesError);
+  const isRefreshing = (isCurriculum && curriculumRefetching) || (isReports && reportsRefetching) || (isResources && resourcesRefetching);
+
+  const refetch = useCallback(() => {
+    if (isCurriculum) refetchCurriculum();
+    else if (isReports) refetchReports();
+    else if (isResources) refetchResources();
+  }, [isCurriculum, isReports, isResources, refetchCurriculum, refetchReports, refetchResources]);
+
+  useRefetchOnFocus(refetch);
 
   const toggleSection = useCallback((sectionKey) => {
     setCollapsedSections((prev) => ({ ...prev, [sectionKey]: !prev[sectionKey] }));
   }, []);
-
-  const loadData = useCallback(async (showRefresh = false) => {
-    if (!clientId || activeTab === TABS.FEED) {
-      setIsLoading(false);
-      return;
-    }
-    try {
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
-
-      if (activeTab === TABS.CURRICULUM) {
-        const { data } = await getClientPerformanceCurriculum(clientId);
-        setCurriculum({
-          program: data?.program || null,
-          modules: data?.modules || data || [],
-        });
-      } else if (activeTab === TABS.REPORTS) {
-        const { data } = await getClientPerformanceSnapshots(clientId);
-        setReports(data || []);
-      } else {
-        const { data } = await getClientSharedMedia(clientId);
-        setResources(data || []);
-      }
-    } catch (err) {
-      logger.warn('Failed to load progress data:', err?.message || err);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [clientId, activeTab]);
-
-  // Defer initial fetch to focus — prevents firing when mounted by lazy={false} on inactive tab
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadData(hasLoaded.current);
-      hasLoaded.current = true;
-    });
-    return unsubscribe;
-  }, [navigation, loadData]);
-
-  // Re-fetch when activeTab changes, but only after screen has been focused at least once
-  useEffect(() => {
-    if (hasLoaded.current) {
-      loadData();
-    }
-  }, [activeTab, loadData]);
 
   const getCompletionPercent = (modules) => {
     if (!modules.length) return 0;
@@ -484,13 +452,21 @@ const ClientProgressScreen = () => {
         <ActivityFeedContent />
       ) : isLoading ? (
         <ListSkeleton count={4} />
+      ) : activeError ? (
+        <EmptyState
+          icon="cloud-off-outline"
+          title="Couldn't Load Data"
+          message="Unable to load this section. Pull down to retry."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
       ) : (
         <ScrollView
           contentContainerStyle={styles.scrollContent}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadData(true)}
+              onRefresh={refetch}
               tintColor={colors.primary}
             />
           }

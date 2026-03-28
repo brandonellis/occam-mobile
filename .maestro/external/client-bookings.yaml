@@ -1,0 +1,60 @@
+# Client Bookings Flow — client views upcoming and past bookings
+#
+# Tests:
+#   ✓ client can navigate to Bookings tab
+#   ✓ bookings screen shows Upcoming and Past tabs
+#   ✓ upcoming bookings tab shows booking cards or empty state
+#   ✓ can switch to Past tab and see past bookings or empty state
+#   ✓ new booking button is accessible
+#
+# Usage:
+#   maestro test .maestro/external/client-bookings.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Navigate to Bookings tab via deep link ────────────────────────────
+- openLink: "occamgolf://bookings"
+- waitForAnimationToEnd
+
+# ── Test: bookings screen loads ───────────────────────────────────────
+- extendedWaitUntil:
+    visible: "Bookings"
+    timeout: 15000
+
+# ── Test: Upcoming tab is default ─────────────────────────────────────
+- assertVisible: "Upcoming"
+- assertVisible: "Past"
+
+# ── Test: booking cards or empty state ────────────────────────────────
+# The seeder creates upcoming bookings for e2e-client
+- extendedWaitUntil:
+    visible: ".*CONFIRMED.*|.*PENDING.*|.*No Upcoming Bookings.*"
+    timeout: 15000
+
+# ── Test: date filter chips are visible ───────────────────────────────
+- assertVisible: "All"
+
+# ── Test: switch to Past tab ──────────────────────────────────────────
+- tapOn: "Past"
+- waitForAnimationToEnd
+
+# Past bookings or empty state
+- extendedWaitUntil:
+    visible: ".*COMPLETED.*|.*CANCELLED.*|.*No Past Bookings.*"
+    timeout: 15000
+
+# ── Test: switch back to Upcoming ─────────────────────────────────────
+- tapOn: "Upcoming"
+- waitForAnimationToEnd

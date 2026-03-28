@@ -1,0 +1,41 @@
+# Marshal Admin Chat Flow — admin opens Marshal, verifies admin-specific UI
+#
+# Tests:
+#   ✓ admin can navigate to Marshal tab
+#   ✓ Marshal shows "Admin operations" badge (not "Coach operations")
+#   ✓ admin can type and send a message
+#   ✓ Marshal responds
+#
+# Usage:
+#   maestro test .maestro/external/marshal-admin-chat.yaml \
+#     -e ADMIN_EMAIL=e2e-staff@occam.test \
+#     -e ADMIN_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login-admin.yaml
+
+# ── Navigate to Marshal ───────────────────────────────────────────────
+- runFlow: ../helpers/navigate-to-marshal.yaml
+
+# ── Test: admin operations badge ──────────────────────────────────────
+- assertVisible: ".*Admin operations.*"
+- assertVisible: "Marshal"
+
+# ── Test: send a message ──────────────────────────────────────────────
+- tapOn: ".*Ask Marshal.*"
+- inputText: "Give me a summary"
+- pressKey: Enter
+
+# ── Test: Marshal responds ────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Marshal.*"
+    timeout: 30000

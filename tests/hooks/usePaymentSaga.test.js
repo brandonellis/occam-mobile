@@ -15,6 +15,7 @@ jest.mock('../../src/helpers/error.helper', () => ({
 
 jest.mock('../../src/helpers/logger.helper', () => ({
   warn: jest.fn(),
+  error: jest.fn(),
 }));
 
 jest.spyOn(Alert, 'alert').mockImplementation(() => {});
@@ -106,7 +107,10 @@ describe('usePaymentSaga', () => {
     // Should NOT cancel the booking since charge already completed
     expect(cancelBooking).not.toHaveBeenCalled();
 
-    expect(Alert.alert).toHaveBeenCalledWith('Payment Failed', 'Post-charge error');
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Payment Processed',
+      'Your payment was successful but we encountered an issue finalizing the booking. Your booking is confirmed — please check your bookings list.',
+    );
   });
 
   test('falls back to bookingResponse when getBooking fails', async () => {

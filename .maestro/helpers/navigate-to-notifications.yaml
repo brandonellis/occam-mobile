@@ -1,0 +1,13 @@
+# Shared helper: navigate to the Notifications screen.
+# Works for any role (client, coach, admin).
+appId: com.occamgolf.app
+
+---
+
+- openLink: "occamgolf://notifications"
+- waitForAnimationToEnd
+
+# Wait for the Notifications screen header
+- extendedWaitUntil:
+    visible: "Notifications"
+    timeout: 15000

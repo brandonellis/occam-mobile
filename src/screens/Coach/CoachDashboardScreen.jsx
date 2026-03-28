@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,6 @@ import useAuth from '../../hooks/useAuth';
 import useProactiveInsights from '../../hooks/useProactiveInsights';
 import { SCREENS } from '../../constants/navigation.constants';
 import { formatTimeInTz, getTodayKey } from '../../helpers/timezone.helper';
-import { getBookings } from '../../services/bookings.api';
-import { getClients } from '../../services/accounts.api';
 import { buildInsightMarshalIntent } from '../../helpers/marshalIntent.helper';
 import useMarshalIntent from '../../hooks/useMarshalIntent';
 import { dashboardStyles as styles } from '../../styles/dashboard.styles';
@@ -22,17 +20,15 @@ import { CoachDashboardSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import ProactiveInsightsSection from '../../components/Dashboard/ProactiveInsightsSection';
 import useUnreadNotifications from '../../hooks/useUnreadNotifications';
+import useBookingsQuery from '../../hooks/useBookingsQuery';
+import useClientCountQuery from '../../hooks/useClientCountQuery';
+import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
 import { colors } from '../../theme';
 
 const CoachDashboardScreen = ({ navigation }) => {
   const { user, company } = useAuth();
   const firstName = user?.first_name || user?.name?.split(' ')[0] || 'Coach';
 
-  const [sessions, setSessions] = useState([]);
-  const [clientCount, setClientCount] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [error, setError] = useState(null);
   const { unreadCount } = useUnreadNotifications();
   const insights = useProactiveInsights();
   const { deliverIntent } = useMarshalIntent();
@@ -44,53 +40,39 @@ const CoachDashboardScreen = ({ navigation }) => {
 
   const todayKey = getTodayKey(company);
 
-  const loadDashboard = useCallback(async (showRefresh = false) => {
-    try {
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
+  const bookingParams = useMemo(() => ({
+    start_date: todayKey,
+    end_date: todayKey,
+    coach_id: user?.id,
+  }), [todayKey, user?.id]);
 
-      const [bookingsRes, clientsRes] = await Promise.allSettled([
-        getBookings({ start_date: todayKey, end_date: todayKey, coach_id: user?.id }),
-        getClients({ per_page: 1 }),
-      ]);
+  const { data: rawSessions, isLoading: bookingsLoading, refetch: refetchBookings, isRefetching: bookingsRefetching, error: bookingsError } = useBookingsQuery(bookingParams);
+  const { data: clientCount, refetch: refetchClients, isRefetching: clientsRefetching } = useClientCountQuery();
 
-      setError(null);
+  const refetch = useCallback(() => {
+    refetchBookings();
+    refetchClients();
+  }, [refetchBookings, refetchClients]);
 
-      if (bookingsRes.status === 'fulfilled') {
-        const data = bookingsRes.value?.data || [];
-        const sorted = data.sort((a, b) =>
-          (a.start_time || '').localeCompare(b.start_time || '')
-        );
-        setSessions(sorted);
-      }
+  useRefetchOnFocus(refetch);
 
-      if (clientsRes.status === 'fulfilled') {
-        const meta = clientsRes.value?.meta || clientsRes.value;
-        setClientCount(meta?.total ?? clientsRes.value?.data?.length ?? null);
-      }
-    } catch (err) {
-      setError('Unable to load your dashboard. Pull down to retry.');
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [todayKey, user?.id]);
+  const isLoading = bookingsLoading;
+  const isRefreshing = bookingsRefetching || clientsRefetching;
+  const error = bookingsError;
 
-  // Load on mount + refresh when returning to dashboard
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadDashboard();
+  const sessions = useMemo(() => {
+    const list = rawSessions || [];
+    return [...list].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+  }, [rawSessions]);
+
+  const upcomingSessions = useMemo(() => {
+    const now = Date.now();
+    return sessions.filter((s) => {
+      if (!s.start_time) return true;
+      const startDate = new Date(s.start_time);
+      return Number.isNaN(startDate.getTime()) || startDate.getTime() >= now;
     });
-    return unsubscribe;
-  }, [navigation, loadDashboard]);
-
-  const now = new Date();
-  const upcomingSessions = sessions.filter((s) => {
-    if (!s.start_time) return true;
-    // start_time is ISO 8601 — compare as Date
-    const startDate = new Date(s.start_time);
-    return isNaN(startDate.getTime()) || startDate >= now;
-  });
+  }, [sessions]);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -99,7 +81,7 @@ const CoachDashboardScreen = ({ navigation }) => {
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
-            onRefresh={() => loadDashboard(true)}
+            onRefresh={refetch}
             tintColor={colors.primary}
           />
         }
@@ -128,11 +110,11 @@ const CoachDashboardScreen = ({ navigation }) => {
           <CoachDashboardSkeleton />
         ) : error ? (
           <EmptyState
-            icon="cloud-offline-outline"
+            icon="cloud-off-outline"
             title="Couldn't Load Dashboard"
-            message={error}
+            message="Unable to load your dashboard. Pull down to retry."
             actionLabel="Retry"
-            onAction={() => loadDashboard()}
+            onAction={refetch}
           />
         ) : (
           <>

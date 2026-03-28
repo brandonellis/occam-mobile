@@ -1,0 +1,50 @@
+# Coach Auth Flow — login, verify dashboard, verify tabs, logout
+#
+# Tests:
+#   ✓ coach can log in via org search + credentials
+#   ✓ coach lands on dashboard with greeting
+#   ✓ coach dashboard shows expected quick actions and stats
+#   ✓ coach tabs include Schedule, Clients, Marshal
+#   ✓ coach can log out and returns to login screen
+#
+# Usage:
+#   maestro test .maestro/external/auth-coach.yaml \
+#     -e COACH_EMAIL=coach.alpha@e2e-golf.test \
+#     -e COACH_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch the app ────────────────────────────────────────────────────
+- launchApp
+
+# ── Login as coach ─────────────────────────────────────────────────────
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login-coach.yaml
+
+# ── Test: coach lands on dashboard ─────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Hello.*Coach.*"
+    timeout: 30000
+
+# ── Test: dashboard shows quick actions ────────────────────────────────
+- assertVisible:
+    id: "new-booking-quick-action"
+
+# ── Test: dashboard shows stats row ────────────────────────────────────
+- assertVisible: ".*Today's Sessions.*"
+
+# ── Test: coach tabs are visible ───────────────────────────────────────
+- assertVisible: "Dashboard"
+- assertVisible: "Schedule"
+- assertVisible: "Clients"
+- assertVisible: "Marshal"
+
+# ── Test: logout ───────────────────────────────────────────────────────
+- runFlow: ../helpers/logout.yaml
+
+# ── Test: back on login screen ─────────────────────────────────────────
+- assertVisible: "Sign In"

@@ -1,13 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
-import { Text, SegmentedButtons, TextInput, Switch, Menu } from 'react-native-paper';
+import { Text, SegmentedButtons, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
-
-const FREQUENCY_OPTIONS = [
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'biweekly', label: 'Every 2 Weeks' },
-  { value: 'monthly', label: 'Monthly (4 Weeks)' },
-];
 import { useConfirmPayment, StripeProvider } from '@stripe/stripe-react-native';
 import config from '../../config';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -15,17 +9,18 @@ import Avatar from '../../components/Avatar';
 import BookingStepIndicator from '../../components/BookingStepIndicator';
 import PromoCodeInput from '../../components/PromoCodeInput';
 import BookingSuccessView from '../../components/Booking/BookingSuccessView';
+import BookingDetailsSection from '../../components/Booking/BookingDetailsSection';
+import RecurrenceSection from '../../components/Booking/RecurrenceSection';
 import MembershipAllotmentSection from '../../components/Booking/MembershipAllotmentSection';
 import PaymentMethodSection from '../../components/Booking/PaymentMethodSection';
 import PaymentSummarySection from '../../components/Booking/PaymentSummarySection';
 import BookingBenefitBanner from '../../components/Booking/BookingBenefitBanner';
 import ConfirmBottomBar from '../../components/Booking/ConfirmBottomBar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
-import { formatDuration } from '../../constants/booking.constants';
 import { buildPaymentSummary } from '../../helpers/pricing.helper';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import { getBookingSteps } from '../../helpers/booking.helper';
-import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
+import { formatDateInTz } from '../../helpers/timezone.helper';
 import { colors } from '../../theme';
 import { COACH_ROLES } from '../../constants/auth.constants';
 import useAuth from '../../hooks/useAuth';
@@ -58,7 +53,6 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const [recurrenceEnabled, setRecurrenceEnabled] = useState(false);
   const [recurrenceFrequency, setRecurrenceFrequency] = useState('weekly');
   const [recurrenceOccurrences, setRecurrenceOccurrences] = useState(4);
-  const [frequencyMenuVisible, setFrequencyMenuVisible] = useState(false);
   const isClassBooking = Boolean(bookingData.selectedClassSession);
   const canShowRecurrence = isCoach && !isEditMode && !isClassBooking;
 
@@ -259,121 +253,27 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
-        {/* Booking Details */}
-        <View style={styles.confirmSection}>
-          {location && (
-            <>
-              <Text style={styles.confirmLabel}>LOCATION</Text>
-              <Text style={styles.confirmValue}>{location.name}</Text>
-              <View style={styles.confirmDivider} />
-            </>
-          )}
+        <BookingDetailsSection
+          service={service}
+          coach={coach}
+          location={location}
+          selectedResource={selectedResource}
+          formattedDate={formattedDate}
+          timeSlot={timeSlot}
+          effectiveDuration={effectiveDuration}
+          summary={summary}
+          company={company}
+        />
 
-          <Text style={styles.confirmLabel}>SERVICE</Text>
-          <Text style={styles.confirmValue}>{service?.name}</Text>
-          <View style={styles.confirmDivider} />
-          <View style={styles.confirmRow}>
-            <View>
-              <Text style={styles.confirmLabel}>DURATION</Text>
-              <Text style={styles.confirmValue}>{formatDuration(effectiveDuration)}</Text>
-            </View>
-            <View style={styles.confirmPriceColumn}>
-              <Text style={styles.confirmLabel}>PRICE</Text>
-              <Text style={styles.confirmValue}>{summary.subtotalFormatted}</Text>
-            </View>
-          </View>
-
-          {coach && (
-            <>
-              <View style={styles.confirmDivider} />
-              <Text style={styles.confirmLabel}>COACH</Text>
-              <View style={styles.confirmRowWithAvatar}>
-                <Avatar uri={coach.avatar_url} name={`${coach.first_name} ${coach.last_name}`} size={32} />
-                <Text style={[styles.confirmValue, styles.confirmValueWithMargin]}>
-                  {coach.first_name} {coach.last_name}
-                </Text>
-              </View>
-            </>
-          )}
-
-          {selectedResource?.name && (
-            <>
-              <View style={styles.confirmDivider} />
-              <Text style={styles.confirmLabel}>RESOURCE</Text>
-              <Text style={styles.confirmValue}>{selectedResource.name}</Text>
-            </>
-          )}
-
-          <View style={styles.confirmDivider} />
-          <Text style={styles.confirmLabel}>DATE & TIME</Text>
-          <Text style={styles.confirmValue}>{formattedDate}</Text>
-          <Text style={[styles.confirmValue, styles.confirmTimeSubtext, { color: colors.textSecondary }]}>
-            {formatTimeInTz(timeSlot?.start_time, company)}
-            {timeSlot?.end_time ? ` — ${formatTimeInTz(timeSlot.end_time, company)}` : ''}
-          </Text>
-        </View>
-
-        {/* Recurrence options (coach only, non-class, non-edit) */}
         {canShowRecurrence && (
-          <View style={styles.confirmSection}>
-            <View style={styles.recurrenceHeader}>
-              <Text style={styles.confirmLabel}>REPEAT BOOKING</Text>
-              <Switch
-                value={recurrenceEnabled}
-                onValueChange={setRecurrenceEnabled}
-                color={colors.accent}
-              />
-            </View>
-            {recurrenceEnabled && (
-              <View style={styles.recurrenceFields}>
-                <View>
-                  <Text style={[styles.confirmLabel, styles.recurrenceLabelSpaced]}>FREQUENCY</Text>
-                  <Menu
-                    visible={frequencyMenuVisible}
-                    onDismiss={() => setFrequencyMenuVisible(false)}
-                    anchor={
-                      <TextInput
-                        mode="outlined"
-                        value={FREQUENCY_OPTIONS.find((o) => o.value === recurrenceFrequency)?.label || ''}
-                        onFocus={() => setFrequencyMenuVisible(true)}
-                        showSoftInputOnFocus={false}
-                        right={<TextInput.Icon icon="chevron-down" onPress={() => setFrequencyMenuVisible(true)} />}
-                        dense
-                      />
-                    }
-                  >
-                    {FREQUENCY_OPTIONS.map((opt) => (
-                      <Menu.Item
-                        key={opt.value}
-                        title={opt.label}
-                        onPress={() => {
-                          setRecurrenceFrequency(opt.value);
-                          setFrequencyMenuVisible(false);
-                        }}
-                      />
-                    ))}
-                  </Menu>
-                </View>
-                <View>
-                  <Text style={[styles.confirmLabel, styles.recurrenceLabelSpaced]}>OCCURRENCES</Text>
-                  <TextInput
-                    mode="outlined"
-                    keyboardType="number-pad"
-                    value={String(recurrenceOccurrences)}
-                    onChangeText={(v) => {
-                      const num = parseInt(v, 10);
-                      if (!isNaN(num)) setRecurrenceOccurrences(Math.max(2, Math.min(26, num)));
-                      else if (v === '') setRecurrenceOccurrences(2);
-                    }}
-                    dense
-                  />
-                  <Text style={styles.recurrenceHint}>
-                    Total sessions including this one (2–26)
-                  </Text>
-                </View>
-              </View>
-            )}
-          </View>
+          <RecurrenceSection
+            recurrenceEnabled={recurrenceEnabled}
+            onRecurrenceToggle={setRecurrenceEnabled}
+            recurrenceFrequency={recurrenceFrequency}
+            onFrequencyChange={setRecurrenceFrequency}
+            recurrenceOccurrences={recurrenceOccurrences}
+            onOccurrencesChange={setRecurrenceOccurrences}
+          />
         )}
 
         {/* Edit mode: status + notes */}

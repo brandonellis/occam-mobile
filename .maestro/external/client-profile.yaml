@@ -1,0 +1,61 @@
+# Client Profile Flow — client views profile, membership benefits, settings
+#
+# Tests:
+#   ✓ client can navigate to profile tab
+#   ✓ profile shows user name and email
+#   ✓ benefits section shows membership info (for member client)
+#   ✓ notification settings link is visible
+#   ✓ sign out button is visible
+#
+# Usage:
+#   maestro test .maestro/external/client-profile.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Navigate to Profile tab via deep link ─────────────────────────────
+- openLink: "occamgolf://profile"
+- waitForAnimationToEnd
+
+# ── Test: profile screen loads ────────────────────────────────────────
+# Should see the user's email displayed
+- extendedWaitUntil:
+    visible: ".*e2e-client.*|.*E2E.*Client.*"
+    timeout: 15000
+
+# ── Test: membership/benefits section ─────────────────────────────────
+# e2e-client has Premium membership
+- extendedWaitUntil:
+    visible: ".*Premium.*|.*Membership.*|.*Benefits.*"
+    timeout: 10000
+
+# ── Test: settings items visible ──────────────────────────────────────
+- scrollUntilVisible:
+    element: "Notification Settings"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+
+- assertVisible: "Notification Settings"
+
+# ── Test: sign out button visible ─────────────────────────────────────
+- scrollUntilVisible:
+    element:
+      id: "sign-out-button"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+
+- assertVisible:
+    id: "sign-out-button"

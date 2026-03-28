@@ -1,0 +1,47 @@
+# Admin Schedule Flow — admin views daily schedule
+#
+# Tests:
+#   ✓ admin can navigate to Schedule tab
+#   ✓ schedule screen shows header and date selector
+#   ✓ admin new booking button is accessible
+#   ✓ session cards or empty state are shown
+#
+# Usage:
+#   maestro test .maestro/external/admin-schedule.yaml \
+#     -e ADMIN_EMAIL=e2e-staff@occam.test \
+#     -e ADMIN_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login-admin.yaml
+
+# ── Navigate to Schedule tab via deep link ────────────────────────────
+- openLink: "occamgolf://admin/schedule"
+- waitForAnimationToEnd
+
+# ── Test: schedule header is visible ──────────────────────────────────
+- extendedWaitUntil:
+    visible: "Schedule"
+    timeout: 15000
+
+# ── Test: admin new booking button exists ─────────────────────────────
+- assertVisible:
+    id: "admin-new-booking-button"
+
+# ── Test: date selector ──────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Mon.*|.*Tue.*|.*Wed.*|.*Thu.*|.*Fri.*|.*Sat.*|.*Sun.*"
+    timeout: 10000
+
+# ── Test: content loads (sessions or empty state) ─────────────────────
+- extendedWaitUntil:
+    visible: ".*Session.*|.*No Sessions.*"
+    timeout: 15000

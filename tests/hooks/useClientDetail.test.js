@@ -41,12 +41,14 @@ jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
 // Store focus callbacks so we can trigger them inside act()
 let focusCallbacks = [];
+const mockParentNavigation = { navigate: jest.fn() };
 const mockNavigation = {
   addListener: jest.fn((event, cb) => {
     if (event === 'focus') focusCallbacks.push(cb);
     return jest.fn();
   }),
   navigate: jest.fn(),
+  getParent: jest.fn(() => mockParentNavigation),
 };
 
 const mockCompany = { id: 1, timezone: 'America/New_York' };
@@ -155,10 +157,7 @@ describe('useClientDetail', () => {
     });
 
     expect(mockDeliverIntent).toHaveBeenCalledWith({ message: 'mock intent' });
-    expect(mockNavigation.navigate).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.objectContaining({ screen: expect.any(String) }),
-    );
+    expect(mockParentNavigation.navigate).toHaveBeenCalledWith(expect.any(String));
   });
 
   test('handleOpenMarshal does nothing when client is null', async () => {

@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,15 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IconButton } from 'react-native-paper';
 import useAuth from '../../hooks/useAuth';
 import { SCREENS } from '../../constants/navigation.constants';
-import { getBookings, cancelBooking } from '../../services/bookings.api';
+import { cancelBooking } from '../../services/bookings.api';
 import { formatTimeInTz, generateDateRangeInTz, getTodayKey, formatDateKeyLong } from '../../helpers/timezone.helper';
 import { scheduleStyles as styles } from '../../styles/schedule.styles';
 import { globalStyles } from '../../styles/global.styles';
 import { ScheduleSkeleton } from '../../components/SkeletonLoader';
 import EmptyState from '../../components/EmptyState';
 import { colors, spacing } from '../../theme';
-import logger from '../../helpers/logger.helper';
+import useBookingsQuery from '../../hooks/useBookingsQuery';
+import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
 
 const CoachScheduleScreen = ({ navigation }) => {
   const { user, company } = useAuth();
@@ -29,40 +30,20 @@ const CoachScheduleScreen = ({ navigation }) => {
     const today = getTodayKey(company);
     return dates.find((d) => d.key === today) || dates[0];
   });
-  const [sessions, setSessions] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const loadSessions = useCallback(async (showRefresh = false) => {
-    try {
-      if (showRefresh) setIsRefreshing(true);
-      else setIsLoading(true);
+  const bookingParams = useMemo(() => ({
+    start_date: selectedDate.key,
+    end_date: selectedDate.key,
+    coach_id: user?.id,
+  }), [selectedDate.key, user?.id]);
 
-      const { data } = await getBookings({
-        start_date: selectedDate.key,
-        end_date: selectedDate.key,
-        coach_id: user?.id,
-      });
-      const sorted = (data || []).sort((a, b) =>
-        (a.start_time || '').localeCompare(b.start_time || '')
-      );
-      setSessions(sorted);
-    } catch (err) {
-      logger.warn('Failed to load sessions:', err?.message || err);
-      setSessions([]);
-    } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
-    }
-  }, [selectedDate]);
+  const { data: rawSessions, isLoading, refetch, isRefetching: isRefreshing, error } = useBookingsQuery(bookingParams);
+  useRefetchOnFocus(refetch);
 
-  // Load on mount + refresh when navigating back (e.g. after creating a booking)
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadSessions();
-    });
-    return unsubscribe;
-  }, [navigation, loadSessions]);
+  const sessions = useMemo(() => {
+    const list = rawSessions || [];
+    return [...list].sort((a, b) => (a.start_time || '').localeCompare(b.start_time || ''));
+  }, [rawSessions]);
 
   const handleCancelBooking = useCallback((bookingId, serviceName) => {
     Alert.alert(
@@ -76,7 +57,7 @@ const CoachScheduleScreen = ({ navigation }) => {
           onPress: async () => {
             try {
               await cancelBooking(bookingId);
-              loadSessions(true);
+              refetch();
             } catch {
               Alert.alert('Error', 'Failed to cancel booking.');
             }
@@ -84,7 +65,7 @@ const CoachScheduleScreen = ({ navigation }) => {
         },
       ]
     );
-  }, [loadSessions]);
+  }, [refetch]);
 
   const formattedHeader = formatDateKeyLong(selectedDate.key);
 
@@ -149,6 +130,14 @@ const CoachScheduleScreen = ({ navigation }) => {
 
       {isLoading ? (
         <ScheduleSkeleton />
+      ) : error ? (
+        <EmptyState
+          icon="cloud-off-outline"
+          title="Couldn't Load Schedule"
+          message="Unable to load your sessions. Pull down to retry."
+          actionLabel="Retry"
+          onAction={refetch}
+        />
       ) : (
         <ScrollView
           contentContainerStyle={[
@@ -158,7 +147,7 @@ const CoachScheduleScreen = ({ navigation }) => {
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
-              onRefresh={() => loadSessions(true)}
+              onRefresh={refetch}
               tintColor={colors.primary}
             />
           }

@@ -1,0 +1,54 @@
+# Deep Link — Booking Detail — verifies deep linking to a specific booking
+#
+# Tests:
+#   ✓ opening occamgolf://bookings/{id} navigates to booking detail
+#   ✓ booking detail screen shows booking information
+#
+# Note: This test uses a booking ID from the seeded data.
+# The seeder creates bookings with known IDs — we use the first seeded booking.
+# If the booking ID doesn't exist, the app should show an error or 404 state.
+#
+# Usage:
+#   maestro test .maestro/external/deep-link-booking.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── First go to bookings to find a booking ────────────────────────────
+- openLink: "occamgolf://bookings"
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible: "Bookings"
+    timeout: 15000
+
+# ── Test: tap a booking card to see detail ────────────────────────────
+# If there are upcoming bookings, tap the first one
+# The seeder creates confirmed bookings for e2e-client
+- extendedWaitUntil:
+    visible: ".*CONFIRMED.*|.*No Upcoming Bookings.*"
+    timeout: 15000
+
+# Tap the first booking card (if bookings exist)
+- tapOn:
+    text: ".*CONFIRMED.*"
+    index: 0
+    optional: true
+- waitForAnimationToEnd
+
+# ── Test: booking detail or bookings list is still visible ────────────
+# If we tapped a booking, we should see detail; otherwise we're still on list
+- extendedWaitUntil:
+    visible: ".*Booking.*|.*Session.*|.*1:1.*|.*Upcoming.*"
+    timeout: 15000

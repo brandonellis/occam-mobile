@@ -37,12 +37,14 @@ export const QUERY_KEYS = {
   CLIENTS: {
     all: ['clients'],
     detail: (id) => ['client', id],
+    count: ['clients', 'count'],
   },
 
   // ── Membership Plans ──────────────────────────────────────────────
   MEMBERSHIPS: {
     plans: ['membershipPlans'],
     my: ['myMembership'],
+    mySelf: ['myMembershipSelf'],
   },
 
   // ── Packages ──────────────────────────────────────────────────────
@@ -63,5 +65,12 @@ export const QUERY_KEYS = {
   ACTIVITIES: {
     client: (clientId, params) => ['clientActivities', clientId, params],
     tags: ['activityTags'],
+  },
+
+  // ── Progress (curriculum, reports, resources) ───────────────────
+  PROGRESS: {
+    curriculum: (clientId) => ['progress', 'curriculum', clientId],
+    reports: (clientId) => ['progress', 'reports', clientId],
+    resources: (clientId) => ['progress', 'resources', clientId],
   },
 };

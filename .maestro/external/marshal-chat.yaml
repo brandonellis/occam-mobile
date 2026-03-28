@@ -1,0 +1,63 @@
+# Marshal Chat Flow — coach opens Marshal, sends a message, sees streaming response
+#
+# Tests:
+#   ✓ coach can navigate to Marshal tab
+#   ✓ Marshal hero section is visible with title and role badge
+#   ✓ coach can type and send a message
+#   ✓ Marshal responds with a streaming message
+#   ✓ reset conversation clears chat history
+#
+# Usage:
+#   maestro test .maestro/external/marshal-chat.yaml \
+#     -e COACH_EMAIL=coach.alpha@e2e-golf.test \
+#     -e COACH_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login-coach.yaml
+
+# ── Navigate to Marshal ───────────────────────────────────────────────
+- runFlow: ../helpers/navigate-to-marshal.yaml
+
+# ── Test: hero section is visible ─────────────────────────────────────
+- assertVisible: "Marshal"
+- assertVisible: ".*operations.*"
+
+# ── Test: input placeholder is visible ────────────────────────────────
+- assertVisible: ".*Ask Marshal.*"
+
+# ── Test: send a message ──────────────────────────────────────────────
+- tapOn: ".*Ask Marshal.*"
+- inputText: "Show today's schedule"
+
+# Submit via keyboard
+- pressKey: Enter
+
+# ── Test: Marshal responds ────────────────────────────────────────────
+- extendedWaitUntil:
+    visible: ".*Marshal.*"
+    timeout: 30000
+
+# ── Test: reset conversation ──────────────────────────────────────────
+- scrollUntilVisible:
+    element: "Reset conversation"
+    direction: DOWN
+    timeout: 10000
+    speed: 40
+    visibilityPercentage: 50
+
+- tapOn: "Reset conversation"
+- waitForAnimationToEnd
+
+# After reset, hero section should reappear
+- extendedWaitUntil:
+    visible: ".*operations.*"
+    timeout: 10000

@@ -6,18 +6,55 @@
 # Directory structure:
 #   .maestro/
 #   ├── config.yaml                              (this file)
+#   ├── run-all.sh                               (orchestrator script)
 #   ├── helpers/
 #   │   ├── login.yaml                           (client login sub-flow)
 #   │   ├── login-coach.yaml                     (coach login sub-flow)
-#   │   ├── navigate-to-new-booking-coach.yaml   (coach new booking entry point)
+#   │   ├── login-admin.yaml                     (admin login sub-flow)
+#   │   ├── logout.yaml                          (logout via deep link)
+#   │   ├── navigate-to-booking.yaml             (client → service selection)
+#   │   ├── navigate-to-new-booking-coach.yaml   (coach → client selection)
+#   │   ├── navigate-to-caddie.yaml              (deep link to Caddie tab)
+#   │   ├── navigate-to-marshal.yaml             (deep link to Marshal tab)
+#   │   ├── navigate-to-notifications.yaml       (deep link to Notifications)
+#   │   ├── select-service.yaml                  (select service by name)
+#   │   ├── select-first-timeslot.yaml           (select first available slot)
+#   │   ├── handle-location-selection.yaml       (skip location if shown)
+#   │   └── handle-coach-selection.yaml          (select first coach)
 #   ├── external/
-#   │   ├── booking-flow.yaml                    (mirrors booking-flow.spec.js)
-#   │   ├── booking-flow-auth.yaml               (mirrors booking-flow.auth.spec.js)
-#   │   ├── variable-duration-booking.yaml       (mirrors variable-duration-booking.spec.js)
-#   │   ├── booking-visibility.yaml              (mirrors booking-visibility.spec.js)
-#   │   ├── booking-visibility-auth.yaml         (mirrors booking-visibility.auth.spec.js)
-#   │   ├── online-booking-controls.yaml         (mirrors online-booking-controls.spec.js)
-#   │   └── booking-flow-coach.yaml              (coach-initiated booking)
+#   │   ├── # ── Auth ──────────────────────────────────────────────
+#   │   ├── auth-client.yaml                     (client login/logout cycle)
+#   │   ├── auth-coach.yaml                      (coach login/logout cycle)
+#   │   ├── auth-admin.yaml                      (admin login/logout cycle)
+#   │   ├── # ── Booking ───────────────────────────────────────────
+#   │   ├── booking-flow.yaml                    (standard client booking)
+#   │   ├── booking-flow-auth.yaml               (member booking with coverage)
+#   │   ├── booking-flow-coach.yaml              (coach-initiated booking)
+#   │   ├── variable-duration-booking.yaml       (duration selection flow)
+#   │   ├── booking-visibility.yaml              (non-member visibility)
+#   │   ├── booking-visibility-auth.yaml         (member visibility)
+#   │   ├── online-booking-controls.yaml         (online booking limits)
+#   │   ├── membership-booking-discount.yaml     (membership price coverage)
+#   │   ├── # ── AI Chat ──────────────────────────────────────────
+#   │   ├── caddie-chat.yaml                     (client Caddie interaction)
+#   │   ├── marshal-chat.yaml                    (coach Marshal interaction)
+#   │   ├── marshal-admin-chat.yaml              (admin Marshal interaction)
+#   │   ├── # ── Schedule & Bookings ──────────────────────────────
+#   │   ├── coach-schedule.yaml                  (coach daily schedule view)
+#   │   ├── admin-schedule.yaml                  (admin schedule view)
+#   │   ├── client-bookings.yaml                 (client upcoming/past list)
+#   │   ├── # ── Membership & Packages ────────────────────────────
+#   │   ├── membership-plans.yaml                (browse membership plans)
+#   │   ├── package-list.yaml                    (browse packages)
+#   │   ├── # ── Notifications & Profile ──────────────────────────
+#   │   ├── notifications.yaml                   (notification list)
+#   │   ├── client-profile.yaml                  (client profile & benefits)
+#   │   ├── coach-profile.yaml                   (coach profile)
+#   │   ├── # ── Navigation & Deep Links ──────────────────────────
+#   │   ├── tab-navigation-client.yaml           (all client tabs load)
+#   │   ├── tab-navigation-coach.yaml            (all coach tabs load)
+#   │   ├── deep-link-booking.yaml               (booking detail deep link)
+#   │   └── deep-link-notifications.yaml         (notifications deep link)
 #   └── README.md
 
 # App configuration
@@ -26,19 +63,25 @@ appId: com.occamgolf.app  # Dev build app ID
 # Environment variables (override via CLI with -e KEY=VALUE)
 #
 # Seeded test data (mirrors E2eTenantSeeder from occam-platform):
-#   - e2e-client@occam.test / password  — member client with Premium membership
+#   - e2e-staff@occam.test / password     — admin/owner (admin + owner roles)
+#   - e2e-client@occam.test / password    — member client with Premium membership
+#   - e2e-guest@occam.test / password     — non-member client (has package)
+#   - coach.alpha@e2e-golf.test / password — seeded coach
+#   - coach.beta@e2e-golf.test / password  — second seeded coach
+#
+# Services:
 #   - "1:1 Coaching Session" (E2E-1ON1) — requires coach, booking_visibility='all'
 #   - "Member Lesson" (E2E-MEMBER)       — booking_visibility='members_only'
 #   - "Simulator Bay Rental"             — variable duration, requires_resource
 #   - "Range Session"                    — no coach required
 #   - "Staff Only Fitting"              — online_booking_enabled=false
 #   - "Short Game Lesson"               — advance_booking_limit_days=7
-#   - Coach Alpha (e2e-coach@occam.test) — seeded coach
-#   - Coach Beta                        — second seeded coach
 env:
   CLIENT_EMAIL: ""
   CLIENT_PASSWORD: ""
   COACH_EMAIL: ""
   COACH_PASSWORD: ""
+  ADMIN_EMAIL: ""
+  ADMIN_PASSWORD: ""
   TEST_ORG: ""
   TEST_CLIENT_NAME: ""

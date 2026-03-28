@@ -1,0 +1,36 @@
+# Notifications Flow — client views notifications list
+#
+# Tests:
+#   ✓ client can navigate to notifications screen
+#   ✓ notifications header is visible
+#   ✓ notification items or empty state are shown
+#   ✓ "Read All" button appears if unread notifications exist
+#
+# Usage:
+#   maestro test .maestro/external/notifications.yaml \
+#     -e CLIENT_EMAIL=e2e-client@occam.test \
+#     -e CLIENT_PASSWORD=password \
+#     -e TEST_ORG=e2e
+appId: com.occamgolf.app
+
+---
+
+# ── Launch and login ──────────────────────────────────────────────────
+- launchApp
+
+- runFlow:
+    when:
+      visible: "Sign In"
+    file: ../helpers/login.yaml
+
+# ── Navigate to Notifications ─────────────────────────────────────────
+- runFlow: ../helpers/navigate-to-notifications.yaml
+
+# ── Test: notifications screen loads ──────────────────────────────────
+- assertVisible: "Notifications"
+
+# ── Test: notification items or empty state ───────────────────────────
+# The seeder may or may not create notifications, handle both cases
+- extendedWaitUntil:
+    visible: ".*No Notifications.*|.*ago.*|.*Read All.*"
+    timeout: 15000
