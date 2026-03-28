@@ -292,7 +292,7 @@ const ClientBookingsScreen = ({ navigation }) => {
         <ListSkeleton count={5} />
       ) : error ? (
         <EmptyState
-          icon="cloud-offline-outline"
+          icon="cloud-off-outline"
           title="Couldn't Load Bookings"
           message="Unable to load your bookings. Pull down to retry."
           actionLabel="Retry"

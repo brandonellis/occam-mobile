@@ -160,7 +160,7 @@ const ClientProgressScreen = () => {
 
   const isLoading = (isCurriculum && curriculumLoading) || (isReports && reportsLoading) || (isResources && resourcesLoading);
   const activeError = (isCurriculum && curriculumError) || (isReports && reportsError) || (isResources && resourcesError);
-  const isRefreshing = curriculumRefetching || reportsRefetching || resourcesRefetching;
+  const isRefreshing = (isCurriculum && curriculumRefetching) || (isReports && reportsRefetching) || (isResources && resourcesRefetching);
 
   const refetch = useCallback(() => {
     if (isCurriculum) refetchCurriculum();
@@ -454,7 +454,7 @@ const ClientProgressScreen = () => {
         <ListSkeleton count={4} />
       ) : activeError ? (
         <EmptyState
-          icon="cloud-offline-outline"
+          icon="cloud-off-outline"
           title="Couldn't Load Data"
           message="Unable to load this section. Pull down to retry."
           actionLabel="Retry"

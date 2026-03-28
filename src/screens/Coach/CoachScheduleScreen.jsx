@@ -132,7 +132,7 @@ const CoachScheduleScreen = ({ navigation }) => {
         <ScheduleSkeleton />
       ) : error ? (
         <EmptyState
-          icon="cloud-offline-outline"
+          icon="cloud-off-outline"
           title="Couldn't Load Schedule"
           message="Unable to load your sessions. Pull down to retry."
           actionLabel="Retry"

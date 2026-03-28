@@ -110,7 +110,7 @@ const CoachDashboardScreen = ({ navigation }) => {
           <CoachDashboardSkeleton />
         ) : error ? (
           <EmptyState
-            icon="cloud-offline-outline"
+            icon="cloud-off-outline"
             title="Couldn't Load Dashboard"
             message="Unable to load your dashboard. Pull down to retry."
             actionLabel="Retry"

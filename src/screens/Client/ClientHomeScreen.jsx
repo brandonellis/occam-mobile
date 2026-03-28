@@ -84,7 +84,7 @@ const ClientHomeScreen = ({ navigation }) => {
             <Text style={styles.greeting}>Welcome, {firstName}</Text>
           </View>
           <EmptyState
-            icon="cloud-offline-outline"
+            icon="cloud-off-outline"
             title="Couldn't Load Sessions"
             message="Unable to load your sessions. Pull down to retry."
             actionLabel="Retry"
