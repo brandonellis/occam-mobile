@@ -148,52 +148,18 @@ if [ "$BUILD" = true ]; then
   ok "Archive built at $ARCHIVE_PATH"
 fi
 
-# ── Export IPA ────────────────────────────────────────────────
-if [ "$BUILD" = true ]; then
-  log "Exporting IPA..."
-  rm -rf "$EXPORT_PATH"
+# ── Export + Upload to App Store Connect ──────────────────────
+# ExportOptions.plist has destination=upload, so xcodebuild exports
+# and uploads in a single step — no separate IPA file needed.
+if [ "$SUBMIT" = true ]; then
+  log "Exporting and uploading to App Store Connect..."
 
   xcodebuild -exportArchive \
     -archivePath "$ARCHIVE_PATH" \
-    -exportPath "$EXPORT_PATH" \
     -exportOptionsPlist "$EXPORT_OPTIONS" \
-    -quiet
-
-  IPA_FILE=$(find "$EXPORT_PATH" -name "*.ipa" -print -quit)
-  if [ -z "$IPA_FILE" ]; then
-    fail "No IPA file found after export."
-  fi
-
-  ok "IPA exported to $IPA_FILE"
-fi
-
-# ── App Store Connect API Key ─────────────────────────────────
-ASC_API_KEY="2GWLNN38WJ"
-ASC_API_ISSUER="17336cf1-1dc4-4b12-98df-7eb7900b437b"
-ASC_KEY_FILE="$HOME/.appstoreconnect/private_keys/AuthKey_${ASC_API_KEY}.p8"
-
-# ── Upload to App Store Connect ───────────────────────────────
-if [ "$SUBMIT" = true ]; then
-  if [ "$BUILD" = false ]; then
-    IPA_FILE=$(find "$EXPORT_PATH" -name "*.ipa" -print -quit 2>/dev/null)
-    if [ -z "$IPA_FILE" ]; then
-      fail "No IPA found in $EXPORT_PATH. Run a build first."
-    fi
-  fi
-
-  if [ ! -f "$ASC_KEY_FILE" ]; then
-    fail "API key not found at $ASC_KEY_FILE. Download AuthKey_${ASC_API_KEY}.p8 from App Store Connect and place it there."
-  fi
-
-  log "Uploading to App Store Connect..."
-
-  xcrun altool --upload-app \
-    -f "$IPA_FILE" \
-    -t ios \
-    --apiKey "$ASC_API_KEY" \
-    --apiIssuer "$ASC_API_ISSUER" \
+    -allowProvisioningUpdates \
   || {
-    warn "Automated upload failed. Opening Xcode Organizer for manual upload..."
+    warn "Export/upload failed. Opening Xcode Organizer for manual upload..."
     open "$ARCHIVE_PATH"
     echo ""
     log "In Xcode Organizer: select the archive → Distribute App → App Store Connect → Upload"
