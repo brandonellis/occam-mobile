@@ -150,14 +150,14 @@ const useAgentChat = ({
     }
   }, [initialMessages, initialSuggestions, messagesStorageKey, sessionStorageKey]);
 
-  const sendMessage = useCallback(async (value, { slotContext, displayText, pageContext, freshStart } = {}) => {
+  const sendMessage = useCallback(async (value, { slotContext, displayText, pageContext, freshStart, fromSuggestedAction } = {}) => {
     const trimmed = typeof value === 'string' ? value.trim() : '';
 
     if (!trimmed || state.isLoading || restoringRef.current) {
       return;
     }
 
-    const userMessage = buildMessage('user', displayText || trimmed);
+    const userMessage = buildMessage('user', displayText || trimmed, fromSuggestedAction ? { fromSuggestedAction: true } : {});
     // When freshStart is true (e.g., after resetConversation), use empty history
     // to avoid stale closure capturing pre-reset messages
     const history = freshStart
@@ -195,6 +195,10 @@ const useAgentChat = ({
 
       if (pageContext) {
         apiOptions.pageContext = pageContext;
+      }
+
+      if (state.sessionId) {
+        apiOptions.sessionId = state.sessionId;
       }
 
       if (supportsStreaming) {
@@ -323,7 +327,7 @@ const useAgentChat = ({
   }, [sendMessage, state.input]);
 
   const selectSuggestion = useCallback((suggestion) => {
-    sendMessage(suggestion);
+    sendMessage(suggestion, { fromSuggestedAction: true });
   }, [sendMessage]);
 
   const runHealthCheck = useCallback(async () => {
