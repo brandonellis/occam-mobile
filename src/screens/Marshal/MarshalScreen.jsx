@@ -9,6 +9,7 @@ import AgentChatMessages from '../../components/AgentChat/AgentChatMessages';
 import useAuth from '../../hooks/useAuth';
 import useMarshal from '../../hooks/useMarshal';
 import useMarshalIntent from '../../hooks/useMarshalIntent';
+import { submitMarshalFeedback } from '../../services/marshal.api';
 import { buildMarshalScreenContext } from '../../helpers/marshalContext.helper';
 import { marshalStyles as styles } from '../../styles/marshal.styles';
 import logger from '../../helpers/logger.helper';
@@ -41,9 +42,14 @@ const MarshalScreen = ({ route }) => {
     runHealthCheck,
     selectSuggestion,
     sendCurrentMessage,
+    sessionId,
     setInput,
     suggestions,
   } = useMarshal({ screenContext });
+
+  const handleFeedback = useCallback(({ rating, reason }) => {
+    submitMarshalFeedback(sessionId, { rating, reason });
+  }, [sessionId]);
 
   // Consume pending intent on focus (handles normal tab navigation)
   useFocusEffect(useCallback(() => {
@@ -131,6 +137,7 @@ const MarshalScreen = ({ route }) => {
               onDeclineAction={declineAction}
               onSendEmail={handleSendEmail}
               onDiscardEmail={handleDiscardEmail}
+              onFeedback={handleFeedback}
             />
             <AgentChatInput
               error={error}

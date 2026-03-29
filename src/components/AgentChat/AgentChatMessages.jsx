@@ -40,10 +40,17 @@ const AgentChatMessages = ({
   onSlotSelect,
   onBookingLinkPress,
   handoffActionLabel,
+  onFeedback,
 }) => {
   const scrollRef = useRef(null);
 
   const lastMessage = messages[messages.length - 1];
+  const lastAssistantIdx = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].sender === 'assistant' && !messages[i].streaming) return i;
+    }
+    return -1;
+  })();
   const lastMessageText = lastMessage?.text;
   // Also scroll when the last message gains a booking link or availability
   // (these are added after the streaming placeholder is already in the array)
@@ -66,7 +73,7 @@ const AgentChatMessages = ({
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {messages.map((message) => (
+        {messages.map((message, index) => (
           <AgentChatBubble
             key={message.id}
             message={message}
@@ -79,6 +86,8 @@ const AgentChatMessages = ({
             onSlotSelect={onSlotSelect}
             onBookingLinkPress={onBookingLinkPress}
             handoffActionLabel={handoffActionLabel}
+            isLastAssistant={index === lastAssistantIdx}
+            onFeedback={index === lastAssistantIdx ? onFeedback : undefined}
           />
         ))}
         {isLoading && !messages.some((m) => m.streaming && m.text) ? (
@@ -108,6 +117,7 @@ AgentChatMessages.propTypes = {
   onSlotSelect: PropTypes.func,
   onBookingLinkPress: PropTypes.func,
   handoffActionLabel: PropTypes.string,
+  onFeedback: PropTypes.func,
   messages: PropTypes.arrayOf(PropTypes.shape({
     id: PropTypes.string.isRequired,
     sender: PropTypes.oneOf(['assistant', 'user']).isRequired,

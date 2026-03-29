@@ -10,6 +10,7 @@ import BookingsCard from './BookingsCard';
 import EmailPreviewCard from './EmailPreviewCard';
 import EmailDraftCard from './EmailDraftCard';
 import FormattedResponseText from './FormattedResponseText';
+import AgentFeedbackButtons from './AgentFeedbackButtons';
 
 const ACTION_LABELS = {
   create_booking: 'Create Booking',
@@ -229,7 +230,7 @@ HandoffCard.propTypes = {
   onHandoffAction: PropTypes.func,
 };
 
-const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction, onHandoffAction, handoffActionLabel, onSlotSelect, onBookingLinkPress, onSendEmail, onDiscardEmail }) => {
+const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction, onHandoffAction, handoffActionLabel, onSlotSelect, onBookingLinkPress, onSendEmail, onDiscardEmail, isLastAssistant, onFeedback }) => {
   const isUser = message.sender === 'user';
 
   // Hide streaming placeholder until first token arrives
@@ -333,6 +334,9 @@ const AgentChatBubble = ({ message, agentLabel, onConfirmAction, onDeclineAction
             {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </Text>
         ) : null}
+        {isLastAssistant && !isUser && !message.streaming && onFeedback ? (
+          <AgentFeedbackButtons onSubmit={onFeedback} />
+        ) : null}
       </View>
       {isUser ? (
         <View style={[styles.avatarWrap, styles.userAvatar]}>
@@ -416,6 +420,8 @@ AgentChatBubble.propTypes = {
     })),
   }).isRequired,
   agentLabel: PropTypes.string,
+  isLastAssistant: PropTypes.bool,
+  onFeedback: PropTypes.func,
   onConfirmAction: PropTypes.func,
   onDeclineAction: PropTypes.func,
   onDiscardEmail: PropTypes.func,

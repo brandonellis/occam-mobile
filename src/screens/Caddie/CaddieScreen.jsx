@@ -8,6 +8,7 @@ import AgentChatInput from '../../components/AgentChat/AgentChatInput';
 import AgentChatMessages from '../../components/AgentChat/AgentChatMessages';
 import useCaddie from '../../hooks/useCaddie';
 import useAuth from '../../hooks/useAuth';
+import { submitCaddieFeedback } from '../../services/caddie.api';
 import { ADMIN_SHELL_ROLES, COACH_ROLES, ROLES } from '../../constants/auth.constants';
 import { SCREENS } from '../../constants/navigation.constants';
 import { navigate, navigationRef } from '../../helpers/navigation.helper';
@@ -35,10 +36,15 @@ const CaddieScreen = () => {
     selectSuggestion,
     sendCurrentMessage,
     sendMessage,
+    sessionId,
     setInput,
     suggestions,
     dispatch,
   } = useCaddie();
+
+  const handleFeedback = useCallback(({ rating, reason }) => {
+    submitCaddieFeedback(sessionId, { rating, reason });
+  }, [sessionId]);
 
   useFocusEffect(useCallback(() => { runHealthCheck(); }, [runHealthCheck]));
 
@@ -207,6 +213,7 @@ const CaddieScreen = () => {
               onSlotSelect={handleSlotSelect}
               onBookingLinkPress={handleBookingLinkPress}
               handoffActionLabel="Open in Marshal"
+              onFeedback={handleFeedback}
             />
             <AgentChatInput
               error={combinedError}

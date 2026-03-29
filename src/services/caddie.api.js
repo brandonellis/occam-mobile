@@ -81,3 +81,17 @@ export const checkCaddieHealth = async () => {
     return false;
   }
 };
+
+export const submitCaddieFeedback = async (sessionId, { rating, reason, comment, messageIndex }) => {
+  try {
+    await apiClient.post('/caddie/feedback', {
+      session_id: sessionId,
+      rating,
+      reason: reason || null,
+      comment: comment || null,
+      message_index: messageIndex ?? null,
+    });
+  } catch (err) {
+    logger.warn('Caddie feedback submit failed:', err?.message);
+  }
+};

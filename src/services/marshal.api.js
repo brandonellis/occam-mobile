@@ -117,3 +117,17 @@ export const checkMarshalHealth = async () => {
     return false;
   }
 };
+
+export const submitMarshalFeedback = async (sessionId, { rating, reason, comment, messageIndex }) => {
+  try {
+    await apiClient.post('/marshal/feedback', {
+      session_id: sessionId,
+      rating,
+      reason: reason || null,
+      comment: comment || null,
+      message_index: messageIndex ?? null,
+    });
+  } catch (err) {
+    logger.warn('Marshal feedback submit failed:', err?.message);
+  }
+};
