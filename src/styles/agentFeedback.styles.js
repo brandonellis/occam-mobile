@@ -10,8 +10,8 @@ export const agentFeedbackStyles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   button: {
-    width: 32,
-    height: 32,
+    minWidth: 44,
+    minHeight: 44,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
@@ -32,8 +32,10 @@ export const agentFeedbackStyles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   reasonChip: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     borderRadius: 12,
     borderWidth: 1,
     borderColor: colors.gray200,

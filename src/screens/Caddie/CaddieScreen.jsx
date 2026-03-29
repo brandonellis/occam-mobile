@@ -43,6 +43,7 @@ const CaddieScreen = () => {
   } = useCaddie();
 
   const handleFeedback = useCallback(({ rating, reason }) => {
+    if (!sessionId) return;
     submitCaddieFeedback(sessionId, { rating, reason });
   }, [sessionId]);
 

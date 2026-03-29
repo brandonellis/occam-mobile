@@ -48,6 +48,7 @@ const MarshalScreen = ({ route }) => {
   } = useMarshal({ screenContext });
 
   const handleFeedback = useCallback(({ rating, reason }) => {
+    if (!sessionId) return;
     submitMarshalFeedback(sessionId, { rating, reason });
   }, [sessionId]);
 
