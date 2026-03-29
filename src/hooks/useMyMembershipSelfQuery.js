@@ -11,8 +11,13 @@ const useMyMembershipSelfQuery = (options = {}) => {
   return useQuery({
     queryKey: QUERY_KEYS.MEMBERSHIPS.mySelf,
     queryFn: async () => {
-      const resp = await getMyMembership();
-      return resp?.data ?? resp ?? null;
+      try {
+        const resp = await getMyMembership();
+        return resp?.data ?? resp ?? null;
+      } catch (err) {
+        if (err?.response?.status === 404) return null;
+        throw err;
+      }
     },
     ...options,
   });
