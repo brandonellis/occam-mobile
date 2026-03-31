@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, ScrollView, Alert, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { View, ScrollView, Alert, FlatList, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, TextInput, Switch, Text, Divider, Card, Chip, Searchbar, ActivityIndicator } from 'react-native-paper';
+import { WebView } from 'react-native-webview';
 import ScreenHeader from '../../components/ScreenHeader';
-import { sendLessonFeedback } from '../../services/bookings.api';
+import { sendLessonFeedback, previewLessonFeedback } from '../../services/bookings.api';
 import { getUploads } from '../../services/uploads.api';
 import { getClientPerformanceCurriculum } from '../../services/accounts.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
@@ -12,10 +13,14 @@ import { colors } from '../../theme';
 import { lessonFeedbackStyles as styles } from '../../styles/lessonFeedback.styles';
 import logger from '../../helpers/logger.helper';
 
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const MAX_WEBVIEW_HEIGHT = 500;
+
 const LessonFeedbackScreen = ({ navigation, route }) => {
   const { booking } = route.params || {};
   const { company } = useAuth();
 
+  const [mode, setMode] = useState('compose'); // 'compose' | 'preview'
   const [coachMessage, setCoachMessage] = useState('');
   const [includeNotes, setIncludeNotes] = useState(false);
   const [notesContent, setNotesContent] = useState('');
@@ -26,6 +31,10 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
   const [curriculumData, setCurriculumData] = useState(null);
   const [curriculumLoading, setCurriculumLoading] = useState(false);
   const [sending, setSending] = useState(false);
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [webViewHeight, setWebViewHeight] = useState(300);
+  const webViewRef = useRef(null);
 
   const clientId = booking?.client?.id || booking?.client_id;
   const clientName = booking?.client
@@ -101,7 +110,6 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
     return () => { cancelled = true; clearTimeout(timeout); };
   }, [resourceSearch]);
 
-  // Filter out already-selected resources without re-triggering the search
   const searchResults = useMemo(() => {
     const selectedIds = selectedResources.map(r => r.id);
     return rawSearchResults.filter(u => !selectedIds.includes(u.id));
@@ -116,6 +124,51 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
     setSelectedResources(prev => prev.filter(r => r.id !== uploadId));
   }, []);
 
+  const buildPayload = useCallback(() => ({
+    message: coachMessage.trim(),
+    include_notes: includeNotes,
+    notes_content: includeNotes ? notesContent : null,
+    include_curriculum: includeCurriculum,
+    resource_ids: selectedResources.map(r => r.id),
+  }), [coachMessage, includeNotes, notesContent, includeCurriculum, selectedResources]);
+
+  const injectedJS = `
+    (function() {
+      var height = document.documentElement.scrollHeight;
+      window.ReactNativeWebView.postMessage(JSON.stringify({ height: height }));
+      var observer = new ResizeObserver(function() {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ height: document.documentElement.scrollHeight }));
+      });
+      observer.observe(document.body);
+    })();
+    true;
+  `;
+
+  const handleWebViewMessage = useCallback((event) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.height) {
+        setWebViewHeight(Math.min(data.height, MAX_WEBVIEW_HEIGHT));
+      }
+    } catch {
+      // Ignore non-JSON messages
+    }
+  }, []);
+
+  const handlePreview = useCallback(async () => {
+    if (!booking?.id || !coachMessage.trim()) return;
+    setPreviewLoading(true);
+    try {
+      const html = await previewLessonFeedback(booking.id, buildPayload());
+      setPreviewHtml(html);
+      setMode('preview');
+    } catch {
+      Alert.alert('Error', 'Failed to load preview.');
+    } finally {
+      setPreviewLoading(false);
+    }
+  }, [booking, coachMessage, buildPayload]);
+
   const handleSend = useCallback(async () => {
     if (!booking?.id || !coachMessage.trim()) return;
 
@@ -129,13 +182,7 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
           onPress: async () => {
             setSending(true);
             try {
-              await sendLessonFeedback(booking.id, {
-                message: coachMessage.trim(),
-                include_notes: includeNotes,
-                notes_content: includeNotes ? notesContent : null,
-                include_curriculum: includeCurriculum,
-                resource_ids: selectedResources.map(r => r.id),
-              });
+              await sendLessonFeedback(booking.id, buildPayload());
               Alert.alert('Success', 'Lesson recap sent!', [
                 { text: 'OK', onPress: () => navigation.goBack() },
               ]);
@@ -149,10 +196,54 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
         },
       ]
     );
-  }, [booking, coachMessage, includeNotes, notesContent, includeCurriculum, selectedResources, clientName, navigation]);
+  }, [booking, coachMessage, buildPayload, clientName, navigation]);
 
   const service = booking?.services?.[0];
   const coach = booking?.coaches?.[0];
+
+  if (mode === 'preview') {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScreenHeader title="Preview Lesson Recap" onBack={() => setMode('compose')} />
+        <View style={[styles.webViewContainer, { height: webViewHeight }]}>
+          <WebView
+            ref={webViewRef}
+            source={{ html: previewHtml }}
+            style={styles.webView}
+            scrollEnabled
+            injectedJavaScript={injectedJS}
+            onMessage={handleWebViewMessage}
+            originWhitelist={['https:', 'http:', 'about:']}
+            onShouldStartLoadWithRequest={(req) => req.url === 'about:blank' || req.url.startsWith('data:')}
+            showsVerticalScrollIndicator={false}
+            javaScriptEnabled
+          />
+        </View>
+        <View style={styles.previewActions}>
+          <Button
+            mode="outlined"
+            icon="pencil-outline"
+            onPress={() => setMode('compose')}
+            style={styles.previewActionButton}
+          >
+            Back to Edit
+          </Button>
+          <Button
+            mode="contained"
+            icon="send"
+            onPress={handleSend}
+            loading={sending}
+            disabled={sending}
+            buttonColor={colors.accent}
+            textColor={colors.textInverse}
+            style={styles.previewActionButton}
+          >
+            Send Recap
+          </Button>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -285,19 +376,31 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
           </>
         )}
 
-        {/* Send button */}
-        <Button
-          mode="contained"
-          icon="send"
-          onPress={handleSend}
-          loading={sending}
-          disabled={sending || !coachMessage.trim()}
-          buttonColor={colors.accent}
-          textColor={colors.textInverse}
-          style={styles.sendButton}
-        >
-          Send Recap
-        </Button>
+        {/* Action buttons */}
+        <View style={styles.composeActions}>
+          <Button
+            mode="outlined"
+            icon="eye-outline"
+            onPress={handlePreview}
+            loading={previewLoading}
+            disabled={previewLoading || !coachMessage.trim()}
+            style={styles.composeActionButton}
+          >
+            Preview
+          </Button>
+          <Button
+            mode="contained"
+            icon="send"
+            onPress={handleSend}
+            loading={sending}
+            disabled={sending || !coachMessage.trim()}
+            buttonColor={colors.accent}
+            textColor={colors.textInverse}
+            style={styles.composeActionButton}
+          >
+            Send Recap
+          </Button>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

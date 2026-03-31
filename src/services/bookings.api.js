@@ -175,3 +175,14 @@ export const sendLessonFeedback = async (bookingId, payload) => {
   const response = await apiClient.post(`/bookings/${bookingId}/send-lesson-feedback`, payload);
   return response.data;
 };
+
+/**
+ * Preview lesson feedback email as rendered HTML.
+ * @param {number} bookingId
+ * @param {object} payload - same shape as sendLessonFeedback
+ * @returns {Promise<string>} Rendered HTML
+ */
+export const previewLessonFeedback = async (bookingId, payload) => {
+  const response = await apiClient.post(`/bookings/${bookingId}/preview-lesson-feedback`, payload);
+  return response.data?.html || '';
+};
