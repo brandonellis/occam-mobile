@@ -185,6 +185,10 @@ const BookingDetailScreen = ({ navigation, route }) => {
     booking.status === 'confirmed' &&
     !booking.paid_at &&
     !booking.class_session_id;
+  const isPastBooking = booking.end_time && new Date(booking.end_time) < new Date();
+  const canSendFeedback = isStaffView && isPastBooking &&
+    booking.status === 'confirmed' && !booking.class_session_id;
+  const feedbackAlreadySent = !!booking.feedback_email_sent_at;
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -278,7 +282,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {(isStaffView || canEdit || canCancel || canCollectPayment) && (
+        {(isStaffView || canEdit || canCancel || canCollectPayment || canSendFeedback) && (
           <View style={styles.actionGroup}>
             {canCollectPayment && (
               <Button
@@ -303,6 +307,17 @@ const BookingDetailScreen = ({ navigation, route }) => {
                 labelStyle={styles.marshalButtonLabel}
               >
                 Open in Marshal
+              </Button>
+            )}
+            {canSendFeedback && (
+              <Button
+                mode="outlined"
+                icon="email-send-outline"
+                textColor={feedbackAlreadySent ? colors.textSecondary : colors.accentDark}
+                disabled={feedbackAlreadySent}
+                onPress={() => navigation.navigate(SCREENS.LESSON_FEEDBACK, { booking })}
+              >
+                {feedbackAlreadySent ? 'Recap Sent' : 'Send Lesson Recap'}
               </Button>
             )}
             {canEdit && (

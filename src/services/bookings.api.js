@@ -165,3 +165,13 @@ export const cancelRecurringSeries = async (seriesId) => {
   const response = await apiClient.post(`/bookings/series/${seriesId}/cancel`);
   return response.data;
 };
+
+/**
+ * Send lesson feedback email to the client.
+ * @param {number} bookingId
+ * @param {object} payload - { message, include_notes, notes_content, include_curriculum, resource_ids }
+ */
+export const sendLessonFeedback = async (bookingId, payload) => {
+  const response = await apiClient.post(`/bookings/${bookingId}/send-lesson-feedback`, payload);
+  return response.data;
+};
