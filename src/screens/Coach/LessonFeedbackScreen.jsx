@@ -288,7 +288,7 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
         {/* Send button */}
         <Button
           mode="contained"
-          icon="email-send-outline"
+          icon="send"
           onPress={handleSend}
           loading={sending}
           disabled={sending || !coachMessage.trim()}

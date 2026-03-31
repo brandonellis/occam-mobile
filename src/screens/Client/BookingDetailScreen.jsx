@@ -312,7 +312,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
             {canSendFeedback && (
               <Button
                 mode="outlined"
-                icon="email-send-outline"
+                icon="send"
                 textColor={feedbackAlreadySent ? colors.textSecondary : colors.accentDark}
                 disabled={feedbackAlreadySent}
                 onPress={() => navigation.navigate(SCREENS.LESSON_FEEDBACK, { booking })}
