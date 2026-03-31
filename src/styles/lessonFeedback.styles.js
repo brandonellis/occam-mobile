@@ -15,8 +15,13 @@ export const lessonFeedbackStyles = StyleSheet.create({
   },
   sectionTitle: {
     fontWeight: '600',
-    marginBottom: spacing.xs,
+    marginBottom: 2,
     color: colors.textPrimary,
+  },
+  helperText: {
+    color: colors.textTertiary,
+    marginBottom: spacing.sm,
+    lineHeight: 18,
   },
   detailText: {
     color: colors.textPrimary,
@@ -33,9 +38,13 @@ export const lessonFeedbackStyles = StyleSheet.create({
   toggleRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginBottom: spacing.sm,
     paddingVertical: spacing.xs,
+    gap: spacing.sm,
+  },
+  toggleLabel: {
+    flex: 1,
   },
   divider: {
     marginVertical: spacing.md,
@@ -46,15 +55,55 @@ export const lessonFeedbackStyles = StyleSheet.create({
   },
   searchResultsCard: {
     marginBottom: spacing.sm,
-    maxHeight: 200,
+    maxHeight: 240,
   },
   searchResultItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
-    minHeight: 44,
+    minHeight: 52,
+    gap: spacing.sm,
+  },
+  searchResultThumb: {
+    width: 36,
+    height: 36,
+    borderRadius: 4,
+  },
+  searchResultIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 4,
+    backgroundColor: colors.gray50,
+    alignItems: 'center',
     justifyContent: 'center',
+  },
+  searchResultIconVideo: {
+    backgroundColor: colors.accentLight || colors.gray50,
+  },
+  searchResultInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  searchResultTitle: {
+    color: colors.textPrimary,
+  },
+  searchResultType: {
+    color: colors.textTertiary,
+    fontSize: 11,
+    textTransform: 'uppercase',
+    letterSpacing: 0.3,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    gap: spacing.xs,
+  },
+  emptyStateText: {
+    color: colors.textTertiary,
+    textAlign: 'center',
   },
   chipRow: {
     flexDirection: 'row',

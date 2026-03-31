@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, ScrollView, Alert, FlatList, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, TextInput, Switch, Text, Divider, Card, Chip, Searchbar, ActivityIndicator } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import ScreenHeader from '../../components/ScreenHeader';
 import { sendLessonFeedback, previewLessonFeedback } from '../../services/bookings.api';
@@ -9,18 +10,26 @@ import { getUploads } from '../../services/uploads.api';
 import { getClientPerformanceCurriculum } from '../../services/accounts.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
+import { resolveMediaUrl } from '../../helpers/media.helper';
+import AuthImage from '../../components/AuthImage';
 import { colors } from '../../theme';
 import { lessonFeedbackStyles as styles } from '../../styles/lessonFeedback.styles';
 import logger from '../../helpers/logger.helper';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
 const MAX_WEBVIEW_HEIGHT = 500;
+
+const getDocIcon = (mime) => {
+  if (mime.startsWith('application/pdf')) return 'file-document';
+  if (mime.includes('spreadsheet') || mime.includes('excel')) return 'grid';
+  if (mime.includes('presentation') || mime.includes('powerpoint')) return 'presentation';
+  return 'file-document-outline';
+};
 
 const LessonFeedbackScreen = ({ navigation, route }) => {
   const { booking } = route.params || {};
   const { company } = useAuth();
 
-  const [mode, setMode] = useState('compose'); // 'compose' | 'preview'
+  const [mode, setMode] = useState('compose');
   const [coachMessage, setCoachMessage] = useState('');
   const [includeNotes, setIncludeNotes] = useState(false);
   const [notesContent, setNotesContent] = useState('');
@@ -41,36 +50,23 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
     ? `${booking.client.first_name} ${booking.client.last_name}`
     : 'the client';
 
-  // Pre-populate notes from existing booking notes
   useEffect(() => {
     if (booking) {
       const notes = booking.notes || [];
       const textNotes = Array.isArray(notes)
-        ? notes
-            .filter(n => typeof n === 'object' && n.note && n.note_type !== 'voice')
-            .map(n => n.note)
-            .join('\n\n')
+        ? notes.filter(n => typeof n === 'object' && n.note && n.note_type !== 'voice').map(n => n.note).join('\n\n')
         : '';
-
-      if (textNotes) {
-        setNotesContent(textNotes);
-        setIncludeNotes(true);
-      }
+      if (textNotes) { setNotesContent(textNotes); setIncludeNotes(true); }
     }
   }, [booking]);
 
-  // Load curriculum data
   useEffect(() => {
     if (!clientId) return;
     let cancelled = false;
     setCurriculumLoading(true);
     getClientPerformanceCurriculum(clientId)
       .then(data => {
-        if (!cancelled) {
-          setCurriculumData(data);
-          const hasPrograms = data?.programs?.length > 0;
-          setIncludeCurriculum(hasPrograms);
-        }
+        if (!cancelled) { setCurriculumData(data); setIncludeCurriculum(data?.programs?.length > 0); }
       })
       .catch((err) => { logger.warn('Failed to load curriculum:', err?.message); })
       .finally(() => { if (!cancelled) setCurriculumLoading(false); });
@@ -81,31 +77,22 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
     const program = curriculumData?.programs?.[0];
     if (!program) return null;
     const total = program.modules?.reduce((sum, m) => sum + (m.lessons?.length || 0), 0) || 0;
-    const completed = program.modules?.reduce(
-      (sum, m) => sum + (m.lessons?.filter(l => l.completed)?.length || 0), 0
-    ) || 0;
+    const completed = program.modules?.reduce((sum, m) => sum + (m.lessons?.filter(l => l.completed)?.length || 0), 0) || 0;
     const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { name: program.name, total, completed, pct };
   }, [curriculumData]);
 
-  // Search uploads from media library (debounced)
   const [rawSearchResults, setRawSearchResults] = useState([]);
   useEffect(() => {
-    if (!resourceSearch.trim()) {
-      setRawSearchResults([]);
-      return;
-    }
+    if (!resourceSearch.trim()) { setRawSearchResults([]); return; }
     let cancelled = false;
     const timeout = setTimeout(async () => {
       setSearchLoading(true);
       try {
         const data = await getUploads({ search: resourceSearch, per_page: 15 });
         if (!cancelled) setRawSearchResults(data?.data || []);
-      } catch {
-        if (!cancelled) setRawSearchResults([]);
-      } finally {
-        if (!cancelled) setSearchLoading(false);
-      }
+      } catch { if (!cancelled) setRawSearchResults([]); }
+      finally { if (!cancelled) setSearchLoading(false); }
     }, 300);
     return () => { cancelled = true; clearTimeout(timeout); };
   }, [resourceSearch]);
@@ -147,12 +134,8 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
   const handleWebViewMessage = useCallback((event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
-      if (data.height) {
-        setWebViewHeight(Math.min(data.height, MAX_WEBVIEW_HEIGHT));
-      }
-    } catch {
-      // Ignore non-JSON messages
-    }
+      if (data.height) setWebViewHeight(Math.min(data.height, MAX_WEBVIEW_HEIGHT));
+    } catch {}
   }, []);
 
   const handlePreview = useCallback(async () => {
@@ -162,45 +145,63 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
       const html = await previewLessonFeedback(booking.id, buildPayload());
       setPreviewHtml(html);
       setMode('preview');
-    } catch {
-      Alert.alert('Error', 'Failed to load preview.');
-    } finally {
-      setPreviewLoading(false);
-    }
+    } catch { Alert.alert('Error', 'Failed to load preview.'); }
+    finally { setPreviewLoading(false); }
   }, [booking, coachMessage, buildPayload]);
 
   const handleSend = useCallback(async () => {
     if (!booking?.id || !coachMessage.trim()) return;
-
-    Alert.alert(
-      'Send Lesson Recap',
-      `Send lesson recap email to ${clientName}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Send',
-          onPress: async () => {
-            setSending(true);
-            try {
-              await sendLessonFeedback(booking.id, buildPayload());
-              Alert.alert('Success', 'Lesson recap sent!', [
-                { text: 'OK', onPress: () => navigation.goBack() },
-              ]);
-            } catch (error) {
-              const msg = error?.response?.data?.message || 'Failed to send lesson recap.';
-              Alert.alert('Error', msg);
-            } finally {
-              setSending(false);
-            }
-          },
+    Alert.alert('Send Lesson Recap', `Send lesson recap email to ${clientName}?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Send',
+        onPress: async () => {
+          setSending(true);
+          try {
+            await sendLessonFeedback(booking.id, buildPayload());
+            Alert.alert('Success', 'Lesson recap sent!', [{ text: 'OK', onPress: () => navigation.goBack() }]);
+          } catch (error) {
+            Alert.alert('Error', error?.response?.data?.message || 'Failed to send lesson recap.');
+          } finally { setSending(false); }
         },
-      ]
-    );
+      },
+    ]);
   }, [booking, coachMessage, buildPayload, clientName, navigation]);
 
   const service = booking?.services?.[0];
   const coach = booking?.coaches?.[0];
 
+  const renderSearchResultItem = useCallback(({ item }) => {
+    const mime = item.mime_type || '';
+    const isImage = mime.startsWith('image/');
+    const isVideo = mime.startsWith('video/');
+    const thumbUrl = resolveMediaUrl(item.thumb_url || (isImage ? item.url : null));
+    const title = item.title || item.original_filename || item.filename;
+
+    return (
+      <TouchableOpacity style={styles.searchResultItem} onPress={() => handleSelectResource(item)}>
+        {isImage && thumbUrl ? (
+          <AuthImage uri={thumbUrl} style={styles.searchResultThumb} resizeMode="cover" />
+        ) : isVideo ? (
+          <View style={[styles.searchResultIcon, styles.searchResultIconVideo]}>
+            <MaterialCommunityIcons name="play-circle" size={20} color={colors.accent} />
+          </View>
+        ) : (
+          <View style={styles.searchResultIcon}>
+            <MaterialCommunityIcons name={getDocIcon(mime)} size={20} color={colors.textTertiary} />
+          </View>
+        )}
+        <View style={styles.searchResultInfo}>
+          <Text variant="bodyMedium" numberOfLines={1} style={styles.searchResultTitle}>{title}</Text>
+          <Text variant="bodySmall" style={styles.searchResultType}>
+            {isImage ? 'Image' : isVideo ? 'Video' : mime.split('/').pop()?.toUpperCase() || 'File'}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    );
+  }, [handleSelectResource]);
+
+  // Preview mode
   if (mode === 'preview') {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
@@ -220,24 +221,10 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
           />
         </View>
         <View style={styles.previewActions}>
-          <Button
-            mode="outlined"
-            icon="pencil-outline"
-            onPress={() => setMode('compose')}
-            style={styles.previewActionButton}
-          >
+          <Button mode="outlined" icon="pencil-outline" onPress={() => setMode('compose')} style={styles.previewActionButton}>
             Back to Edit
           </Button>
-          <Button
-            mode="contained"
-            icon="send"
-            onPress={handleSend}
-            loading={sending}
-            disabled={sending}
-            buttonColor={colors.accent}
-            textColor={colors.textInverse}
-            style={styles.previewActionButton}
-          >
+          <Button mode="contained" icon="send" onPress={handleSend} loading={sending} disabled={sending} buttonColor={colors.accent} textColor={colors.textInverse} style={styles.previewActionButton}>
             Send Recap
           </Button>
         </View>
@@ -245,6 +232,7 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
     );
   }
 
+  // Compose mode
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <ScreenHeader title="Send Lesson Recap" onBack={() => navigation.goBack()} />
@@ -254,37 +242,32 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
           <Card.Content>
             <Text variant="titleSmall" style={styles.sectionTitle}>Session Details</Text>
             {booking?.start_time && (
-              <Text variant="bodyMedium" style={styles.detailText}>
-                {formatDateInTz(booking.start_time, company, 'long')}
-              </Text>
+              <Text variant="bodyMedium" style={styles.detailText}>{formatDateInTz(booking.start_time, company, 'long')}</Text>
             )}
             {booking?.start_time && (
               <Text variant="bodyMedium" style={styles.detailText}>
-                {formatTimeInTz(booking.start_time, company)}
-                {booking.end_time ? ` - ${formatTimeInTz(booking.end_time, company)}` : ''}
+                {formatTimeInTz(booking.start_time, company)}{booking.end_time ? ` - ${formatTimeInTz(booking.end_time, company)}` : ''}
               </Text>
             )}
-            {service && (
-              <Text variant="bodyMedium" style={styles.detailText}>{service.name}</Text>
-            )}
-            {coach && (
-              <Text variant="bodySmall" style={styles.secondaryText}>
-                Coach: {coach.first_name} {coach.last_name}
-              </Text>
-            )}
+            {service && <Text variant="bodyMedium" style={styles.detailText}>{service.name}</Text>}
+            {coach && <Text variant="bodySmall" style={styles.secondaryText}>Coach: {coach.first_name} {coach.last_name}</Text>}
           </Card.Content>
         </Card>
 
-        {/* Message */}
-        <Text variant="titleSmall" style={styles.sectionTitle}>Message to Client *</Text>
+        {/* Personal Feedback */}
+        <Text variant="titleSmall" style={styles.sectionTitle}>Personal Feedback *</Text>
+        <Text variant="bodySmall" style={styles.helperText}>
+          Your personalized message to the client. This is the main body of the email.
+        </Text>
         <TextInput
           mode="outlined"
           multiline
           numberOfLines={5}
-          placeholder="Write a personalized message about the session..."
+          placeholder="Write about what you worked on, what went well, and what to focus on next..."
           value={coachMessage}
           onChangeText={setCoachMessage}
           maxLength={5000}
+          right={<TextInput.Affix text={`${coachMessage.length}/5000`} />}
           style={styles.textInput}
         />
 
@@ -292,7 +275,12 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
 
         {/* Notes toggle */}
         <View style={styles.toggleRow}>
-          <Text variant="bodyLarge">Include Session Notes</Text>
+          <View style={styles.toggleLabel}>
+            <Text variant="bodyLarge">Include Session Notes</Text>
+            <Text variant="bodySmall" style={styles.helperText}>
+              Pre-filled from notes added during the lesson. Shown as a separate section.
+            </Text>
+          </View>
           <Switch value={includeNotes} onValueChange={setIncludeNotes} />
         </View>
         {includeNotes && (
@@ -312,6 +300,9 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
 
         {/* Attach Resources */}
         <Text variant="titleSmall" style={styles.sectionTitle}>Attach Resources</Text>
+        <Text variant="bodySmall" style={styles.helperText}>
+          Share drill videos, documents, or images for your client to review. Resources are automatically added to their profile.
+        </Text>
         <Searchbar
           placeholder="Search media library..."
           value={resourceSearch}
@@ -319,33 +310,26 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
           style={styles.searchbar}
           loading={searchLoading}
         />
+        {!resourceSearch && selectedResources.length === 0 && (
+          <View style={styles.emptyState}>
+            <MaterialCommunityIcons name="folder-open-outline" size={28} color={colors.textTertiary} />
+            <Text variant="bodySmall" style={styles.emptyStateText}>Search your media library to attach resources</Text>
+          </View>
+        )}
         {searchResults.length > 0 && (
           <Card style={styles.searchResultsCard} mode="outlined">
             <FlatList
               data={searchResults}
               keyExtractor={item => String(item.id)}
               scrollEnabled={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.searchResultItem}
-                  onPress={() => handleSelectResource(item)}
-                >
-                  <Text variant="bodyMedium" numberOfLines={1}>
-                    {item.title || item.original_filename || item.filename}
-                  </Text>
-                </TouchableOpacity>
-              )}
+              renderItem={renderSearchResultItem}
             />
           </Card>
         )}
         {selectedResources.length > 0 && (
           <View style={styles.chipRow}>
             {selectedResources.map(r => (
-              <Chip
-                key={r.id}
-                onClose={() => handleRemoveResource(r.id)}
-                style={styles.chip}
-              >
+              <Chip key={r.id} onClose={() => handleRemoveResource(r.id)} style={styles.chip}>
                 {r.title || r.original_filename || r.filename}
               </Chip>
             ))}
@@ -359,7 +343,12 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
         {curriculumSummary && !curriculumLoading && (
           <>
             <View style={styles.toggleRow}>
-              <Text variant="bodyLarge">Include Curriculum Progress</Text>
+              <View style={styles.toggleLabel}>
+                <Text variant="bodyLarge">Include Curriculum Progress</Text>
+                <Text variant="bodySmall" style={styles.helperText}>
+                  Shows the client their overall program completion and recently completed lessons.
+                </Text>
+              </View>
               <Switch value={includeCurriculum} onValueChange={setIncludeCurriculum} />
             </View>
             {includeCurriculum && (
@@ -378,26 +367,10 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
 
         {/* Action buttons */}
         <View style={styles.composeActions}>
-          <Button
-            mode="outlined"
-            icon="eye-outline"
-            onPress={handlePreview}
-            loading={previewLoading}
-            disabled={previewLoading || !coachMessage.trim()}
-            style={styles.composeActionButton}
-          >
+          <Button mode="outlined" icon="eye-outline" onPress={handlePreview} loading={previewLoading} disabled={previewLoading || !coachMessage.trim()} style={styles.composeActionButton}>
             Preview
           </Button>
-          <Button
-            mode="contained"
-            icon="send"
-            onPress={handleSend}
-            loading={sending}
-            disabled={sending || !coachMessage.trim()}
-            buttonColor={colors.accent}
-            textColor={colors.textInverse}
-            style={styles.composeActionButton}
-          >
+          <Button mode="contained" icon="send" onPress={handleSend} loading={sending} disabled={sending || !coachMessage.trim()} buttonColor={colors.accent} textColor={colors.textInverse} style={styles.composeActionButton}>
             Send Recap
           </Button>
         </View>
