@@ -3,7 +3,7 @@ import { buildMessage, normalizeSuggestions } from './agentChat.helper';
 export const INITIAL_SUGGESTIONS = [
   'Summarize today\u2019s bookings',
   'What should I focus on next?',
-  'Show operational risks for this week',
+  'How are we doing this month?',
 ];
 
 export const INITIAL_MESSAGES = [

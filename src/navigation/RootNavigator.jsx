@@ -20,6 +20,7 @@ import NotificationPreferencesScreen from '../screens/Shared/NotificationPrefere
 import PaymentLinkScreen from '../screens/Shared/PaymentLinkScreen';
 import BookingDetailScreen from '../screens/Client/BookingDetailScreen';
 import CalendarSyncScreen from '../screens/Client/CalendarSyncScreen';
+import LessonFeedbackScreen from '../screens/Coach/LessonFeedbackScreen';
 import { bookingScreens } from './BookingScreens';
 
 const Stack = createNativeStackNavigator();
@@ -117,6 +118,13 @@ const RootNavigator = () => {
           <Stack.Screen
             name={SCREENS.BOOKING_DETAIL}
             component={BookingDetailScreen}
+            options={{ animation: 'slide_from_right' }}
+          />
+
+          {/* Lesson feedback — accessed from BookingDetail */}
+          <Stack.Screen
+            name={SCREENS.LESSON_FEEDBACK}
+            component={LessonFeedbackScreen}
             options={{ animation: 'slide_from_right' }}
           />
 

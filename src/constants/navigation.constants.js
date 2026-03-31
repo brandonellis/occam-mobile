@@ -67,6 +67,9 @@ export const SCREENS = {
   // Booking detail
   BOOKING_DETAIL: 'BookingDetail',
 
+  // Lesson feedback
+  LESSON_FEEDBACK: 'LessonFeedback',
+
   // Calendar sync
   CALENDAR_SYNC: 'CalendarSync',
 
