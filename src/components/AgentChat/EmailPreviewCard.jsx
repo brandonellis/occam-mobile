@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { Dimensions, View } from 'react-native';
+import { Dimensions, Platform, View } from 'react-native';
 import { Button, Icon, Text } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
 import { colors } from '../../theme';
@@ -90,6 +90,7 @@ const EmailPreviewCard = ({ emailPreview, onSendEmail, onDiscardEmail, isSending
           originWhitelist={['*']}
           showsVerticalScrollIndicator={false}
           javaScriptEnabled
+          {...(Platform.OS === 'android' && { androidLayerType: 'hardware' })}
         />
         {!expanded && webViewHeight >= MAX_HEIGHT ? (
           <View style={styles.fadeOverlay}>

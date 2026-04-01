@@ -2,7 +2,7 @@
   "expo": {
     "name": "Occam Golf",
     "slug": "occam-golf",
-    "version": "37",
+    "version": "38",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -26,16 +26,12 @@
             "CFBundleURLSchemes": [
               "com.googleusercontent.apps.826339810168-bd399kemauur3f1jjdqr5m2ldfs736er"
             ]
-          },
-          {
-            "CFBundleURLSchemes": [
-              "com.googleusercontent.apps.826339810168-bd399kemauur3f1jjdqr5m2ldfs736er"
-            ]
           }
         ],
         "ITSAppUsesNonExemptEncryption": false
       },
-      "appleTeamId": "86P5XHSDSV"
+      "appleTeamId": "86P5XHSDSV",
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.occamgolf.app",
@@ -97,10 +93,11 @@
         "@stripe/stripe-react-native",
         {
           "merchantIdentifier": "merchant.com.occamgolf.app",
-          "enableGooglePay": false
+          "enableGooglePay": true
         }
       ],
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-apple-authentication"
     ],
     "extra": {
       "eas": {

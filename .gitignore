@@ -45,5 +45,6 @@ credentials.json
 credentials/
 build/
 
-# local build number tracker
+# local build number trackers
 .build-number
+.build-number-android

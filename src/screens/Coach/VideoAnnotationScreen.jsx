@@ -424,7 +424,7 @@ const VideoAnnotationContent = ({ initialSource, uploadId, videoUrl, videoTitle,
 
       <KeyboardAvoidingView
         style={globalStyles.flex1}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         {/* Video player + drawing overlay */}
         <View style={[styles.videoContainer, { height: VIDEO_HEIGHT }, isDrawing && styles.videoContainerDrawing]}>

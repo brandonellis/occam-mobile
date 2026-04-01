@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { View, ScrollView, Alert, FlatList, TouchableOpacity, Dimensions } from 'react-native';
+import { View, ScrollView, Alert, FlatList, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Switch, Text, Divider, Card, Chip, Searchbar, ActivityIndicator } from 'react-native-paper';
 import RichTextEditor from '../../components/RichTextEditor';
@@ -220,6 +220,7 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
             onShouldStartLoadWithRequest={(req) => req.url === 'about:blank' || req.url.startsWith('data:')}
             showsVerticalScrollIndicator={false}
             javaScriptEnabled
+            {...(Platform.OS === 'android' && { androidLayerType: 'hardware' })}
           />
         </View>
         <View style={styles.previewActions}>

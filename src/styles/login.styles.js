@@ -206,6 +206,26 @@ export const loginStyles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
+  // Apple Sign-In
+  appleButton: {
+    backgroundColor: '#000000',
+    borderRadius: borderRadius.md,
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 56,
+  },
+  appleButtonDisabled: {
+    opacity: 0.4,
+  },
+  appleButtonText: {
+    ...typography.button,
+    color: colors.white,
+    fontSize: 15,
+    fontWeight: '600',
+  },
   errorContainer: {
     backgroundColor: colors.errorSubtle,
     borderWidth: 1,

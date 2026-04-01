@@ -28,13 +28,21 @@ try {
   // Native module not available — Google Sign-In will be disabled
 }
 import useAuth from '../../hooks/useAuth';
-import { googleSignInNative, forgotPassword } from '../../services/auth.api';
+import { googleSignInNative, appleSignInNative, forgotPassword } from '../../services/auth.api';
 import { searchTenants } from '../../services/tenants.api';
 import { getLastOrg, setLastOrg } from '../../helpers/storage.helper';
 import { loginStyles as styles } from '../../styles/login.styles';
 import { colors } from '../../theme';
 import config from '../../config';
 import logger from '../../helpers/logger.helper';
+
+// Lazy-load Apple Authentication — only available on iOS with native build
+let AppleAuthentication = null;
+try {
+  AppleAuthentication = require('expo-apple-authentication');
+} catch (e) {
+  // Native module not available — Apple Sign-In will be disabled
+}
 
 const logoColor = require('../../../assets/images/logo-color.png');
 const googleIcon = require('../../../assets/images/g-logo.png');
@@ -215,6 +223,58 @@ const LoginScreen = () => {
       setGoogleLoading(false);
     }
   }, [selectedOrg, error, clearError, setError, loginWithGoogle]);
+
+  // Apple Sign-In availability and handler
+  const [appleAvailable, setAppleAvailable] = useState(false);
+  const [appleLoading, setAppleLoading] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS === 'ios' && AppleAuthentication) {
+      AppleAuthentication.isAvailableAsync().then(setAppleAvailable).catch(() => {});
+    }
+  }, []);
+
+  const handleAppleSignIn = useCallback(async () => {
+    if (!selectedOrg || !appleAvailable) return;
+
+    setAppleLoading(true);
+    if (error) clearError();
+
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      const identityToken = credential.identityToken;
+      if (!identityToken) {
+        throw new Error('No identity token received from Apple');
+      }
+
+      // Apple only provides the name on the very first sign-in
+      const fullName = credential.fullName
+        ? { givenName: credential.fullName.givenName, familyName: credential.fullName.familyName }
+        : null;
+
+      const { data } = await appleSignInNative(identityToken, selectedOrg.id, fullName);
+
+      if (data?.token && data?.user) {
+        await loginWithGoogle(data.token, data.user, selectedOrg.id);
+      }
+    } catch (err) {
+      // User cancelled — do nothing
+      if (err.code === 'ERR_REQUEST_CANCELED') {
+        return;
+      }
+      const message = err?.response?.data?.message || err?.message || 'Apple sign-in failed. Please try again.';
+      setError(message);
+      logger.warn('Apple sign-in error:', message);
+    } finally {
+      setAppleLoading(false);
+    }
+  }, [selectedOrg, appleAvailable, error, clearError, setError, loginWithGoogle]);
 
   const handleFieldChange = useCallback(
     (setter, field) => (value) => {
@@ -544,9 +604,34 @@ const LoginScreen = () => {
                   )}
                 </TouchableOpacity>
 
+                {/* Apple Sign-In (iOS only) */}
+                {Platform.OS === 'ios' && appleAvailable && (
+                  <TouchableOpacity
+                    style={[
+                      styles.appleButton,
+                      (!selectedOrg || appleLoading) && styles.appleButtonDisabled,
+                    ]}
+                    onPress={handleAppleSignIn}
+                    disabled={!selectedOrg || appleLoading}
+                    activeOpacity={0.8}
+                    accessibilityLabel="Continue with Apple"
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: !selectedOrg || appleLoading }}
+                  >
+                    {appleLoading ? (
+                      <ActivityIndicator size="small" color={colors.white} />
+                    ) : (
+                      <>
+                        <MaterialCommunityIcons name="apple" size={20} color={colors.white} />
+                        <Text style={styles.appleButtonText}>Continue with Apple</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                )}
+
                 {!selectedOrg && (
                   <Text style={styles.googleHint}>
-                    Select your organization first to sign in with Google
+                    Select your organization first to sign in
                   </Text>
                 )}
 

@@ -7,6 +7,7 @@ const ENV = {
     stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
     googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
     googleIosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID || '',
+    googleAndroidClientId: process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID || '',
   },
   staging: {
     centralUrl: 'https://helm.occam.golf/api/central',
@@ -15,6 +16,7 @@ const ENV = {
     stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
     googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
     googleIosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID || '',
+    googleAndroidClientId: process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID || '',
   },
   production: {
     centralUrl: 'https://helm.occam.golf/api/central',
@@ -23,6 +25,7 @@ const ENV = {
     stripePublishableKey: process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY || '',
     googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '',
     googleIosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID || '',
+    googleAndroidClientId: process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID || '',
   },
 };
 

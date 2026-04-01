@@ -38,3 +38,20 @@ export const googleSignInNative = async (idToken, tenantSlug) => {
   });
   return response.data;
 };
+
+/**
+ * Authenticate with Apple using a native identityToken (from expo-apple-authentication).
+ * Sends the identityToken to the backend which verifies it with Apple and returns a Sanctum token.
+ * @param {string} identityToken - The Apple identityToken from native sign-in
+ * @param {string} tenantSlug - The tenant ID/slug
+ * @param {object|null} fullName - The user's full name (only provided on first sign-in)
+ * @returns {Promise<{success: boolean, data: {token: string, user: object}}>}
+ */
+export const appleSignInNative = async (identityToken, tenantSlug, fullName) => {
+  const response = await centralClient.post('/auth/apple/authenticate-native', {
+    identity_token: identityToken,
+    tenant: tenantSlug,
+    full_name: fullName,
+  });
+  return response.data;
+};

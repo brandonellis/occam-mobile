@@ -17,7 +17,8 @@
         "EXPO_PUBLIC_APP_ENV": "production",
         "EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY": "pk_live_51Rkpc7JJjo8tO119YAIX8odwDUQMy4SCy6NaCebCH9tqA1jNfuFO1TjfYhyye3GLdD6BdhKnVevrXQxf5rUI6ATY00cp3E7DcZ",
         "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "826339810168-104olnb3ap2t5sqmkkm9c556n5qumnid.apps.googleusercontent.com",
-        "EXPO_PUBLIC_IOS_CLIENT_ID": "826339810168-bd399kemauur3f1jjdqr5m2ldfs736er.apps.googleusercontent.com"
+        "EXPO_PUBLIC_IOS_CLIENT_ID": "826339810168-bd399kemauur3f1jjdqr5m2ldfs736er.apps.googleusercontent.com",
+        "EXPO_PUBLIC_ANDROID_CLIENT_ID": ""
       }
     }
   },
@@ -26,6 +27,10 @@
       "ios": {
         "ascAppId": "6760312218",
         "companyName": "Occam Software Inc."
+      },
+      "android": {
+        "track": "internal",
+        "releaseStatus": "draft"
       }
     }
   }
