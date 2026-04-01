@@ -106,6 +106,9 @@ const ActivityCard = ({ item, onPress, company }) => {
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       onPress={() => onPress?.(item)}
+      accessibilityLabel={item?.title || 'Activity'}
+      accessibilityRole="button"
+      accessibilityHint="Open activity details"
     >
       <View style={[styles.cardAccent, { backgroundColor: accentColor }]} />
 

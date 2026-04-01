@@ -1,18 +1,20 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { spacing, borderRadius } from '../theme/spacing';
 
 export const agentFeedbackStyles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: 4,
+    gap: spacing.sm,
+    marginTop: spacing.xs,
     paddingHorizontal: 2,
   },
   button: {
     minWidth: 44,
     minHeight: 44,
-    borderRadius: 8,
+    borderRadius: borderRadius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -20,29 +22,30 @@ export const agentFeedbackStyles = StyleSheet.create({
     backgroundColor: colors.gray100,
   },
   thanks: {
+    ...typography.bodySmall,
     fontSize: 11,
     color: colors.textTertiary,
-    marginLeft: 4,
+    marginLeft: spacing.xs,
   },
   reasons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 6,
+    gap: spacing.sm,
+    marginTop: spacing.sm,
     paddingHorizontal: 2,
   },
   reasonChip: {
     minHeight: 44,
     justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 12,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.gray200,
     backgroundColor: colors.white,
   },
   reasonText: {
-    fontSize: 12,
+    ...typography.bodySmall,
     color: colors.textSecondary,
   },
 });

@@ -4,6 +4,7 @@ import { Pressable, ScrollView, View } from 'react-native';
 import { ActivityIndicator, Icon, Text, TextInput } from 'react-native-paper';
 import { agentChatStyles as styles } from '../../styles/agentChat.styles';
 import { colors } from '../../theme/colors';
+import { haptic } from '../../helpers/haptic.helper';
 
 const AgentChatInput = ({
   disabled,
@@ -37,6 +38,9 @@ const AgentChatInput = ({
                   pressed && styles.suggestionChipPressed,
                 ]}
                 onPress={() => onSelectSuggestion(suggestion)}
+                accessibilityLabel={suggestion}
+                accessibilityRole="button"
+                accessibilityHint="Use this suggestion"
               >
                 <Icon source="lightning-bolt" size={14} color={styles.suggestionChipIcon.color} />
                 <Text style={styles.suggestionChipText}>{suggestion}</Text>
@@ -64,9 +68,12 @@ const AgentChatInput = ({
           dense
         />
         <Pressable
-          onPress={canSend ? onSend : undefined}
+          onPress={canSend ? () => { haptic.medium(); onSend(); } : undefined}
           style={[styles.sendButtonCircle, !canSend && styles.sendButtonDisabled]}
           disabled={!canSend}
+          accessibilityLabel="Send message"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: !canSend }}
         >
           {isLoading ? (
             <ActivityIndicator size={16} color={colors.textInverse} />

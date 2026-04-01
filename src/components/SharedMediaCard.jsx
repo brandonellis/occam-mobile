@@ -45,7 +45,12 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
       )}
 
       {isVideo && mediaUrl && (
-        <TouchableOpacity activeOpacity={0.8} onPress={handleVideoPress}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleVideoPress}
+          accessibilityLabel={`Play ${item.title || item.filename || 'video'}`}
+          accessibilityRole="button"
+        >
           {thumbUrl ? (
             <View>
               <AuthImage
@@ -96,7 +101,8 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
                 size={20}
                 iconColor={colors.accent}
                 onPress={handleVideoPress}
-                style={{ margin: 0 }}
+                accessibilityLabel="Play video"
+                style={styles.sharedMediaActionButton}
               />
               <IconButton
                 icon="brush"
@@ -111,7 +117,8 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
                     targetId: clientId,
                   })
                 }
-                style={{ margin: 0 }}
+                accessibilityLabel="Annotate video"
+                style={styles.sharedMediaActionButton}
               />
             </>
           )}
@@ -120,7 +127,8 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
             size={20}
             iconColor={colors.error}
             onPress={() => onUnshare(item.id)}
-            style={{ margin: 0 }}
+            accessibilityLabel="Remove shared media"
+            style={styles.sharedMediaActionButton}
           />
         </View>
       </View>

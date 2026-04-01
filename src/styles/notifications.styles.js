@@ -64,8 +64,8 @@ export const notificationsStyles = StyleSheet.create({
     paddingVertical: spacing.xs,
   },
   markAllText: {
-    ...typography.label,
+    ...typography.bodySmall,
     color: colors.accent,
-    fontSize: 13,
+    fontWeight: '600',
   },
 });

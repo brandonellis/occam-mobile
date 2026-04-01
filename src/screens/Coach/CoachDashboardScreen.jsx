@@ -139,6 +139,8 @@ const CoachDashboardScreen = ({ navigation }) => {
                   style={styles.quickActionButton}
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate(SCREENS.CLIENT_SELECTION, { bookingData: {} })}
+                  accessibilityLabel="New Booking"
+                  accessibilityRole="button"
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: colors.accentLight }]}>
                     <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.accent} />
@@ -149,6 +151,8 @@ const CoachDashboardScreen = ({ navigation }) => {
                   style={styles.quickActionButton}
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate(SCREENS.VIDEO_RECORDING)}
+                  accessibilityLabel="Record Video"
+                  accessibilityRole="button"
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: colors.lavenderMistLight }]}>
                     <MaterialCommunityIcons name="video-outline" size={18} color={colors.twilightPurple} />
@@ -159,6 +163,8 @@ const CoachDashboardScreen = ({ navigation }) => {
                   style={styles.quickActionButton}
                   activeOpacity={0.7}
                   onPress={() => navigation.navigate('ClientsTab', { screen: SCREENS.COACH_CLIENTS })}
+                  accessibilityLabel="View Clients"
+                  accessibilityRole="button"
                 >
                   <View style={[styles.quickActionIcon, { backgroundColor: colors.successLight }]}>
                     <MaterialCommunityIcons name="account-group-outline" size={18} color={colors.success} />

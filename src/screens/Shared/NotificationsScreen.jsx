@@ -1,14 +1,13 @@
 import React, { useEffect, useCallback, useState } from 'react';
 import {
   View,
-  Text,
   FlatList,
   TouchableOpacity,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { TouchableRipple } from 'react-native-paper';
+import { Text, TouchableRipple } from 'react-native-paper';
 import ScreenHeader from '../../components/ScreenHeader';
 import EmptyState from '../../components/EmptyState';
 import { SCREENS } from '../../constants/navigation.constants';
@@ -206,7 +205,7 @@ const NotificationsScreen = ({ navigation }) => {
           ListFooterComponent={
             isLoadingMore ? (
               <View style={{ paddingVertical: 16, alignItems: 'center' }}>
-                <Text style={{ color: colors.textSecondary, fontSize: 13 }}>Loading more...</Text>
+                <Text variant="bodySmall" style={{ color: colors.textSecondary }}>Loading more...</Text>
               </View>
             ) : null
           }

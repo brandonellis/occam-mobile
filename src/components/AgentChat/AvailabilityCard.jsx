@@ -106,6 +106,9 @@ const AvailabilityCard = ({ availability, onSlotSelect }) => {
                   key={day.date || index}
                   style={[styles.availabilityDayTab, isActive && styles.availabilityDayTabActive]}
                   onPress={() => { setActiveDayIndex(index); setShowAll(false); setSelectedSlotTime(null); }}
+                  accessibilityLabel={`${weekday} ${dayNum}, ${day.slots.length} slot${day.slots.length !== 1 ? 's' : ''}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: isActive }}
                 >
                   <Text style={[styles.availabilityDayTabText, isActive && styles.availabilityDayTabTextActive]}>
                     {weekday} {dayNum}
@@ -133,6 +136,9 @@ const AvailabilityCard = ({ availability, onSlotSelect }) => {
                 (pressed || isSelected) && styles.availabilitySlotPressed,
               ]}
               onPress={() => handleSlotPress(slot)}
+              accessibilityLabel={`${timeLabel}${coachName ? ` with ${coachName}` : ''}`}
+              accessibilityRole="button"
+              accessibilityState={{ selected: isSelected }}
             >
               <Text style={styles.availabilitySlotTime}>{timeLabel}</Text>
               {coachName ? <Text style={styles.availabilitySlotCoach}>{coachName}</Text> : null}

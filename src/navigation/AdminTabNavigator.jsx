@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
+import { shadows } from '../theme/spacing';
 import CustomTabBar from '../components/CustomTabBar';
 import AdminDashboardScreen from '../screens/Admin/AdminDashboardScreen';
 import AdminScheduleStack from './AdminScheduleStack';
@@ -27,7 +28,7 @@ const AdminTabNavigator = () => {
         headerShown: false,
         freezeOnBlur: true,
         sceneStyle: { backgroundColor: colors.background },
-        tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0, shadowOpacity: 0 },
+        tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, ...shadows.none },
         animation: 'shift',
       }}
       lazy={false}

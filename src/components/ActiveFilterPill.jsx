@@ -1,15 +1,20 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, Pressable } from 'react-native';
+import { Text, Icon } from 'react-native-paper';
 import { activityFeedStyles as styles } from '../styles/activityFeed.styles';
 import { colors } from '../theme';
 
 const ActiveFilterPill = ({ label, onRemove }) => (
   <View style={styles.activeFilterPill}>
     <Text style={styles.activeFilterPillText}>{label}</Text>
-    <TouchableOpacity onPress={onRemove} hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}>
-      <MaterialCommunityIcons name="close-circle" size={14} color={colors.accent} />
-    </TouchableOpacity>
+    <Pressable
+      onPress={onRemove}
+      style={styles.activeFilterRemoveButton}
+      accessibilityLabel={`Remove ${label} filter`}
+      accessibilityRole="button"
+    >
+      <Icon source="close-circle" size={14} color={colors.accent} />
+    </Pressable>
   </View>
 );
 

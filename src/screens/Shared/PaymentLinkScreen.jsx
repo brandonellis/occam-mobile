@@ -160,8 +160,8 @@ const PaymentLinkInner = ({ route, navigation }) => {
         <ScreenHeader title="Payment" onBack={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('HomeTab')} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <MaterialCommunityIcons name="check-circle" size={64} color={colors.success} />
-          <Text style={{ fontSize: 18, fontWeight: '600', marginTop: 16 }}>Already Paid</Text>
-          <Text style={{ color: colors.textSecondary, marginTop: 8, textAlign: 'center' }}>
+          <Text variant="titleLarge" style={{ marginTop: 16 }}>Already Paid</Text>
+          <Text variant="bodyMedium" style={{ color: colors.textSecondary, marginTop: 8, textAlign: 'center' }}>
             This booking has already been paid. No further action is needed.
           </Text>
         </View>
@@ -175,8 +175,8 @@ const PaymentLinkInner = ({ route, navigation }) => {
         <ScreenHeader title="Payment" onBack={() => navigation.canGoBack() ? navigation.goBack() : navigation.navigate('HomeTab')} />
         <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 }}>
           <MaterialCommunityIcons name="alert-circle" size={64} color={colors.error} />
-          <Text style={{ fontSize: 18, fontWeight: '600', marginTop: 16 }}>Payment Error</Text>
-          <Text style={{ color: colors.textSecondary, marginTop: 8, textAlign: 'center' }}>{error}</Text>
+          <Text variant="titleLarge" style={{ marginTop: 16 }}>Payment Error</Text>
+          <Text variant="bodyMedium" style={{ color: colors.textSecondary, marginTop: 8, textAlign: 'center' }}>{error}</Text>
         </View>
       </SafeAreaView>
     );

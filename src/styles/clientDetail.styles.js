@@ -250,7 +250,10 @@ export const clientDetailStyles = StyleSheet.create({
   sharedMediaActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+  },
+  sharedMediaActionButton: {
+    margin: 0,
+    marginLeft: -spacing.xs,
   },
 
   // Section header with action

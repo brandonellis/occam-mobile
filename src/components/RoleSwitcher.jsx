@@ -3,6 +3,7 @@ import { TouchableOpacity } from 'react-native';
 import { Surface, Text, Icon } from 'react-native-paper';
 import useAuth from '../hooks/useAuth';
 import { roleSwitcherStyles as styles } from '../styles/roleSwitcher.styles';
+import { haptic } from '../helpers/haptic.helper';
 import { colors } from '../theme';
 import { ADMIN_SHELL_ROLES } from '../constants/auth.constants';
 
@@ -31,8 +32,11 @@ const RoleSwitcher = () => {
     <Surface style={styles.container} elevation={1}>
       <TouchableOpacity
         style={styles.content}
-        onPress={() => switchRole(targetRole)}
+        onPress={() => { haptic.medium(); switchRole(targetRole); }}
         activeOpacity={0.7}
+        accessibilityLabel={`Switch to ${targetLabel}`}
+        accessibilityRole="button"
+        accessibilityHint={`You're currently in ${currentLabel} mode`}
       >
         <Surface style={styles.iconWrapper} elevation={0}>
           <Icon source={icons.target} size={18} color={colors.accent} />

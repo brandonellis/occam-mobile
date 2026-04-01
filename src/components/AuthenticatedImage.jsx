@@ -11,7 +11,7 @@ import { colors } from '../theme';
  *
  * Falls back to a placeholder icon when the image fails to load.
  */
-const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon = 'image-outline', placeholderSize = 32 }) => {
+const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon = 'image-outline', placeholderSize = 32, accessibilityLabel }) => {
   const [source, setSource] = useState(null);
   const [failed, setFailed] = useState(false);
   const [resolvedUri, setResolvedUri] = useState(null);
@@ -83,6 +83,8 @@ const AuthenticatedImage = ({ uri, style, resizeMode = 'cover', placeholderIcon 
       source={source}
       style={style}
       resizeMode={resizeMode}
+      accessible={!!accessibilityLabel}
+      accessibilityLabel={accessibilityLabel}
       onError={() => {
         if (source?.headers && resolvedUri && !retriedRef.current) {
           retriedRef.current = true;

@@ -35,8 +35,9 @@ export const activityFeedStyles = StyleSheet.create({
   filterPill: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.xs,
     paddingHorizontal: spacing.md,
-    paddingVertical: 7,
+    minHeight: 36,
     borderRadius: borderRadius.full,
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -103,6 +104,12 @@ export const activityFeedStyles = StyleSheet.create({
     color: colors.accent,
     fontWeight: '600',
     marginRight: 4,
+  },
+  activeFilterRemoveButton: {
+    minWidth: 28,
+    minHeight: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // ── Timeline ───────────────────────────────────────────
@@ -427,9 +434,9 @@ export const activityFeedStyles = StyleSheet.create({
     flex: 1,
   },
   sheetClose: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.gray100,
     alignItems: 'center',
     justifyContent: 'center',
@@ -606,9 +613,9 @@ export const activityFeedStyles = StyleSheet.create({
     minHeight: 40,
   },
   composerSend: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',

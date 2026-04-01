@@ -1,17 +1,21 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { View, TouchableOpacity } from 'react-native';
+import { Text, Icon } from 'react-native-paper';
 import { activityFeedStyles as styles } from '../styles/activityFeed.styles';
 import { colors } from '../theme';
+import { haptic } from '../helpers/haptic.helper';
 
 const FilterPill = ({ icon, label, isActive, count, onPress }) => (
   <TouchableOpacity
     style={[styles.filterPill, isActive && styles.filterPillActive]}
-    onPress={onPress}
+    onPress={() => { haptic.selection(); onPress(); }}
     activeOpacity={0.7}
+    accessibilityLabel={`${label}${count > 0 ? `, ${count} items` : ''}`}
+    accessibilityRole="button"
+    accessibilityState={{ selected: isActive }}
   >
-    <MaterialCommunityIcons
-      name={icon}
+    <Icon
+      source={icon}
       size={14}
       color={isActive ? colors.textInverse : colors.textSecondary}
     />
@@ -23,11 +27,10 @@ const FilterPill = ({ icon, label, isActive, count, onPress }) => (
         <Text style={styles.filterPillBadgeText}>{count}</Text>
       </View>
     ) : (
-      <MaterialCommunityIcons
-        name="chevron-down"
+      <Icon
+        source="chevron-down"
         size={12}
         color={isActive ? colors.textInverse : colors.textTertiary}
-        style={{ marginLeft: 2 }}
       />
     )}
   </TouchableOpacity>

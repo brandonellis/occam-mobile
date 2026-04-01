@@ -86,13 +86,12 @@ export const dashboardStyles = StyleSheet.create({
     marginRight: spacing.md,
   },
   bookingTimeValue: {
-    ...typography.label,
-    color: colors.info,
-    fontSize: 13,
+    ...typography.bodySmall,
+    color: colors.accent,
     fontWeight: '700',
   },
   bookingTimeDate: {
-    ...typography.labelSmall,
+    ...typography.bodySmall,
     color: colors.textTertiary,
     fontSize: 10,
     marginTop: 2,

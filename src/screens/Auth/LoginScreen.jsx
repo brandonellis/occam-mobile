@@ -4,6 +4,7 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
+  Pressable,
   ScrollView,
   KeyboardAvoidingView,
   Platform,
@@ -53,6 +54,9 @@ const LoginScreen = () => {
   const [showResults, setShowResults] = useState(false);
   const searchTimer = useRef(null);
   const abortRef = useRef(null);
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+  const resetEmailInputRef = useRef(null);
 
   // Load last selected organization on mount
   useEffect(() => {
@@ -162,6 +166,9 @@ const LoginScreen = () => {
         GoogleSignin.configure({
           webClientId: config.googleWebClientId,
           iosClientId: config.googleIosClientId,
+          ...(Platform.OS === 'android' && config.googleAndroidClientId
+            ? { androidClientId: config.googleAndroidClientId }
+            : {}),
           offlineAccess: false,
         });
         setGoogleAvailable(true);
@@ -274,7 +281,12 @@ const LoginScreen = () => {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.logoContainer}>
-            <Image source={logoColor} style={styles.logoImage} />
+            <Image
+              source={logoColor}
+              style={styles.logoImage}
+              accessible={true}
+              accessibilityLabel="Occam Golf logo"
+            />
           </View>
 
           {error && (
@@ -312,12 +324,19 @@ const LoginScreen = () => {
                   }}
                   autoCapitalize="none"
                   autoCorrect={false}
+                  accessibilityLabel="Organization search"
+                  accessibilityHint="Type your business, academy, or facility name"
                 />
                 {isSearching && (
                   <ActivityIndicator size="small" color={colors.accent} />
                 )}
                 {selectedOrg && (
-                  <TouchableOpacity onPress={handleClearOrg} hitSlop={{ top: 13, bottom: 13, left: 13, right: 13 }}>
+                  <TouchableOpacity
+                    onPress={handleClearOrg}
+                    hitSlop={{ top: 13, bottom: 13, left: 13, right: 13 }}
+                    accessibilityLabel="Clear organization"
+                    accessibilityRole="button"
+                  >
                     <MaterialCommunityIcons name="close-circle" size={18} color={colors.textInverseSubdued} />
                   </TouchableOpacity>
                 )}
@@ -333,6 +352,9 @@ const LoginScreen = () => {
                       onPress={() => handleSelectOrg(org)}
                       activeOpacity={0.7}
                       testID={`org-result-${org.id}`}
+                      accessibilityLabel={org.name || org.id}
+                      accessibilityRole="button"
+                      accessibilityHint="Select this organization"
                     >
                       <View style={styles.orgResultIcon}>
                         <MaterialCommunityIcons name="domain" size={16} color={colors.accent} />
@@ -364,22 +386,26 @@ const LoginScreen = () => {
 
                 <View style={styles.fieldGroup}>
                   <Text style={styles.label}>Email</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      focusedField === 'resetEmail' && styles.inputFocused,
-                    ]}
-                    placeholder="Enter your email"
-                    placeholderTextColor={colors.textInverseDisabled}
-                    value={resetEmail}
-                    onChangeText={setResetEmail}
-                    onFocus={() => setFocusedField('resetEmail')}
-                    onBlur={() => setFocusedField(null)}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="email-address"
-                    textContentType="emailAddress"
-                  />
+                  <Pressable onPress={() => resetEmailInputRef.current?.focus()}>
+                    <TextInput
+                      ref={resetEmailInputRef}
+                      style={[
+                        styles.input,
+                        focusedField === 'resetEmail' && styles.inputFocused,
+                      ]}
+                      placeholder="Enter your email"
+                      placeholderTextColor={colors.textInverseDisabled}
+                      value={resetEmail}
+                      onChangeText={setResetEmail}
+                      onFocus={() => setFocusedField('resetEmail')}
+                      onBlur={() => setFocusedField(null)}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="email-address"
+                      textContentType="emailAddress"
+                      accessibilityLabel="Email"
+                    />
+                  </Pressable>
                 </View>
 
                 <TouchableOpacity
@@ -390,6 +416,9 @@ const LoginScreen = () => {
                   onPress={handleSendResetLink}
                   disabled={!resetEmail.trim() || resetLoading}
                   activeOpacity={0.8}
+                  accessibilityLabel={resetLoading ? 'Sending reset link' : 'Send Reset Link'}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: !resetEmail.trim() || resetLoading }}
                 >
                   {resetLoading ? (
                     <ActivityIndicator color={colors.textInverse} />
@@ -398,7 +427,13 @@ const LoginScreen = () => {
                   )}
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.6} onPress={handleBackToLogin}>
+                <TouchableOpacity
+                  style={styles.forgotPassword}
+                  activeOpacity={0.6}
+                  onPress={handleBackToLogin}
+                  accessibilityLabel="Back to Sign In"
+                  accessibilityRole="button"
+                >
                   <Text style={styles.forgotPasswordText}>Back to Sign In</Text>
                 </TouchableOpacity>
               </>
@@ -406,23 +441,26 @@ const LoginScreen = () => {
               <>
                 <View style={styles.fieldGroup}>
                   <Text style={styles.label}>Email</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      focusedField === 'email' && styles.inputFocused,
-                      fieldErrors.email && styles.inputError,
-                    ]}
-                    placeholder="Enter your email"
-                    placeholderTextColor={colors.textInverseDisabled}
-                    value={email}
-                    onChangeText={handleFieldChange(setEmail, 'email')}
-                    onFocus={() => setFocusedField('email')}
-                    onBlur={() => setFocusedField(null)}
-                    autoCapitalize="none"
-                    autoCorrect={false}
-                    keyboardType="email-address"
-                    textContentType="emailAddress"
-                  />
+                  <Pressable onPress={() => emailInputRef.current?.focus()}>
+                    <TextInput
+                      ref={emailInputRef}
+                      style={[
+                        styles.input,
+                        focusedField === 'email' && styles.inputFocused,
+                        fieldErrors.email && styles.inputError,
+                      ]}
+                      placeholder="Enter your email"
+                      placeholderTextColor={colors.textInverseDisabled}
+                      value={email}
+                      onChangeText={handleFieldChange(setEmail, 'email')}
+                      onFocus={() => setFocusedField('email')}
+                      onBlur={() => setFocusedField(null)}
+                      autoCapitalize="none"
+                      autoCorrect={false}
+                      keyboardType="email-address"
+                      textContentType="emailAddress"
+                    />
+                  </Pressable>
                   {fieldErrors.email && (
                     <Text style={styles.fieldError}>{fieldErrors.email}</Text>
                   )}
@@ -430,21 +468,24 @@ const LoginScreen = () => {
 
                 <View style={styles.fieldGroup}>
                   <Text style={styles.label}>Password</Text>
-                  <TextInput
-                    style={[
-                      styles.input,
-                      focusedField === 'password' && styles.inputFocused,
-                      fieldErrors.password && styles.inputError,
-                    ]}
-                    placeholder="Enter your password"
-                    placeholderTextColor={colors.textInverseDisabled}
-                    value={password}
-                    onChangeText={handleFieldChange(setPassword, 'password')}
-                    onFocus={() => setFocusedField('password')}
-                    onBlur={() => setFocusedField(null)}
-                    secureTextEntry
-                    textContentType="password"
-                  />
+                  <Pressable onPress={() => passwordInputRef.current?.focus()}>
+                    <TextInput
+                      ref={passwordInputRef}
+                      style={[
+                        styles.input,
+                        focusedField === 'password' && styles.inputFocused,
+                        fieldErrors.password && styles.inputError,
+                      ]}
+                      placeholder="Enter your password"
+                      placeholderTextColor={colors.textInverseDisabled}
+                      value={password}
+                      onChangeText={handleFieldChange(setPassword, 'password')}
+                      onFocus={() => setFocusedField('password')}
+                      onBlur={() => setFocusedField(null)}
+                      secureTextEntry
+                      textContentType="password"
+                    />
+                  </Pressable>
                   {fieldErrors.password && (
                     <Text style={styles.fieldError}>{fieldErrors.password}</Text>
                   )}
@@ -458,6 +499,9 @@ const LoginScreen = () => {
                   onPress={handleLogin}
                   disabled={isLoading}
                   activeOpacity={0.8}
+                  accessibilityLabel={isLoading ? 'Signing in' : 'Sign In'}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: isLoading }}
                 >
                   {isLoading ? (
                     <ActivityIndicator color={colors.textInverse} />
@@ -482,6 +526,9 @@ const LoginScreen = () => {
                   onPress={handleGoogleSignIn}
                   disabled={!selectedOrg || googleLoading}
                   activeOpacity={0.8}
+                  accessibilityLabel="Continue with Google"
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: !selectedOrg || googleLoading }}
                 >
                   {googleLoading ? (
                     <ActivityIndicator size="small" color={colors.textPrimary} />
@@ -490,6 +537,7 @@ const LoginScreen = () => {
                       <Image
                         source={googleIcon}
                         style={styles.googleIcon}
+                        accessible={false}
                       />
                       <Text style={styles.googleButtonText}>Continue with Google</Text>
                     </>
@@ -502,7 +550,13 @@ const LoginScreen = () => {
                   </Text>
                 )}
 
-                <TouchableOpacity style={styles.forgotPassword} activeOpacity={0.6} onPress={handleForgotPassword}>
+                <TouchableOpacity
+                  style={styles.forgotPassword}
+                  activeOpacity={0.6}
+                  onPress={handleForgotPassword}
+                  accessibilityLabel="Forgot password"
+                  accessibilityRole="button"
+                >
                   <Text style={styles.forgotPasswordText}>Forgot password?</Text>
                 </TouchableOpacity>
               </>

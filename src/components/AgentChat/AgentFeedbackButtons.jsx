@@ -4,6 +4,7 @@ import { Pressable, View } from 'react-native';
 import { Icon, Text } from 'react-native-paper';
 import { colors } from '../../theme/colors';
 import { agentFeedbackStyles as styles } from '../../styles/agentFeedback.styles';
+import { haptic } from '../../helpers/haptic.helper';
 
 const NEGATIVE_REASONS = [
   { value: 'unhelpful', label: 'Not helpful' },
@@ -18,6 +19,7 @@ const AgentFeedbackButtons = ({ onSubmit }) => {
   const [submitted, setSubmitted] = useState(false);
 
   const handleRate = useCallback((value) => {
+    haptic.light();
     setRating(value);
     if (value === 2) {
       onSubmit({ rating: 2 });
@@ -52,15 +54,17 @@ const AgentFeedbackButtons = ({ onSubmit }) => {
       <View style={styles.container}>
         <Pressable
           onPress={() => handleRate(2)}
-          hitSlop={8}
           style={[styles.button, rating === 2 && styles.buttonActive]}
+          accessibilityLabel="Helpful"
+          accessibilityRole="button"
         >
           <Icon source="thumb-up-outline" size={16} color={rating === 2 ? colors.accent : colors.textSecondary} />
         </Pressable>
         <Pressable
           onPress={() => handleRate(1)}
-          hitSlop={8}
           style={[styles.button, rating === 1 && styles.buttonActive]}
+          accessibilityLabel="Not helpful"
+          accessibilityRole="button"
         >
           <Icon source="thumb-down-outline" size={16} color={rating === 1 ? colors.error : colors.textSecondary} />
         </Pressable>
@@ -68,7 +72,13 @@ const AgentFeedbackButtons = ({ onSubmit }) => {
       {showReasons ? (
         <View style={styles.reasons}>
           {NEGATIVE_REASONS.map((r) => (
-            <Pressable key={r.value} onPress={() => handleReason(r.value)} style={styles.reasonChip}>
+            <Pressable
+              key={r.value}
+              onPress={() => handleReason(r.value)}
+              style={styles.reasonChip}
+              accessibilityLabel={r.label}
+              accessibilityRole="button"
+            >
               <Text style={styles.reasonText}>{r.label}</Text>
             </Pressable>
           ))}

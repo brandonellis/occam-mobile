@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, ScrollView, Animated } from 'react-native';
 import { Text, Icon, Button } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import Avatar from '../Avatar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { formatTimeInTz } from '../../helpers/timezone.helper';
 import { colors } from '../../theme';
+import { haptic } from '../../helpers/haptic.helper';
 
 const BookingSuccessView = ({
   createdBookingData,
@@ -33,6 +34,10 @@ const BookingSuccessView = ({
   const successResource = createdBookingData?.resources?.[0] || selectedResource;
   const bookingCode = createdBookingData?.booking_code;
   const clientName = client ? `${client.first_name}` : null;
+
+  useEffect(() => {
+    haptic.success();
+  }, []);
 
   const getSuccessSubtitle = () => {
     if (isEditMode) {

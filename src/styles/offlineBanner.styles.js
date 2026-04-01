@@ -1,5 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../theme/colors';
+import { typography } from '../theme/typography';
+import { spacing } from '../theme/spacing';
 
 export const styles = StyleSheet.create({
   banner: {
@@ -12,15 +14,15 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
   },
   icon: {
-    marginRight: 6,
+    marginRight: spacing.sm,
   },
   text: {
+    ...typography.bodySmall,
     color: colors.white,
-    fontSize: 13,
     fontWeight: '500',
   },
 });

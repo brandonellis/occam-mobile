@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 import { colors } from '../theme/colors';
 import { typography } from '../theme/typography';
-import { spacing, borderRadius } from '../theme/spacing';
+import { spacing, borderRadius, shadows } from '../theme/spacing';
 
 export const loginStyles = StyleSheet.create({
   container: {
@@ -16,7 +16,7 @@ export const loginStyles = StyleSheet.create({
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 48,
+    marginBottom: spacing.xxxl,
   },
   logoImage: {
     width: 220,
@@ -45,8 +45,8 @@ export const loginStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.whiteOverlay15,
     borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: 18,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
     ...typography.body,
     lineHeight: undefined,
     textAlignVertical: 'center',
@@ -69,7 +69,7 @@ export const loginStyles = StyleSheet.create({
   loginButton: {
     backgroundColor: colors.accent,
     borderRadius: borderRadius.md,
-    paddingVertical: 18,
+    paddingVertical: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
     minHeight: 56,
@@ -125,7 +125,7 @@ export const loginStyles = StyleSheet.create({
     marginTop: 4,
     overflow: 'hidden',
     zIndex: 10,
-    elevation: 10,
+    ...shadows.xl,
   },
   orgResultItem: {
     flexDirection: 'row',
@@ -179,7 +179,7 @@ export const loginStyles = StyleSheet.create({
   googleButton: {
     backgroundColor: colors.white,
     borderRadius: borderRadius.md,
-    paddingVertical: 18,
+    paddingVertical: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',

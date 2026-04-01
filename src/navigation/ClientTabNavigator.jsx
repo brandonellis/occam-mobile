@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { SCREENS } from '../constants/navigation.constants';
 import { colors } from '../theme/colors';
+import { shadows } from '../theme/spacing';
 import CustomTabBar from '../components/CustomTabBar';
 import ClientHomeStack from './ClientHomeStack';
 import ClientBookingsScreen from '../screens/Client/ClientBookingsScreen';
@@ -34,7 +35,7 @@ const ClientTabNavigator = () => {
         headerShown: false,
         freezeOnBlur: true,
         sceneStyle: { backgroundColor: colors.background },
-        tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, elevation: 0, shadowOpacity: 0 },
+        tabBarStyle: { position: 'absolute', backgroundColor: 'transparent', borderTopWidth: 0, ...shadows.none },
         animation: 'shift',
       }}
       lazy={false}

@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { colors } from '../theme/colors';
 import { useBadges } from '../context/BadgeContext';
+import { haptic } from '../helpers/haptic.helper';
 import { typography } from '../theme/typography';
 import { spacing, borderRadius, shadows } from '../theme/spacing';
 import { SCREENS } from '../constants/navigation.constants';
@@ -65,6 +66,7 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
     <View style={[styles.outerWrap, { paddingBottom: bottomOffset }]} pointerEvents="box-none">
       {/* Opaque backdrop so scrolling content doesn't show through */}
       <View style={styles.backdrop} pointerEvents="none" />
+      <View style={styles.shadowWrap}>
       <View style={styles.container} onLayout={handleLayout}>
         {containerWidth > 0 && pillWidth > 0 && (
           <Animated.View
@@ -94,6 +96,7 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
                 canPreventDefault: true,
               });
               if (!isFocused && !event.defaultPrevented) {
+                haptic.light();
                 navigation.navigate(route.name, route.params);
               }
             };
@@ -121,7 +124,7 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
                   <MaterialCommunityIcons
                     name={iconName}
                     size={22}
-                    color={isFocused ? colors.accent : colors.textInverseMuted}
+                    color={isFocused ? colors.accent : colors.textInverseSecondary}
                     style={styles.icon}
                   />
                   {badgeCount > 0 && (
@@ -153,6 +156,7 @@ const CustomTabBar = ({ state, descriptors, navigation, tabIcons }) => {
           })}
         </View>
       </View>
+      </View>
     </View>
   );
 };
@@ -169,21 +173,15 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.background,
   },
+  shadowWrap: {
+    borderRadius: borderRadius.full,
+    ...shadows.xl,
+    pointerEvents: 'auto',
+  },
   container: {
     backgroundColor: colors.primary,
     borderRadius: borderRadius.full,
-    ...shadows.lg,
-    // Extra shadow for the floating effect
-    ...(Platform.OS === 'ios' ? {
-      shadowColor: colors.black,
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.25,
-      shadowRadius: 24,
-    } : {
-      elevation: 12,
-    }),
     overflow: 'hidden',
-    pointerEvents: 'auto',
   },
   activePill: {
     position: 'absolute',
@@ -241,7 +239,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   labelUnfocused: {
-    color: colors.textInverseMuted,
+    color: colors.textInverseSecondary,
     fontWeight: '500',
   },
   labelRow: {
@@ -259,7 +257,7 @@ const styles = StyleSheet.create({
     color: colors.accent,
   },
   betaLabelUnfocused: {
-    color: colors.textInverseMuted,
+    color: colors.textInverseSecondary,
   },
 });
 
