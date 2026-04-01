@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { View, ScrollView, Alert, FlatList, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Button, TextInput, Switch, Text, Divider, Card, Chip, Searchbar, ActivityIndicator } from 'react-native-paper';
+import { Button, Switch, Text, Divider, Card, Chip, Searchbar, ActivityIndicator } from 'react-native-paper';
 import RichTextEditor from '../../components/RichTextEditor';
+import { isHtmlEmpty } from '../../helpers/html.helper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -18,8 +19,6 @@ import { lessonFeedbackStyles as styles } from '../../styles/lessonFeedback.styl
 import logger from '../../helpers/logger.helper';
 
 const MAX_WEBVIEW_HEIGHT = 500;
-
-const isHtmlEmpty = (html) => !html || !html.replace(/<[^>]*>/g, '').trim();
 
 const getDocIcon = (mime) => {
   if (mime.startsWith('application/pdf')) return 'file-document';

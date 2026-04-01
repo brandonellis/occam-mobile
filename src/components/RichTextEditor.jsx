@@ -1,8 +1,10 @@
 import React, { useRef, useCallback, useState, useEffect } from 'react';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, Platform } from 'react-native';
 import { IconButton, Divider } from 'react-native-paper';
 import { WebView } from 'react-native-webview';
-import { colors, spacing } from '../theme';
+import PropTypes from 'prop-types';
+import { colors } from '../theme';
+import { richTextEditorStyles as styles } from '../styles/richTextEditor.styles';
 
 const TOOLBAR_ACTIONS = [
   { icon: 'format-bold', command: 'bold', group: 'format' },
@@ -14,11 +16,25 @@ const TOOLBAR_ACTIONS = [
   { icon: 'format-clear', command: 'removeFormat', group: 'clear' },
 ];
 
-const buildEditorHtml = (initialContent, minHeight, placeholderText) => `
+/**
+ * Escape a string for safe inclusion in an HTML attribute value.
+ * Handles the five characters that have special meaning in HTML.
+ */
+const escapeHtmlAttr = (str) =>
+  (str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+// Note: placeholder and minHeight are only read on mount. Changes after mount are ignored.
+const buildEditorHtml = (minHeight, placeholderText) => `
 <!DOCTYPE html>
 <html>
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline';">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
@@ -42,16 +58,17 @@ const buildEditorHtml = (initialContent, minHeight, placeholderText) => `
   </style>
 </head>
 <body>
-  <div id="editor" contenteditable="true" data-placeholder="${placeholderText || 'Start typing...'}">${initialContent || ''}</div>
+  <div id="editor" contenteditable="true" data-placeholder="${escapeHtmlAttr(placeholderText) || 'Start typing...'}"></div>
   <script>
     var editor = document.getElementById('editor');
     var debounceTimer;
 
+    function normalizeHtml(html) { return html === '<br>' ? '' : html; }
+
     editor.addEventListener('input', function() {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(function() {
-        var html = editor.innerHTML;
-        if (html === '<br>') html = '';
+        var html = normalizeHtml(editor.innerHTML);
         window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'content', html: html }));
       }, 150);
     });
@@ -91,8 +108,7 @@ const buildEditorHtml = (initialContent, minHeight, placeholderText) => `
         document.execCommand(cmd, false, null);
       }
       queryActiveStates();
-      var html = editor.innerHTML;
-      if (html === '<br>') html = '';
+      var html = normalizeHtml(editor.innerHTML);
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'content', html: html }));
     };
 
@@ -101,8 +117,7 @@ const buildEditorHtml = (initialContent, minHeight, placeholderText) => `
     };
 
     window.getContent = function() {
-      var html = editor.innerHTML;
-      if (html === '<br>') html = '';
+      var html = normalizeHtml(editor.innerHTML);
       window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'content', html: html }));
     };
 
@@ -119,23 +134,35 @@ const RichTextEditor = ({ value, onChange, placeholder, minHeight = 160 }) => {
   const [editorReady, setEditorReady] = useState(false);
   const lastValueRef = useRef(value);
 
-  const html = useRef(buildEditorHtml(value, minHeight, placeholder)).current;
+  const html = useRef(buildEditorHtml(minHeight, placeholder)).current;
+  const initialValueRef = useRef(value);
 
   useEffect(() => {
-    if (editorReady && value !== lastValueRef.current) {
+    if (!editorReady) return;
+    // Skip external value injection while user is actively editing to prevent cursor jump.
+    if (isFocused) return;
+
+    // On first ready, inject the initial value that was deferred from HTML build time.
+    // On subsequent changes, sync external value updates into the editor.
+    if (value !== lastValueRef.current || initialValueRef.current !== null) {
       lastValueRef.current = value;
-      const escaped = (value || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\n/g, '\\n');
-      webViewRef.current?.injectJavaScript(`window.setContent('${escaped}'); true;`);
+      initialValueRef.current = null;
+      // Use JSON.stringify for safe string escaping — handles all special
+      // characters including \r, \u2028, \u2029, quotes, and backslashes.
+      const safeValue = JSON.stringify(value || '');
+      webViewRef.current?.injectJavaScript(`window.setContent(${safeValue}); true;`);
     }
-  }, [value, editorReady]);
+  }, [value, editorReady, isFocused]);
 
   const handleMessage = useCallback((event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
       switch (data.type) {
         case 'content':
-          lastValueRef.current = data.html;
-          onChange?.(data.html);
+          if (typeof data.html === 'string') {
+            lastValueRef.current = data.html;
+            onChange?.(data.html);
+          }
           break;
         case 'activeStates':
           setActiveStates(data.states || {});
@@ -150,14 +177,17 @@ const RichTextEditor = ({ value, onChange, placeholder, minHeight = 160 }) => {
           setEditorReady(true);
           break;
       }
-    } catch {}
+    } catch (err) {
+      // Log parse failures for debuggability — should not happen with our own WebView code.
+      console.warn('RichTextEditor: failed to parse WebView message', err?.message);
+    }
   }, [onChange]);
 
   const execCommand = useCallback((command) => {
     webViewRef.current?.injectJavaScript(`window.execCommand('${command}'); true;`);
   }, []);
 
-  const renderToolbarGroup = (group) => {
+  const renderToolbarGroup = useCallback((group) => {
     const actions = TOOLBAR_ACTIONS.filter(a => a.group === group);
     return actions.map(({ icon, command }) => (
       <IconButton
@@ -169,7 +199,7 @@ const RichTextEditor = ({ value, onChange, placeholder, minHeight = 160 }) => {
         onPress={() => execCommand(command)}
       />
     ));
-  };
+  }, [activeStates, execCommand]);
 
   return (
     <View style={[styles.container, isFocused && styles.containerFocused]}>
@@ -201,45 +231,11 @@ const RichTextEditor = ({ value, onChange, placeholder, minHeight = 160 }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
-  },
-  containerFocused: {
-    borderColor: colors.accent,
-  },
-  toolbar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.gray50,
-  },
-  toolbarButton: {
-    margin: 0,
-  },
-  toolbarButtonActive: {
-    backgroundColor: colors.accentSubtle,
-  },
-  toolbarDivider: {
-    width: 1,
-    height: 20,
-    marginHorizontal: spacing.xs,
-    backgroundColor: colors.border,
-  },
-  editorContainer: {
-    overflow: 'hidden',
-  },
-  webView: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-});
+RichTextEditor.propTypes = {
+  value: PropTypes.string,
+  onChange: PropTypes.func,
+  placeholder: PropTypes.string,
+  minHeight: PropTypes.number,
+};
 
 export default RichTextEditor;

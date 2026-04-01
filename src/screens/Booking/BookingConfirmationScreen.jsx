@@ -31,6 +31,8 @@ import useBookingPackage from '../../hooks/useBookingPackage';
 import useBookingPayment from '../../hooks/useBookingPayment';
 import useBookingSubmission from '../../hooks/useBookingSubmission';
 
+const EDITABLE_STATUSES = ['confirmed', 'cancelled'];
+
 const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const { bookingData = {} } = route.params || {};
   const { service, coach, location, client, date, timeSlot, selectedResource: initialResource } = bookingData;
@@ -45,9 +47,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Form state (stays in the screen — not domain logic)
   const [bookingNotes, setBookingNotes] = useState(bookingData.notes || '');
-  const editableStatuses = ['confirmed', 'cancelled'];
   const [bookingStatus, setBookingStatus] = useState(
-    editableStatuses.includes(bookingData.status) ? bookingData.status : 'confirmed'
+    EDITABLE_STATUSES.includes(bookingData.status) ? bookingData.status : 'confirmed'
   );
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [feeBreakdownVisible, setFeeBreakdownVisible] = useState(false);
