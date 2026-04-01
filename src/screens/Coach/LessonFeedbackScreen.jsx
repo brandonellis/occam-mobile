@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { View, ScrollView, Alert, FlatList, TouchableOpacity, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, TextInput, Switch, Text, Divider, Card, Chip, Searchbar, ActivityIndicator } from 'react-native-paper';
+import RichTextEditor from '../../components/RichTextEditor';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { WebView } from 'react-native-webview';
 import ScreenHeader from '../../components/ScreenHeader';
@@ -17,6 +18,8 @@ import { lessonFeedbackStyles as styles } from '../../styles/lessonFeedback.styl
 import logger from '../../helpers/logger.helper';
 
 const MAX_WEBVIEW_HEIGHT = 500;
+
+const isHtmlEmpty = (html) => !html || !html.replace(/<[^>]*>/g, '').trim();
 
 const getDocIcon = (mime) => {
   if (mime.startsWith('application/pdf')) return 'file-document';
@@ -112,7 +115,7 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
   }, []);
 
   const buildPayload = useCallback(() => ({
-    message: coachMessage.trim(),
+    message: coachMessage,
     include_notes: includeNotes,
     notes_content: includeNotes ? notesContent : null,
     include_curriculum: includeCurriculum,
@@ -139,7 +142,7 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
   }, []);
 
   const handlePreview = useCallback(async () => {
-    if (!booking?.id || !coachMessage.trim()) return;
+    if (!booking?.id || isHtmlEmpty(coachMessage)) return;
     setPreviewLoading(true);
     try {
       const html = await previewLessonFeedback(booking.id, buildPayload());
@@ -150,7 +153,7 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
   }, [booking, coachMessage, buildPayload]);
 
   const handleSend = useCallback(async () => {
-    if (!booking?.id || !coachMessage.trim()) return;
+    if (!booking?.id || isHtmlEmpty(coachMessage)) return;
     Alert.alert('Send Lesson Recap', `Send lesson recap email to ${clientName}?`, [
       { text: 'Cancel', style: 'cancel' },
       {
@@ -259,16 +262,11 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
         <Text variant="bodySmall" style={styles.helperText}>
           Your personalized message to the client. This is the main body of the email.
         </Text>
-        <TextInput
-          mode="outlined"
-          multiline
-          numberOfLines={5}
-          placeholder="Write about what you worked on, what went well, and what to focus on next..."
+        <RichTextEditor
           value={coachMessage}
-          onChangeText={setCoachMessage}
-          maxLength={5000}
-          right={<TextInput.Affix text={`${coachMessage.length}/5000`} />}
-          style={styles.textInput}
+          onChange={setCoachMessage}
+          placeholder="Write about what you worked on, what went well, and what to focus on next..."
+          minHeight={160}
         />
 
         <Divider style={styles.divider} />
@@ -284,15 +282,11 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
           <Switch value={includeNotes} onValueChange={setIncludeNotes} />
         </View>
         {includeNotes && (
-          <TextInput
-            mode="outlined"
-            multiline
-            numberOfLines={4}
-            placeholder="Session notes..."
+          <RichTextEditor
             value={notesContent}
-            onChangeText={setNotesContent}
-            maxLength={10000}
-            style={styles.textInput}
+            onChange={setNotesContent}
+            placeholder="Session notes..."
+            minHeight={120}
           />
         )}
 
@@ -367,10 +361,10 @@ const LessonFeedbackScreen = ({ navigation, route }) => {
 
         {/* Action buttons */}
         <View style={styles.composeActions}>
-          <Button mode="outlined" icon="eye-outline" onPress={handlePreview} loading={previewLoading} disabled={previewLoading || !coachMessage.trim()} style={styles.composeActionButton}>
+          <Button mode="outlined" icon="eye-outline" onPress={handlePreview} loading={previewLoading} disabled={previewLoading || isHtmlEmpty(coachMessage)} style={styles.composeActionButton}>
             Preview
           </Button>
-          <Button mode="contained" icon="send" onPress={handleSend} loading={sending} disabled={sending || !coachMessage.trim()} buttonColor={colors.accent} textColor={colors.textInverse} style={styles.composeActionButton}>
+          <Button mode="contained" icon="send" onPress={handleSend} loading={sending} disabled={sending || isHtmlEmpty(coachMessage)} buttonColor={colors.accent} textColor={colors.textInverse} style={styles.composeActionButton}>
             Send Recap
           </Button>
         </View>

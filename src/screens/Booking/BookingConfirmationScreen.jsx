@@ -45,7 +45,10 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Form state (stays in the screen — not domain logic)
   const [bookingNotes, setBookingNotes] = useState(bookingData.notes || '');
-  const [bookingStatus, setBookingStatus] = useState(bookingData.status || 'confirmed');
+  const editableStatuses = ['confirmed', 'cancelled'];
+  const [bookingStatus, setBookingStatus] = useState(
+    editableStatuses.includes(bookingData.status) ? bookingData.status : 'confirmed'
+  );
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [feeBreakdownVisible, setFeeBreakdownVisible] = useState(false);
 
@@ -285,7 +288,6 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
               onValueChange={setBookingStatus}
               style={styles.editStatusControl}
               buttons={[
-                { value: 'pending', label: 'Pending' },
                 { value: 'confirmed', label: 'Confirmed' },
                 { value: 'cancelled', label: 'Cancelled' },
               ]}
