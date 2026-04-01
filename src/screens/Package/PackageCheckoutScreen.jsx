@@ -19,12 +19,24 @@ import { extractErrorMessage } from '../../helpers/error.helper';
 import { createPackagePayment, handlePackagePaymentSuccess } from '../../services/packages.api';
 import useAuth from '../../hooks/useAuth';
 import useEcommerceConfig from '../../hooks/useEcommerceConfig';
+import { COACH_ROLES } from '../../constants/auth.constants';
 import { colors } from '../../theme';
 import { checkoutSuccessStyles as successStyles } from '../../styles/checkoutSuccess.styles';
+import { openPackagePurchase } from '../../helpers/webRedirect.helper';
 
 const PackageCheckoutScreen = ({ route, navigation }) => {
   const pkg = route.params?.package;
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
+
+  const isClient = !COACH_ROLES.includes(activeRole);
+
+  // Guard: clients must purchase via web (App Store compliance)
+  useEffect(() => {
+    if (isClient) {
+      openPackagePurchase();
+      navigation.goBack();
+    }
+  }, [isClient, navigation]);
   const { createPaymentMethod } = useStripe();
   const { confirmPayment } = useConfirmPayment();
   const { platformFeeRate, paymentsEnabled } = useEcommerceConfig();
@@ -142,6 +154,9 @@ const PackageCheckoutScreen = ({ route, navigation }) => {
       setLoadingMessage('');
     }
   }, [cardComplete, createPaymentMethod, user, pkg, navigation]);
+
+  // Prevent flash of checkout UI for client users (guard useEffect handles redirect)
+  if (isClient) return null;
 
   if (showSuccess) {
     return (

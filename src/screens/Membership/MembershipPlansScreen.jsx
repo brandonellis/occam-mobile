@@ -27,9 +27,12 @@ import {
 } from '../../helpers/membership.helper';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
+import { COACH_ROLES } from '../../constants/auth.constants';
+import useAuth from '../../hooks/useAuth';
 import useMyMembershipSelfQuery from '../../hooks/useMyMembershipSelfQuery';
 import useMembershipPlansQuery from '../../hooks/useMembershipPlansQuery';
 import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
+import { openMembershipPurchase } from '../../helpers/webRedirect.helper';
 
 // ─── Active Membership View ─────────────────────────────────────────────────
 const ActiveMembershipView = ({ membership, onUpgrade, onPause, onResume }) => {
@@ -184,7 +187,7 @@ const ActiveMembershipView = ({ membership, onUpgrade, onPause, onResume }) => {
 };
 
 // ─── Plans List View ────────────────────────────────────────────────────────
-const PlansListView = ({ plans, selectedCycles, onSelectCycle, onSelectPlan }) => (
+const PlansListView = ({ plans, selectedCycles, onSelectCycle, onSelectPlan, isCoach }) => (
   <>
     <Text style={styles.introText}>
       Choose a membership plan that fits your goals.
@@ -287,7 +290,7 @@ const PlansListView = ({ plans, selectedCycles, onSelectCycle, onSelectPlan }) =
             onPress={() => onSelectPlan(plan)}
             activeOpacity={0.8}
           >
-            <Text style={styles.selectPlanButtonText}>Select Plan</Text>
+            <Text style={styles.selectPlanButtonText}>{isCoach ? 'Select Plan' : 'Purchase on Web'}</Text>
           </TouchableOpacity>
         </View>
       );
@@ -297,6 +300,8 @@ const PlansListView = ({ plans, selectedCycles, onSelectCycle, onSelectPlan }) =
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 const MembershipPlansScreen = ({ navigation, route }) => {
+  const { activeRole } = useAuth();
+  const isCoach = COACH_ROLES.includes(activeRole);
   const showPlansOnly = route.params?.showPlansOnly || false;
 
   const { data: membership, isLoading: membershipLoading, refetch: refetchMembership, isRefetching: membershipRefetching, error: membershipError } = useMyMembershipSelfQuery();
@@ -347,6 +352,25 @@ const MembershipPlansScreen = ({ navigation, route }) => {
     (plan) => {
       const billingCycle = selectedCycles[plan.id];
 
+      // Clients: redirect to web for purchase (App Store compliance)
+      if (!isCoach) {
+        Alert.alert(
+          'Purchase on Web',
+          'To purchase this membership, you\'ll be taken to our website. Your membership will appear here once completed.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Continue',
+              onPress: async () => {
+                await openMembershipPurchase();
+                refetch();
+              },
+            },
+          ]
+        );
+        return;
+      }
+
       // Conflict check: if user already has an active membership, warn before proceeding
       if (membership) {
         const currentPlan = membership.membership_plan;
@@ -390,7 +414,7 @@ const MembershipPlansScreen = ({ navigation, route }) => {
 
       navigation.navigate(SCREENS.MEMBERSHIP_CHECKOUT, { plan, billingCycle });
     },
-    [navigation, selectedCycles, membership]
+    [navigation, selectedCycles, membership, isCoach, refetch]
   );
 
   const handleUpgrade = useCallback(() => {
@@ -489,6 +513,7 @@ const MembershipPlansScreen = ({ navigation, route }) => {
               selectedCycles={selectedCycles}
               onSelectCycle={handleSelectCycle}
               onSelectPlan={handleSelectPlan}
+              isCoach={isCoach}
             />
           ) : viewMode === 'plans' ? (
             <EmptyState

@@ -20,12 +20,25 @@ import { createMembershipSubscription } from '../../services/billing.api';
 import useAuth from '../../hooks/useAuth';
 import useEcommerceConfig from '../../hooks/useEcommerceConfig';
 import { getBillingCycleLabel } from '../../constants/billing.constants';
+import { COACH_ROLES } from '../../constants/auth.constants';
 import { colors } from '../../theme';
 import { checkoutSuccessStyles as successStyles } from '../../styles/checkoutSuccess.styles';
+import { openMembershipPurchase } from '../../helpers/webRedirect.helper';
 
 const MembershipCheckoutScreen = ({ route, navigation }) => {
   const { plan, billingCycle } = route.params;
-  const { user } = useAuth();
+  const { user, activeRole } = useAuth();
+
+  const isClient = !COACH_ROLES.includes(activeRole);
+
+  // Guard: clients must purchase via web (App Store compliance)
+  useEffect(() => {
+    if (isClient) {
+      openMembershipPurchase();
+      navigation.goBack();
+    }
+  }, [isClient, navigation]);
+
   const { createPaymentMethod } = useStripe();
   const { confirmPayment } = useConfirmPayment();
   const { platformFeeRate, paymentsEnabled } = useEcommerceConfig();
@@ -42,6 +55,7 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (!showSuccess) return;
+
     Animated.parallel([
       Animated.spring(successScale, {
         toValue: 1,
@@ -131,6 +145,9 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
       setLoadingMessage('');
     }
   }, [cardComplete, createPaymentMethod, user, plan, billingCycle, navigation]);
+
+  // Prevent flash of checkout UI for client users (guard useEffect handles redirect)
+  if (isClient) return null;
 
   if (showSuccess) {
     return (

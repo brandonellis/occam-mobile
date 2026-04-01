@@ -5,6 +5,7 @@ import {
   ScrollView,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -17,9 +18,12 @@ import { globalStyles } from '../../styles/global.styles';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { colors } from '../../theme';
 import { SCREENS } from '../../constants/navigation.constants';
+import { COACH_ROLES } from '../../constants/auth.constants';
+import useAuth from '../../hooks/useAuth';
 import usePackagesQuery from '../../hooks/usePackagesQuery';
 import useMyPackagesQuery from '../../hooks/useMyPackagesQuery';
 import useRefetchOnFocus from '../../hooks/useRefetchOnFocus';
+import { openPackagePurchase } from '../../helpers/webRedirect.helper';
 
 // ─── Owned Package Card ──────────────────────────────────────────────────────
 const OwnedPackageCard = ({ clientPackage }) => {
@@ -86,7 +90,7 @@ const OwnedPackageCard = ({ clientPackage }) => {
 };
 
 // ─── Available Package Card ──────────────────────────────────────────────────
-const PackageCard = ({ pkg, onSelect }) => {
+const PackageCard = ({ pkg, onSelect, isCoach }) => {
   const services = pkg.package_services || [];
   const price = parseFloat(pkg.price) || 0;
 
@@ -137,7 +141,7 @@ const PackageCard = ({ pkg, onSelect }) => {
         onPress={() => onSelect(pkg)}
         activeOpacity={0.8}
       >
-        <Text style={styles.selectPackageButtonText}>Purchase Package</Text>
+        <Text style={styles.selectPackageButtonText}>{isCoach ? 'Purchase Package' : 'Purchase on Web'}</Text>
       </TouchableOpacity>
     </View>
   );
@@ -145,6 +149,8 @@ const PackageCard = ({ pkg, onSelect }) => {
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 const PackageListScreen = ({ navigation }) => {
+  const { activeRole } = useAuth();
+  const isCoach = COACH_ROLES.includes(activeRole);
   const { data: packages = [], isLoading: packagesLoading, refetch: refetchPackages, isRefetching: packagesRefetching, error: packagesError } = usePackagesQuery();
   const { data: myPackages = [], isLoading: myPackagesLoading, refetch: refetchMyPackages, isRefetching: myPackagesRefetching } = useMyPackagesQuery();
 
@@ -161,9 +167,28 @@ const PackageListScreen = ({ navigation }) => {
 
   const handleSelectPackage = useCallback(
     (pkg) => {
+      // Clients: redirect to web for purchase (App Store compliance)
+      if (!isCoach) {
+        Alert.alert(
+          'Purchase on Web',
+          'To purchase this package, you\'ll be taken to our website. Your package will appear here once completed.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Continue',
+              onPress: async () => {
+                await openPackagePurchase();
+                refetch();
+              },
+            },
+          ]
+        );
+        return;
+      }
+
       navigation.navigate(SCREENS.PACKAGE_CHECKOUT, { package: pkg });
     },
-    [navigation]
+    [navigation, isCoach, refetch]
   );
 
   const activeOwned = myPackages.filter((cp) => cp.status === 'active');
@@ -227,6 +252,7 @@ const PackageListScreen = ({ navigation }) => {
                 key={pkg.id}
                 pkg={pkg}
                 onSelect={handleSelectPackage}
+                isCoach={isCoach}
               />
             ))
           ) : activeOwned.length === 0 ? (

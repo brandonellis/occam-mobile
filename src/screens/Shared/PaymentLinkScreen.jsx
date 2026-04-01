@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Animated,
+  Linking,
 } from 'react-native';
 import { Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,12 +16,17 @@ import ScreenHeader from '../../components/ScreenHeader';
 import { resolvePaymentToken, createTokenPayment, handlePaymentSuccess } from '../../services/billing.api';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { colors } from '../../theme';
+import { COACH_ROLES } from '../../constants/auth.constants';
+import useAuth from '../../hooks/useAuth';
 import { membershipStyles as styles } from '../../styles/membership.styles';
 import { checkoutSuccessStyles as successStyles } from '../../styles/checkoutSuccess.styles';
+import { buildTenantWebUrl } from '../../helpers/webRedirect.helper';
 
 const PaymentLinkInner = ({ route, navigation }) => {
   const { token } = route.params || {};
   const { confirmPayment } = useConfirmPayment();
+  const { activeRole } = useAuth();
+  const isCoach = COACH_ROLES.includes(activeRole);
 
   const [bookingData, setBookingData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -87,6 +93,16 @@ const PaymentLinkInner = ({ route, navigation }) => {
     };
 
     init();
+  }, [token]);
+
+  // Client web redirect: open payment link in system browser (App Store compliance)
+  const handlePayOnWeb = useCallback(async () => {
+    try {
+      const url = await buildTenantWebUrl(`/pay/${token}`);
+      await Linking.openURL(url);
+    } catch (err) {
+      setError('Unable to open payment page. Please try opening the link from your email in a web browser.');
+    }
   }, [token]);
 
   const handlePay = useCallback(async () => {
@@ -229,25 +245,39 @@ const PaymentLinkInner = ({ route, navigation }) => {
           )}
         </View>
 
-        {/* Card input */}
-        <View style={styles.checkoutCardSection}>
-          <Text style={styles.checkoutCardTitle}>Payment Method</Text>
-          <CardField
-            postalCodeEnabled={false}
-            placeholders={{ number: '4242 4242 4242 4242' }}
-            cardStyle={{
-              backgroundColor: colors.background,
-              textColor: colors.textPrimary,
-              borderWidth: 1,
-              borderColor: colors.border,
-              borderRadius: 8,
-              fontSize: 16,
-              placeholderColor: colors.textTertiary,
-            }}
-            style={styles.checkoutCardField}
-            onCardChange={(details) => setCardComplete(details.complete)}
-          />
-        </View>
+        {/* Client: web redirect instead of in-app payment (App Store compliance) */}
+        {!isCoach && (
+          <View style={[styles.checkoutSection, { backgroundColor: colors.infoLight, borderRadius: 12, padding: 16 }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <MaterialCommunityIcons name="web" size={20} color={colors.info} />
+              <Text style={{ color: colors.info, fontSize: 14, fontWeight: '600', flex: 1 }}>
+                You'll be taken to our website to complete this payment.
+              </Text>
+            </View>
+          </View>
+        )}
+
+        {/* Coach: card input for in-app payment */}
+        {isCoach && (
+          <View style={styles.checkoutCardSection}>
+            <Text style={styles.checkoutCardTitle}>Payment Method</Text>
+            <CardField
+              postalCodeEnabled={false}
+              placeholders={{ number: '4242 4242 4242 4242' }}
+              cardStyle={{
+                backgroundColor: colors.background,
+                textColor: colors.textPrimary,
+                borderWidth: 1,
+                borderColor: colors.border,
+                borderRadius: 8,
+                fontSize: 16,
+                placeholderColor: colors.textTertiary,
+              }}
+              style={styles.checkoutCardField}
+              onCardChange={(details) => setCardComplete(details.complete)}
+            />
+          </View>
+        )}
 
         {/* Payment summary */}
         <View style={styles.checkoutSection}>
@@ -279,12 +309,12 @@ const PaymentLinkInner = ({ route, navigation }) => {
       </ScrollView>
 
       <View style={styles.bottomBar}>
-        {loadingMessage ? (
+        {isCoach && loadingMessage ? (
           <View style={styles.checkoutLoadingRow}>
             <ActivityIndicator size="small" color={colors.primary} />
             <Text style={styles.checkoutLoadingText}>{loadingMessage}</Text>
           </View>
-        ) : (
+        ) : isCoach ? (
           <TouchableOpacity
             style={[styles.purchaseButton, !cardComplete && styles.purchaseButtonDisabled]}
             onPress={handlePay}
@@ -294,6 +324,14 @@ const PaymentLinkInner = ({ route, navigation }) => {
             <Text style={styles.purchaseButtonText}>
               Pay {formatCurrency(displayTotal)}
             </Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.purchaseButton}
+            onPress={handlePayOnWeb}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.purchaseButtonText}>Pay on Web</Text>
           </TouchableOpacity>
         )}
       </View>
