@@ -9,6 +9,7 @@ import {
   getClassSessionWaitlist,
   cancelClassSession,
   createBooking,
+  joinClassSessionWaitlist,
 } from '../../services/bookings.api';
 import { getClients } from '../../services/accounts.api';
 import { bookingDetailStyles as styles } from '../../styles/bookingDetail.styles';
@@ -78,20 +79,29 @@ const ClassSessionSection = ({
   const handleEnrollClient = useCallback(async (client) => {
     if (!session) return;
     setEnrolling(true);
+    const cap = session.capacity ?? session.service?.capacity;
+    const avail = cap != null ? cap - (session.active_attendees ?? 0) : null;
+    const classFull = avail != null && avail <= 0;
     try {
-      await createBooking({
-        client_id: client.id,
-        class_session_id: classSessionId,
-        service_ids: [session.service_id || session.service?.id],
-        location_id: session.location_id || session.location?.id,
-        start_time: session.start_at,
-        end_time: session.end_at,
-        status: 'confirmed',
-        booking_type: 'one_off',
-        bookable_type: 'App\\Models\\User',
-        bookable_id: session.coach_id || session.coach?.id,
-      });
-      Alert.alert('Enrolled', `${client.first_name} ${client.last_name} has been enrolled.`);
+      if (classFull) {
+        // Class is full — add to waitlist instead of creating a booking
+        await joinClassSessionWaitlist(classSessionId, client.id);
+        Alert.alert('Waitlisted', `${client.first_name} ${client.last_name} has been added to the waitlist.`);
+      } else {
+        await createBooking({
+          client_id: client.id,
+          class_session_id: classSessionId,
+          service_ids: [session.service_id || session.service?.id],
+          location_id: session.location_id || session.location?.id,
+          start_time: session.start_at,
+          end_time: session.end_at,
+          status: 'confirmed',
+          booking_type: 'one_off',
+          bookable_type: 'App\\Models\\User',
+          bookable_id: session.coach_id || session.coach?.id,
+        });
+        Alert.alert('Enrolled', `${client.first_name} ${client.last_name} has been enrolled.`);
+      }
       setShowEnrollSearch(false);
       setSearchQuery('');
       setSearchResults([]);

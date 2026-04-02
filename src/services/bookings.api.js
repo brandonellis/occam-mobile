@@ -161,7 +161,7 @@ export const cancelClassSession = async (classSessionId, options = {}) => {
   const response = await apiClient.delete(`/class-sessions/${classSessionId}`, {
     data: {
       notify: options.notify ?? true,
-      message_to_client: options.message || null,
+      message: options.message || null,
     },
   });
   return response.data;
