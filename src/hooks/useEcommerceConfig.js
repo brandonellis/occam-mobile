@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getEcommerceConfig } from '../services/bookings.api';
 import { DEFAULT_FEE_RATE } from '../constants/billing.constants';
+import { setCurrencyDefault } from '../helpers/pricing.helper';
 
 /**
  * Hook to fetch ecommerce config (platform fee, Stripe status).
@@ -31,6 +32,10 @@ const useEcommerceConfig = () => {
         if (acctId && acctType !== 'none') {
           setPaymentsEnabled(true);
           setConnectAccount(acctId);
+        }
+        // Set app-wide currency default from Stripe account
+        if (cfg?.stripe?.currency) {
+          setCurrencyDefault(cfg.stripe.currency);
         }
       } catch {
         // Non-fatal — keep defaults

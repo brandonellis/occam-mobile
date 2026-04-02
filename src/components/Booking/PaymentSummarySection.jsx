@@ -4,10 +4,12 @@ import { Text } from 'react-native-paper';
 import PropTypes from 'prop-types';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { colors } from '../../theme';
+import { formatCurrency } from '../../helpers/pricing.helper';
 
 const PaymentSummarySection = ({
   summary,
   appliedPromo,
+  taxAmount = 0,
   feeBreakdownVisible,
   onToggleFeeBreakdown,
   feeDescription,
@@ -58,15 +60,15 @@ const PaymentSummarySection = ({
       {appliedPromo && (
         <View style={[styles.confirmRow, styles.summaryFeesRow]}>
           <Text style={[styles.summaryLabel, { color: colors.success }]}>Promo: {appliedPromo.code}</Text>
-          <Text style={[styles.summaryValue, { color: colors.success }]}>-${Number(appliedPromo.discount_amount || 0).toFixed(2)}</Text>
+          <Text style={[styles.summaryValue, { color: colors.success }]}>-{formatCurrency(Number(appliedPromo.discount_amount || 0))}</Text>
         </View>
       )}
 
-      {/* Processing fee row with info toggle */}
+      {/* Taxes and Fees row with info toggle */}
       <View style={styles.summaryFeesRow}>
         <View style={styles.confirmRow}>
           <View style={styles.summaryFeesInner}>
-            <Text style={styles.summaryLabel}>Processing Fee ({summary.platformFeePercent}%)</Text>
+            <Text style={styles.summaryLabel}>Taxes and Fees</Text>
             <TouchableOpacity
               onPress={onToggleFeeBreakdown}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -76,7 +78,7 @@ const PaymentSummarySection = ({
             </TouchableOpacity>
           </View>
           <Text style={styles.summaryValue}>
-            {summary.platformFeeFormatted}
+            {formatCurrency(summary.platformFee + taxAmount)}
           </Text>
         </View>
 
@@ -87,6 +89,11 @@ const PaymentSummarySection = ({
             <Text style={styles.feeBreakdownItem}>
               Platform Fee ({summary.platformFeePercent}%): {summary.platformFeeFormatted}
             </Text>
+            {taxAmount > 0 && (
+              <Text style={styles.feeBreakdownItem}>
+                Tax: {formatCurrency(taxAmount)}
+              </Text>
+            )}
             <Text style={styles.feeBreakdownDesc}>
               {feeDescription}
             </Text>
@@ -99,7 +106,9 @@ const PaymentSummarySection = ({
 
       <View style={styles.confirmRow}>
         <Text style={styles.totalLabel}>Total</Text>
-        <Text style={styles.totalPrice}>{summary.totalFormatted}</Text>
+        <Text style={styles.totalPrice}>
+          {summary.isMembershipBooking || summary.isPackageBooking ? 'FREE' : formatCurrency(summary.total + taxAmount)}
+        </Text>
       </View>
     </View>
   );
@@ -116,6 +125,7 @@ PaymentSummarySection.propTypes = {
     code: PropTypes.string,
     discount_amount: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
   }),
+  taxAmount: PropTypes.number,
   feeBreakdownVisible: PropTypes.bool,
   onToggleFeeBreakdown: PropTypes.func.isRequired,
   feeDescription: PropTypes.string,
