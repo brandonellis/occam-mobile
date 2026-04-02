@@ -143,10 +143,10 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   // Clients with membership/package coverage or free services stay in-app.
   useEffect(() => {
     if (isCoach || isEditMode || clientRedirecting || redirectAttemptedRef.current) return;
-    // Wait for all loading to finish before deciding
-    if (ecommerceLoading || membershipLoading || packageBenefitLoading) return;
-    // No redirect needed if payment isn't required
-    if (!paymentsEnabled || isPaymentNotRequired) return;
+    // Wait for membership/package loading to finish before deciding
+    if (membershipLoading || packageBenefitLoading) return;
+    // No redirect needed if service is free
+    if (isPaymentNotRequired) return;
     // Covered by membership or package — no payment, stay in-app
     if (isMembershipBooking || isPackageBooking) return;
 
@@ -158,7 +158,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         setClientRedirecting(false);
         Alert.alert('Unable to Open Checkout', 'Please try again or contact the facility to book.');
       });
-  }, [isCoach, isEditMode, ecommerceLoading, membershipLoading, packageBenefitLoading, paymentsEnabled, isPaymentNotRequired, isMembershipBooking, isPackageBooking, service, coach, location, timeSlot, effectiveDuration, navigation, clientRedirecting]);
+  }, [isCoach, isEditMode, membershipLoading, packageBenefitLoading, isPaymentNotRequired, isMembershipBooking, isPackageBooking, service, coach, location, timeSlot, effectiveDuration, navigation, clientRedirecting]);
 
   const {
     isSubmitting,
