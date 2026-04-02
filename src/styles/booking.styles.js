@@ -948,4 +948,18 @@ export const bookingStyles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: 13,
   },
+
+  // Web redirect loading screen (client → browser handoff)
+  redirectContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  redirectText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.lg,
+  },
 });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, Animated } from 'react-native';
+import { View, ScrollView, Animated, Alert } from 'react-native';
 import { Text, SegmentedButtons, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useConfirmPayment, StripeProvider } from '@stripe/stripe-react-native';
@@ -50,6 +50,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Client web redirect state (resolved after membership/package hooks below)
   const [clientRedirecting, setClientRedirecting] = useState(false);
+  const redirectAttemptedRef = useRef(false);
 
   // Form state (stays in the screen — not domain logic)
   const [bookingNotes, setBookingNotes] = useState(bookingData.notes || '');
@@ -141,7 +142,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   // Coaches/admins process payments in-app as normal.
   // Clients with membership/package coverage or free services stay in-app.
   useEffect(() => {
-    if (isCoach || isEditMode || clientRedirecting) return;
+    if (isCoach || isEditMode || clientRedirecting || redirectAttemptedRef.current) return;
     // Wait for all loading to finish before deciding
     if (ecommerceLoading || membershipLoading || packageBenefitLoading) return;
     // No redirect needed if payment isn't required
@@ -149,25 +150,15 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     // Covered by membership or package — no payment, stay in-app
     if (isMembershipBooking || isPackageBooking) return;
 
+    redirectAttemptedRef.current = true;
     setClientRedirecting(true);
     openBookingPayment({ service, coach, location, timeSlot, duration_minutes: effectiveDuration })
       .then(() => navigation.popToTop())
-      .catch(() => setClientRedirecting(false));
+      .catch(() => {
+        setClientRedirecting(false);
+        Alert.alert('Unable to Open Checkout', 'Please try again or contact the facility to book.');
+      });
   }, [isCoach, isEditMode, ecommerceLoading, membershipLoading, packageBenefitLoading, paymentsEnabled, isPaymentNotRequired, isMembershipBooking, isPackageBooking, service, coach, location, timeSlot, effectiveDuration, navigation, clientRedirecting]);
-
-  if (clientRedirecting) {
-    return (
-      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
-        <ScreenHeader title="Redirecting..." onBack={() => navigation.goBack()} />
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
-          <MaterialCommunityIcons name="web" size={40} color={colors.primary} />
-          <Text style={{ fontSize: 16, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 24 }}>
-            Opening secure checkout...
-          </Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
 
   const {
     isSubmitting,
@@ -236,6 +227,22 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       Animated.timing(successOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
     ]).start();
   }, [showSuccess, successScale, successOpacity]);
+
+  // ── Early returns (must be after all hooks) ──
+
+  if (clientRedirecting) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <ScreenHeader title="Redirecting..." onBack={() => navigation.goBack()} />
+        <View style={styles.redirectContainer}>
+          <MaterialCommunityIcons name="web" size={40} color={colors.primary} />
+          <Text style={styles.redirectText}>
+            Opening secure checkout...
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (showSuccess) {
     return (
