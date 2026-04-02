@@ -60,7 +60,7 @@ describe('availability.service', () => {
       exclude_booking_id: 44,
       client_id: 99,
       duration_minutes: 60,
-    });
+    }, { signal: undefined });
 
     expect(slots).toEqual([
       {

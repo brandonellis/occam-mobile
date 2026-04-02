@@ -63,8 +63,8 @@ export const getAvailabilityMonthlySummary = async (params) => {
  * @param {number} [params.duration_minutes]
  * @returns {Promise<Object>} { data: Array, meta: Object }
  */
-export const getAvailabilityTimeslots = async (params) => {
-  const response = await apiClient.get('/availability/timeslots', { params });
+export const getAvailabilityTimeslots = async (params, { signal } = {}) => {
+  const response = await apiClient.get('/availability/timeslots', { params, signal });
   return response.data;
 };
 

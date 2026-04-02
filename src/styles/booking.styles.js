@@ -1006,6 +1006,21 @@ export const bookingStyles = StyleSheet.create({
   recurrencePreviewReason: {
     fontSize: 11,
   },
+  recurrencePreviewReasonError: {
+    fontSize: 11,
+    color: colors.error,
+  },
+  recurrencePreviewReasonWarn: {
+    fontSize: 11,
+    color: colors.warningDark,
+  },
+  recurrenceRecheckLabel: {
+    fontSize: 12,
+    color: colors.accent,
+  },
+  recurrenceRecheckContent: {
+    minHeight: 44,
+  },
   recurrenceProgressText: {
     fontSize: 12,
     color: colors.textSecondary,

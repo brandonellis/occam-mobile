@@ -35,7 +35,7 @@ const statusIcon = (status) => {
     case 'fail':
       return <MaterialCommunityIcons name="close-circle" size={18} color={colors.error} accessibilityLabel="Not available" />;
     case 'warn':
-      return <MaterialCommunityIcons name="alert-circle" size={18} color={colors.warningDark || colors.warning} accessibilityLabel="Could not verify" />;
+      return <MaterialCommunityIcons name="alert-circle" size={18} color={colors.warningDark} accessibilityLabel="Could not verify" />;
     default:
       return null;
   }
@@ -176,8 +176,8 @@ const RecurrencePreview = ({
               <Button
                 mode="text"
                 onPress={checkAvailability}
-                labelStyle={{ fontSize: 12, color: colors.accent }}
-                contentStyle={{ minHeight: 44 }}
+                labelStyle={styles.recurrenceRecheckLabel}
+                contentStyle={styles.recurrenceRecheckContent}
               >
                 Recheck
               </Button>
@@ -205,10 +205,10 @@ const RecurrencePreview = ({
                 </View>
               </View>
               {item.status === 'fail' && (
-                <Text style={[styles.recurrencePreviewReason, { color: colors.error }]}>{item.reason}</Text>
+                <Text style={styles.recurrencePreviewReasonError}>{item.reason}</Text>
               )}
               {item.status === 'warn' && (
-                <Text style={[styles.recurrencePreviewReason, { color: colors.warningDark || colors.warning }]}>{item.reason}</Text>
+                <Text style={styles.recurrencePreviewReasonWarn}>{item.reason}</Text>
               )}
             </View>
           ))}

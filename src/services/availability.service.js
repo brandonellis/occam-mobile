@@ -106,7 +106,7 @@ export const getAvailableTimeSlots = async ({
       ...(excludeBookingId ? { exclude_booking_id: excludeBookingId } : {}),
       ...(clientId ? { client_id: clientId } : {}),
       ...(durationMinutes ? { duration_minutes: durationMinutes } : {}),
-    });
+    }, { signal });
 
     return transformBackendSlots(
       backendResult?.data || [],
