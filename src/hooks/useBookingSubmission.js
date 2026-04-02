@@ -126,14 +126,6 @@ const useBookingSubmission = ({
         occurrences: recurrenceOccurrences,
       };
       const result = await createRecurringBooking(payload);
-      const created = result?.created_count || 0;
-      const failed = result?.failed_count || 0;
-      if (failed > 0) {
-        Alert.alert(
-          'Recurring Bookings',
-          `${created} booking${created !== 1 ? 's' : ''} created, ${failed} could not be scheduled (conflicts or unavailability).`,
-        );
-      }
       refreshMembership();
       dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: result });
     } catch (error) {

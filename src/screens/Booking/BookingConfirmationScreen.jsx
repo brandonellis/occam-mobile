@@ -19,6 +19,7 @@ import PaymentSummarySection from '../../components/Booking/PaymentSummarySectio
 import { useTaxCalculation } from '../../hooks/useTaxCalculation';
 import BookingBenefitBanner from '../../components/Booking/BookingBenefitBanner';
 import ConfirmBottomBar from '../../components/Booking/ConfirmBottomBar';
+import RecurringResultModal from '../../components/Booking/RecurringResultModal';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { buildPaymentSummary, formatCurrency } from '../../helpers/pricing.helper';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
@@ -57,6 +58,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const bookingStatus = 'confirmed';
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [feeBreakdownVisible, setFeeBreakdownVisible] = useState(false);
+  const [recurringResultVisible, setRecurringResultVisible] = useState(false);
 
   // Recurrence state (coach only, non-class, non-edit)
   const [recurrenceEnabled, setRecurrenceEnabled] = useState(false);
@@ -247,7 +249,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       Animated.spring(successScale, { toValue: 1, tension: 50, friction: 7, useNativeDriver: true }),
       Animated.timing(successOpacity, { toValue: 1, duration: 300, useNativeDriver: true }),
     ]).start();
-  }, [showSuccess, successScale, successOpacity]);
+    // Auto-show recurring result modal if there were failures
+    if (createdBookingData?.failed_count > 0 || createdBookingData?.failed_bookings?.length > 0) {
+      setRecurringResultVisible(true);
+    }
+  }, [showSuccess, successScale, successOpacity, createdBookingData]);
 
   // ── Early returns (must be after all hooks) ──
 
@@ -267,25 +273,32 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   if (showSuccess) {
     return (
-      <BookingSuccessView
-        createdBookingData={createdBookingData}
-        bookingData={bookingData}
-        service={service}
-        coach={coach}
-        location={location}
-        client={client}
-        selectedResource={selectedResource}
-        timeSlot={timeSlot}
-        formattedDate={formattedDate}
-        isEditMode={isEditMode}
-        isCoach={isCoach}
-        isMembershipBooking={isMembershipBooking}
-        isPackageBooking={isPackageBooking}
-        company={company}
-        navigation={navigation}
-        successScale={successScale}
-        successOpacity={successOpacity}
-      />
+      <>
+        <BookingSuccessView
+          createdBookingData={createdBookingData}
+          bookingData={bookingData}
+          service={service}
+          coach={coach}
+          location={location}
+          client={client}
+          selectedResource={selectedResource}
+          timeSlot={timeSlot}
+          formattedDate={formattedDate}
+          isEditMode={isEditMode}
+          isCoach={isCoach}
+          isMembershipBooking={isMembershipBooking}
+          isPackageBooking={isPackageBooking}
+          company={company}
+          navigation={navigation}
+          successScale={successScale}
+          successOpacity={successOpacity}
+        />
+        <RecurringResultModal
+          visible={recurringResultVisible}
+          onDismiss={() => setRecurringResultVisible(false)}
+          result={createdBookingData}
+        />
+      </>
     );
   }
 
