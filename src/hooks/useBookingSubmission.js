@@ -109,14 +109,19 @@ const useBookingSubmission = ({
   }, [buildPayload, refreshMembership]);
 
   const handleDirectConfirm = useCallback(() => handleDirectBooking(), [handleDirectBooking]);
-  const handleSendPaymentLink = useCallback(() => handleDirectBooking({ sendPaymentLink: true }), [handleDirectBooking]);
+  const handleSendPaymentLink = useCallback(() => {
+    if (recurrenceEnabled && recurrenceOccurrences > 1) {
+      return handleRecurringConfirm({ sendPaymentLink: true });
+    }
+    return handleDirectBooking({ sendPaymentLink: true });
+  }, [handleDirectBooking, handleRecurringConfirm, recurrenceEnabled, recurrenceOccurrences]);
 
   // Handle recurring booking (coach only — creates a series of bookings)
-  const handleRecurringConfirm = useCallback(async () => {
+  const handleRecurringConfirm = useCallback(async ({ sendPaymentLink } = {}) => {
     try {
       dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating recurring bookings...' });
       const payload = {
-        ...buildPayload('confirmed'),
+        ...buildPayload('confirmed', { sendPaymentLink }),
         frequency: recurrenceFrequency,
         occurrences: recurrenceOccurrences,
       };
@@ -279,6 +284,10 @@ const useBookingSubmission = ({
     }
     // Recurring booking flow (coach only)
     if (recurrenceEnabled && recurrenceOccurrences > 1) {
+      // When Stripe is not connected, send payment link with recurring bookings
+      const recurringOpts = (!paymentsEnabled && isCoach && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired)
+        ? { sendPaymentLink: true }
+        : {};
       // Pre-flight allotment warning for membership bookings
       // Note: allotment is checked per billing cycle on the backend, so bookings
       // spanning multiple cycles will use each cycle's allotment independently.
@@ -293,12 +302,12 @@ const useBookingSubmission = ({
           `This client has ${remaining} session${remaining !== 1 ? 's' : ''} remaining in the current billing cycle, but you're scheduling ${recurrenceOccurrences} recurring bookings. Sessions in future cycles will use that cycle's allotment. Any sessions beyond available allotment may fail.`,
           [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Continue Anyway', onPress: () => handleRecurringConfirm() },
+            { text: 'Continue Anyway', onPress: () => handleRecurringConfirm(recurringOpts) },
           ],
         );
         return;
       }
-      handleRecurringConfirm();
+      handleRecurringConfirm(recurringOpts);
       return;
     }
     if (isMembershipBooking || isPackageBooking) {
