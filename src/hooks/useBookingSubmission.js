@@ -74,9 +74,9 @@ const useBookingSubmission = ({
   const clientId = isCoach ? client?.id : user?.id;
 
   // Wrap pure buildBookingPayload with current closure values
-  const buildPayload = useCallback((status = 'confirmed') => {
+  const buildPayload = useCallback((status = 'confirmed', { sendPaymentLink } = {}) => {
     return buildBookingPayload(
-      { clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource },
+      { clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource, sendPaymentLink },
       status,
     );
   }, [clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource]);
@@ -89,15 +89,18 @@ const useBookingSubmission = ({
   // Payment saga from extracted hook
   const { executePaymentSaga } = usePaymentSaga({ buildPayload, dispatch, ACTIONS });
 
-  // Handle direct booking (membership or no-payment — no Stripe involved)
-  const handleDirectConfirm = useCallback(async () => {
+  // Handle direct booking (membership, no-payment, or send-payment-link — no inline Stripe)
+  const handleDirectBooking = useCallback(async ({ sendPaymentLink } = {}) => {
     try {
       dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
-      const payload = buildPayload('confirmed');
+      const payload = buildPayload('confirmed', { sendPaymentLink });
       const result = await createBooking(payload);
       const booking = result?.data || result;
       refreshMembership();
       dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: booking });
+      if (sendPaymentLink && booking.payment_link_sent === false) {
+        Alert.alert('Note', 'Booking created, but the payment link could not be sent. You can resend it from the booking details.');
+      }
     } catch (error) {
       Alert.alert('Booking Failed', extractErrorMessage(error));
     } finally {
@@ -105,12 +108,20 @@ const useBookingSubmission = ({
     }
   }, [buildPayload, refreshMembership]);
 
+  const handleDirectConfirm = useCallback(() => handleDirectBooking(), [handleDirectBooking]);
+  const handleSendPaymentLink = useCallback(() => {
+    if (recurrenceEnabled && recurrenceOccurrences > 1) {
+      return handleRecurringConfirm({ sendPaymentLink: true });
+    }
+    return handleDirectBooking({ sendPaymentLink: true });
+  }, [handleDirectBooking, handleRecurringConfirm, recurrenceEnabled, recurrenceOccurrences]);
+
   // Handle recurring booking (coach only — creates a series of bookings)
-  const handleRecurringConfirm = useCallback(async () => {
+  const handleRecurringConfirm = useCallback(async ({ sendPaymentLink } = {}) => {
     try {
       dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating recurring bookings...' });
       const payload = {
-        ...buildPayload('confirmed'),
+        ...buildPayload('confirmed', { sendPaymentLink }),
         frequency: recurrenceFrequency,
         occurrences: recurrenceOccurrences,
       };
@@ -273,6 +284,10 @@ const useBookingSubmission = ({
     }
     // Recurring booking flow (coach only)
     if (recurrenceEnabled && recurrenceOccurrences > 1) {
+      // When Stripe is not connected, send payment link with recurring bookings
+      const recurringOpts = (!paymentsEnabled && isCoach && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired)
+        ? { sendPaymentLink: true }
+        : {};
       // Pre-flight allotment warning for membership bookings
       // Note: allotment is checked per billing cycle on the backend, so bookings
       // spanning multiple cycles will use each cycle's allotment independently.
@@ -287,22 +302,25 @@ const useBookingSubmission = ({
           `This client has ${remaining} session${remaining !== 1 ? 's' : ''} remaining in the current billing cycle, but you're scheduling ${recurrenceOccurrences} recurring bookings. Sessions in future cycles will use that cycle's allotment. Any sessions beyond available allotment may fail.`,
           [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Continue Anyway', onPress: () => handleRecurringConfirm() },
+            { text: 'Continue Anyway', onPress: () => handleRecurringConfirm(recurringOpts) },
           ],
         );
         return;
       }
-      handleRecurringConfirm();
+      handleRecurringConfirm(recurringOpts);
       return;
     }
     if (isMembershipBooking || isPackageBooking) {
       handleDirectConfirm();
-    } else if (isPaymentNotRequired || (isCoach && !paymentsEnabled)) {
+    } else if (isPaymentNotRequired) {
       handleDirectConfirm();
     } else if (paymentsEnabled && paymentMode === 'saved' && selectedSavedMethodId) {
       handleSavedCardPayment();
     } else if (paymentsEnabled) {
       handlePaymentConfirm();
+    } else if (isCoach) {
+      // Stripe not connected — create booking and send payment link to client
+      handleSendPaymentLink();
     } else {
       // paymentsEnabled is false for a client — payment system unavailable
       Alert.alert(
@@ -310,7 +328,7 @@ const useBookingSubmission = ({
         'Online payments are not set up for this facility. Please contact them to book.',
       );
     }
-  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, membershipStatus, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, recurrenceEnabled, recurrenceOccurrences, handleDirectConfirm, handleRecurringConfirm, handlePaymentConfirm, handleSavedCardPayment]);
+  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, membershipStatus, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, recurrenceEnabled, recurrenceOccurrences, handleDirectConfirm, handleRecurringConfirm, handlePaymentConfirm, handleSavedCardPayment, handleSendPaymentLink]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
@@ -332,6 +350,7 @@ const useBookingSubmission = ({
     showSuccess,
     createdBookingData,
     handleConfirm,
+    handleSendPaymentLink,
     canConfirm,
   };
 };

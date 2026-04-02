@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, ScrollView, Animated, Alert, ActivityIndicator } from 'react-native';
-import { Text, SegmentedButtons, TextInput } from 'react-native-paper';
+import { Text, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useConfirmPayment, StripeProvider } from '@stripe/stripe-react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -35,7 +35,6 @@ import useBookingPackage from '../../hooks/useBookingPackage';
 import useBookingPayment from '../../hooks/useBookingPayment';
 import useBookingSubmission from '../../hooks/useBookingSubmission';
 
-const EDITABLE_STATUSES = ['confirmed', 'cancelled'];
 
 const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const { bookingData = {} } = route.params || {};
@@ -55,9 +54,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
 
   // Form state (stays in the screen — not domain logic)
   const [bookingNotes, setBookingNotes] = useState(bookingData.notes || '');
-  const [bookingStatus, setBookingStatus] = useState(
-    EDITABLE_STATUSES.includes(bookingData.status) ? bookingData.status : 'confirmed'
-  );
+  const bookingStatus = 'confirmed';
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [feeBreakdownVisible, setFeeBreakdownVisible] = useState(false);
 
@@ -175,6 +172,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     showSuccess,
     createdBookingData,
     handleConfirm,
+    handleSendPaymentLink,
     canConfirm,
   } = useBookingSubmission({
     bookingData, service, coach, location, client, timeSlot,
@@ -221,11 +219,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       ? `Book ${recurrenceOccurrences} Sessions`
       : isMembershipBooking || isPackageBooking
         ? 'Confirm Session'
-        : isCoach && !coachNeedsPayment
-            ? 'Book Session'
-            : isPaymentNotRequired || !paymentsEnabled
-              ? 'Confirm Booking'
-              : `Pay ${formatCurrency(summary.total + taxAmount)}`;
+        : isPaymentNotRequired || (!isCoach && !paymentsEnabled)
+          ? 'Confirm Booking'
+          : isCoach && !paymentsEnabled
+            ? 'Book & Send Payment Link'
+            : `Pay ${formatCurrency(summary.total + taxAmount)}`;
 
   // ── Success screen ──
 
@@ -284,6 +282,10 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const showPackageBanner = !isEditMode && !membershipLoading && !packageBenefitLoading && !ecommerceLoading && isPackageBooking;
   const showNoPaymentBanner = !isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && isPaymentNotRequired;
   const showPromoSection = !isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled;
+  // Secondary "Send Payment Link" opt-in: shown when Stripe IS connected, as an
+  // alternative to charging in-app. When Stripe is NOT connected, the primary button
+  // routes to handleSendPaymentLink automatically via handleConfirm.
+  const showPaymentLinkButton = isCoach && !isEditMode && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled;
 
   // ── Main confirmation form ──
 
@@ -354,20 +356,9 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           />
         )}
 
-        {/* Edit mode: status + notes */}
+        {/* Edit mode: notes */}
         {isEditMode && (
           <View style={styles.confirmSection}>
-            <Text style={styles.confirmLabel}>STATUS</Text>
-            <SegmentedButtons
-              value={bookingStatus}
-              onValueChange={setBookingStatus}
-              style={styles.editStatusControl}
-              buttons={[
-                { value: 'confirmed', label: 'Confirmed' },
-                { value: 'cancelled', label: 'Cancelled' },
-              ]}
-            />
-            <View style={styles.confirmDivider} />
             <TextInput
               mode="outlined"
               label="Notes"
@@ -484,6 +475,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         loadingMessage={loadingMessage}
         onConfirm={handleConfirm}
         buttonLabel={buttonLabel}
+        onSendPaymentLink={handleSendPaymentLink}
+        showPaymentLinkButton={showPaymentLinkButton}
       />
     </SafeAreaView>
   );

@@ -317,9 +317,6 @@ export const bookingStyles = StyleSheet.create({
     backgroundColor: colors.borderLight,
     marginVertical: spacing.sm,
   },
-  editStatusControl: {
-    marginTop: spacing.sm,
-  },
   editNotesInput: {
     backgroundColor: colors.surface,
   },
@@ -622,6 +619,12 @@ export const bookingStyles = StyleSheet.create({
   },
   totalDivider: {
     marginVertical: spacing.sm,
+  },
+  paymentLinkButton: {
+    marginTop: spacing.sm,
+  },
+  paymentLinkButtonContent: {
+    minHeight: 52,
   },
   loadingBar: {
     flexDirection: 'row',

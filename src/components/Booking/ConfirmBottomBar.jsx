@@ -11,6 +11,8 @@ const ConfirmBottomBar = ({
   loadingMessage,
   onConfirm,
   buttonLabel,
+  onSendPaymentLink,
+  showPaymentLinkButton,
 }) => {
   return (
     <View style={styles.bottomBar}>
@@ -20,17 +22,32 @@ const ConfirmBottomBar = ({
           <Text style={[styles.loadingBarText, { color: colors.textSecondary }]}>{loadingMessage}</Text>
         </View>
       ) : (
-        <Button
-          mode="contained"
-          style={[styles.continueButton, !canConfirm && styles.continueButtonDisabled]}
-          onPress={onConfirm}
-          disabled={!canConfirm}
-          loading={isSubmitting}
-          testID="confirm-booking-button"
-          labelStyle={styles.continueButtonText}
-        >
-          {buttonLabel}
-        </Button>
+        <>
+          <Button
+            mode="contained"
+            style={[styles.continueButton, !canConfirm && styles.continueButtonDisabled]}
+            onPress={onConfirm}
+            disabled={!canConfirm}
+            loading={isSubmitting}
+            testID="confirm-booking-button"
+            labelStyle={styles.continueButtonText}
+          >
+            {buttonLabel}
+          </Button>
+          {showPaymentLinkButton && (
+            <Button
+              mode="outlined"
+              style={styles.paymentLinkButton}
+              contentStyle={styles.paymentLinkButtonContent}
+              onPress={onSendPaymentLink}
+              disabled={!canConfirm || isSubmitting}
+              icon="email-send-outline"
+              testID="send-payment-link-button"
+            >
+              Send Payment Link
+            </Button>
+          )}
+        </>
       )}
     </View>
   );
@@ -42,6 +59,8 @@ ConfirmBottomBar.propTypes = {
   loadingMessage: PropTypes.string,
   onConfirm: PropTypes.func.isRequired,
   buttonLabel: PropTypes.string.isRequired,
+  onSendPaymentLink: PropTypes.func,
+  showPaymentLinkButton: PropTypes.bool,
 };
 
 export default ConfirmBottomBar;
