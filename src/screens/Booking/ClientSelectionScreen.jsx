@@ -74,7 +74,8 @@ const ClientSelectionScreen = ({ route, navigation }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [clientMode, debouncedSearch, selectedClient?.id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- selectedClient read inside but must not trigger refetch
+  }, [clientMode, debouncedSearch]);
 
   useEffect(() => {
     loadClients();
