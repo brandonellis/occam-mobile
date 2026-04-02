@@ -132,7 +132,7 @@ const BookingSuccessView = ({
             </>
           )}
           <View style={styles.successDetailDivider} />
-          <Text style={styles.successDetailLabel}>DATE & TIME</Text>
+          <Text style={styles.successDetailLabel}>{isRecurring ? 'NEXT BOOKING' : 'DATE & TIME'}</Text>
           <Text style={styles.successDetailValue}>{formattedDate}</Text>
           <Text style={styles.successDetailTime}>
             {formatTimeInTz(timeSlot?.start_time, company)}
