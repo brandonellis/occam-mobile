@@ -64,8 +64,6 @@ const useBookingSubmission = ({
   packageBenefitLoading,
   ecommerceLoading,
   isPaymentNotRequired,
-  // Client web redirect (App Store compliance)
-  onClientPaymentRedirect,
 }) => {
   const [state, dispatch] = useReducer(bookingSubmissionReducer, initialBookingSubmissionState);
   const { isSubmitting, loadingMessage, showSuccess, createdBookingData } = state;
@@ -301,9 +299,6 @@ const useBookingSubmission = ({
       handleDirectConfirm();
     } else if (isPaymentNotRequired || (isCoach && !paymentsEnabled)) {
       handleDirectConfirm();
-    } else if (!isCoach && paymentsEnabled && onClientPaymentRedirect) {
-      // App Store compliance: redirect clients to web for payment
-      onClientPaymentRedirect();
     } else if (paymentsEnabled && paymentMode === 'saved' && selectedSavedMethodId) {
       handleSavedCardPayment();
     } else if (paymentsEnabled) {
@@ -315,7 +310,7 @@ const useBookingSubmission = ({
         'Online payments are not set up for this facility. Please contact them to book.',
       );
     }
-  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, membershipStatus, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, recurrenceEnabled, recurrenceOccurrences, handleDirectConfirm, handleRecurringConfirm, handlePaymentConfirm, handleSavedCardPayment, onClientPaymentRedirect]);
+  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, membershipStatus, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, recurrenceEnabled, recurrenceOccurrences, handleDirectConfirm, handleRecurringConfirm, handlePaymentConfirm, handleSavedCardPayment]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
@@ -325,13 +320,11 @@ const useBookingSubmission = ({
     if (isMembershipBooking || isPackageBooking) return true;
     if (isPaymentNotRequired) return true;
     if (isCoach && !paymentsEnabled) return true;
-    // Client web redirect: no card needed (App Store compliance)
-    if (!isCoach && paymentsEnabled && onClientPaymentRedirect) return true;
     if (paymentsEnabled && paymentMode === 'saved') return !!selectedSavedMethodId;
     if (paymentsEnabled) return cardComplete;
     // Client with no payment system — cannot confirm
     return false;
-  }, [isSubmitting, isEditMode, bookingId, timeSlot?.start_time, membershipLoading, packageBenefitLoading, ecommerceLoading, isMembershipBooking, isPackageBooking, isPaymentNotRequired, isCoach, paymentsEnabled, paymentMode, selectedSavedMethodId, cardComplete, onClientPaymentRedirect]);
+  }, [isSubmitting, isEditMode, bookingId, timeSlot?.start_time, membershipLoading, packageBenefitLoading, ecommerceLoading, isMembershipBooking, isPackageBooking, isPaymentNotRequired, isCoach, paymentsEnabled, paymentMode, selectedSavedMethodId, cardComplete]);
 
   return {
     isSubmitting,

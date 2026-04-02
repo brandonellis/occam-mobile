@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, ScrollView, Animated, Alert } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, ScrollView, Animated } from 'react-native';
 import { Text, SegmentedButtons, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useConfirmPayment, StripeProvider } from '@stripe/stripe-react-native';
@@ -47,6 +47,9 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const isEditMode = Boolean(bookingData.editMode);
   const clientId = isCoach ? client?.id : user?.id;
   const effectiveDuration = bookingData.duration_minutes || service?.duration_minutes;
+
+  // Client web redirect state (resolved after membership/package hooks below)
+  const [clientRedirecting, setClientRedirecting] = useState(false);
 
   // Form state (stays in the screen — not domain logic)
   const [bookingNotes, setBookingNotes] = useState(bookingData.notes || '');
@@ -134,26 +137,37 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const isPaymentNotRequired = service?.payment_required === false;
   const coachNeedsPayment = isCoach && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled;
 
-  // App Store compliance: clients needing payment are redirected to web
-  const clientNeedsWebPayment = !isCoach && !isMembershipBooking && !isPackageBooking
-    && !isPaymentNotRequired && paymentsEnabled && !isEditMode;
+  // App Store compliance: redirect clients to web for payment immediately.
+  // Coaches/admins process payments in-app as normal.
+  // Clients with membership/package coverage or free services stay in-app.
+  useEffect(() => {
+    if (isCoach || isEditMode || clientRedirecting) return;
+    // Wait for all loading to finish before deciding
+    if (ecommerceLoading || membershipLoading || packageBenefitLoading) return;
+    // No redirect needed if payment isn't required
+    if (!paymentsEnabled || isPaymentNotRequired) return;
+    // Covered by membership or package — no payment, stay in-app
+    if (isMembershipBooking || isPackageBooking) return;
 
-  const onClientPaymentRedirect = useCallback(() => {
-    Alert.alert(
-      'Continue on Web',
-      'To complete your booking with payment, you\'ll be taken to our website.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Continue',
-          onPress: async () => {
-            await openBookingPayment();
-            navigation.popToTop();
-          },
-        },
-      ]
+    setClientRedirecting(true);
+    openBookingPayment({ service, coach, location, timeSlot, duration_minutes: effectiveDuration })
+      .then(() => navigation.popToTop())
+      .catch(() => setClientRedirecting(false));
+  }, [isCoach, isEditMode, ecommerceLoading, membershipLoading, packageBenefitLoading, paymentsEnabled, isPaymentNotRequired, isMembershipBooking, isPackageBooking, service, coach, location, timeSlot, effectiveDuration, navigation, clientRedirecting]);
+
+  if (clientRedirecting) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        <ScreenHeader title="Redirecting..." onBack={() => navigation.goBack()} />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+          <MaterialCommunityIcons name="web" size={40} color={colors.primary} />
+          <Text style={{ fontSize: 16, color: colors.textSecondary, textAlign: 'center', paddingHorizontal: 24 }}>
+            Opening secure checkout...
+          </Text>
+        </View>
+      </SafeAreaView>
     );
-  }, [navigation]);
+  }
 
   const {
     isSubmitting,
@@ -175,7 +189,6 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     recurrenceFrequency,
     recurrenceOccurrences,
     membershipLoading, packageBenefitLoading, ecommerceLoading, isPaymentNotRequired,
-    onClientPaymentRedirect: clientNeedsWebPayment ? onClientPaymentRedirect : null,
   });
 
   // ── Derived values ──
@@ -208,9 +221,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       ? `Book ${recurrenceOccurrences} Sessions`
       : isMembershipBooking || isPackageBooking
         ? 'Confirm Session'
-        : clientNeedsWebPayment
-          ? 'Continue on Web'
-          : isCoach && !coachNeedsPayment
+        : isCoach && !coachNeedsPayment
             ? 'Book Session'
             : isPaymentNotRequired || !paymentsEnabled
               ? 'Confirm Booking'
@@ -389,18 +400,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           <BookingBenefitBanner type="noPayment" isCoach={isCoach} />
         )}
 
-        {clientNeedsWebPayment && (
-          <View style={[styles.confirmSection, { backgroundColor: colors.infoLight, borderRadius: 12, padding: 16 }]}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              <MaterialCommunityIcons name="web" size={20} color={colors.info} />
-              <Text style={{ color: colors.info, fontSize: 14, fontWeight: '600', flex: 1 }}>
-                This booking requires payment. You'll be taken to our website to complete checkout.
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {showPromoSection && !clientNeedsWebPayment && (
+        {showPromoSection && (
           <View style={styles.confirmSection}>
             <Text style={styles.confirmLabel}>PROMO CODE</Text>
             <PromoCodeInput
@@ -415,41 +415,37 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           </View>
         )}
 
-        {!clientNeedsWebPayment && (
-          <PaymentMethodSection
-            isEditMode={isEditMode}
-            isMembershipBooking={isMembershipBooking}
-            isPackageBooking={isPackageBooking}
-            isPaymentNotRequired={isPaymentNotRequired}
-            membershipLoading={membershipLoading}
-            ecommerceLoading={ecommerceLoading}
-            isCoach={isCoach}
-            paymentsEnabled={paymentsEnabled}
-            cardError={cardError}
-            onCardChange={onCardChange}
-            savedMethods={savedMethods}
-            paymentMode={paymentMode}
-            selectedSavedMethodId={selectedSavedMethodId}
-            onPaymentModeChange={setPaymentMode}
-            onSelectSavedMethod={setSelectedSavedMethodId}
-            skeletonAnim={skeletonAnim}
-          />
-        )}
+        <PaymentMethodSection
+          isEditMode={isEditMode}
+          isMembershipBooking={isMembershipBooking}
+          isPackageBooking={isPackageBooking}
+          isPaymentNotRequired={isPaymentNotRequired}
+          membershipLoading={membershipLoading}
+          ecommerceLoading={ecommerceLoading}
+          isCoach={isCoach}
+          paymentsEnabled={paymentsEnabled}
+          cardError={cardError}
+          onCardChange={onCardChange}
+          savedMethods={savedMethods}
+          paymentMode={paymentMode}
+          selectedSavedMethodId={selectedSavedMethodId}
+          onPaymentModeChange={setPaymentMode}
+          onSelectSavedMethod={setSelectedSavedMethodId}
+          skeletonAnim={skeletonAnim}
+        />
 
-        {!clientNeedsWebPayment && (
-          <PaymentSummarySection
-            summary={summary}
-            appliedPromo={appliedPromo}
-            taxAmount={taxAmount}
-            feeBreakdownVisible={feeBreakdownVisible}
-            onToggleFeeBreakdown={() => setFeeBreakdownVisible((v) => !v)}
-            feeDescription={feeDescription}
-            membershipLoading={membershipLoading}
-            ecommerceLoading={ecommerceLoading}
-            isEditMode={isEditMode}
-            skeletonAnim={skeletonAnim}
-          />
-        )}
+        <PaymentSummarySection
+          summary={summary}
+          appliedPromo={appliedPromo}
+          taxAmount={taxAmount}
+          feeBreakdownVisible={feeBreakdownVisible}
+          onToggleFeeBreakdown={() => setFeeBreakdownVisible((v) => !v)}
+          feeDescription={feeDescription}
+          membershipLoading={membershipLoading}
+          ecommerceLoading={ecommerceLoading}
+          isEditMode={isEditMode}
+          skeletonAnim={skeletonAnim}
+        />
       </ScrollView>
 
       <ConfirmBottomBar

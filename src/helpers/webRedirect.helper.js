@@ -29,4 +29,22 @@ export const openTenantWebPage = async (path) => {
 
 export const openMembershipPurchase = () => openTenantWebPage('/book?flow=membership');
 export const openPackagePurchase = () => openTenantWebPage('/book?flow=package');
-export const openBookingPayment = () => openTenantWebPage('/book');
+
+/**
+ * Redirect a client to the web booking flow with full context so they
+ * land directly on the payment step (App Store compliance — avoids Apple IAP).
+ *
+ * @param {{ service: object, coach: object?, location: object?, timeSlot: object?, duration_minutes: number? }} bookingData
+ */
+export const openBookingPayment = (bookingData = {}) => {
+  const params = new URLSearchParams({ flow: 'booking' });
+  const { service, coach, location, timeSlot, duration_minutes } = bookingData;
+
+  if (service?.id) params.set('service_id', String(service.id));
+  if (location?.id) params.set('location_id', String(location.id));
+  if (coach?.id) params.set('coach_id', String(coach.id));
+  if (timeSlot?.start_time) params.set('start_time', timeSlot.start_time);
+  if (duration_minutes) params.set('duration_minutes', String(duration_minutes));
+
+  return openTenantWebPage(`/book?${params.toString()}`);
+};
