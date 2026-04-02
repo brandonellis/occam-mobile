@@ -368,11 +368,10 @@ export const bookingStyles = StyleSheet.create({
   continueButton: {
     backgroundColor: colors.primary,
     borderRadius: borderRadius.md,
-    paddingVertical: 14,
     paddingHorizontal: spacing.md,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 52,
+    height: 52,
   },
   continueButtonDisabled: {
     opacity: 0.5,
@@ -961,5 +960,56 @@ export const bookingStyles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'center',
     paddingHorizontal: spacing.lg,
+  },
+
+  // Recurrence preview
+  recurrenceCheckButton: {
+    borderColor: colors.accent,
+    borderRadius: borderRadius.md,
+  },
+  recurrenceCheckButtonLabel: {
+    color: colors.accent,
+    fontWeight: '600',
+  },
+  recurrencePreviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  recurrencePreviewItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
+  },
+  recurrencePreviewItemLast: {
+    borderBottomWidth: 0,
+  },
+  recurrencePreviewItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+  },
+  recurrencePreviewDate: {
+    ...typography.body,
+    fontWeight: '500',
+    color: colors.textPrimary,
+  },
+  recurrencePreviewTime: {
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  recurrencePreviewReason: {
+    fontSize: 11,
+  },
+  recurrenceProgressText: {
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
 });

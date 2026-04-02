@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, ScrollView, Animated, Alert } from 'react-native';
+import { View, ScrollView, Animated, Alert, ActivityIndicator } from 'react-native';
 import { Text, SegmentedButtons, TextInput } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useConfirmPayment, StripeProvider } from '@stripe/stripe-react-native';
@@ -158,7 +158,14 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       .then(() => navigation.popToTop())
       .catch(() => {
         setClientRedirecting(false);
-        Alert.alert('Unable to Open Checkout', 'Please try again or contact the facility to book.');
+        Alert.alert(
+          'Unable to Open Checkout',
+          'Please try again or contact the facility to book.',
+          [
+            { text: 'Go Back', style: 'cancel', onPress: () => navigation.goBack() },
+            { text: 'Try Again', onPress: () => { redirectAttemptedRef.current = false; } },
+          ],
+        );
       });
   }, [isCoach, isEditMode, membershipLoading, packageBenefitLoading, isPaymentNotRequired, isMembershipBooking, isPackageBooking, service, coach, location, timeSlot, effectiveDuration, navigation, clientRedirecting]);
 
@@ -237,7 +244,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         <ScreenHeader title="Redirecting..." onBack={() => navigation.goBack()} />
         <View style={styles.redirectContainer}>
-          <MaterialCommunityIcons name="web" size={40} color={colors.primary} />
+          <ActivityIndicator size="large" color={colors.primary} />
           <Text style={styles.redirectText}>
             Opening secure checkout...
           </Text>

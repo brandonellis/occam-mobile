@@ -154,7 +154,7 @@ const BookingSuccessView = ({
         )}
         <Button
           mode="contained"
-          style={[styles.continueButton, { flex: 1, height: 52 }]}
+          style={[styles.continueButton, styles.successPrimaryFull]}
           onPress={() => navigation.popToTop()}
           labelStyle={styles.continueButtonText}
         >

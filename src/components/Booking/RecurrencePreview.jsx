@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View } from 'react-native';
 import { Text, Button } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { getAvailableTimeSlots } from '../../services/availability.service';
 import { formatDateInTz, formatTimeInTz } from '../../helpers/timezone.helper';
+import { haptic } from '../../helpers/haptic.helper';
 import { bookingStyles as styles } from '../../styles/booking.styles';
-import { colors, spacing } from '../../theme';
+import { colors } from '../../theme';
 import dayjs from 'dayjs';
 
 const FREQUENCY_DAYS = { weekly: 7, biweekly: 14, monthly: 28 };
 
-/**
- * Build a recurring series of booking time windows.
- */
 const buildSeries = (startTime, endTime, occurrences, frequency) => {
   if (!startTime || !endTime) return [];
   const baseStart = dayjs(startTime);
@@ -30,10 +28,19 @@ const buildSeries = (startTime, endTime, occurrences, frequency) => {
   return items;
 };
 
-/**
- * Shows a preview of recurring booking dates with availability status.
- * Checks each date against the availability API.
- */
+const statusIcon = (status) => {
+  switch (status) {
+    case 'ok':
+      return <MaterialCommunityIcons name="check-circle" size={18} color={colors.success} accessibilityLabel="Available" />;
+    case 'fail':
+      return <MaterialCommunityIcons name="close-circle" size={18} color={colors.error} accessibilityLabel="Not available" />;
+    case 'warn':
+      return <MaterialCommunityIcons name="alert-circle" size={18} color={colors.warningDark || colors.warning} accessibilityLabel="Could not verify" />;
+    default:
+      return null;
+  }
+};
+
 const RecurrencePreview = ({
   timeSlot,
   recurrenceFrequency,
@@ -48,16 +55,17 @@ const RecurrencePreview = ({
   const [previewItems, setPreviewItems] = useState([]);
   const [checking, setChecking] = useState(false);
   const [checked, setChecked] = useState(false);
+  const [progress, setProgress] = useState(0);
   const abortRef = useRef(null);
   const prevKeyRef = useRef('');
 
-  // Reset when recurrence config changes
   const configKey = `${timeSlot?.start_time}-${recurrenceFrequency}-${recurrenceOccurrences}`;
   useEffect(() => {
     if (configKey !== prevKeyRef.current) {
       prevKeyRef.current = configKey;
       setChecked(false);
       setPreviewItems([]);
+      setProgress(0);
       onPreviewComplete?.(false);
     }
   }, [configKey, onPreviewComplete]);
@@ -69,6 +77,8 @@ const RecurrencePreview = ({
 
     setChecking(true);
     setChecked(false);
+    setProgress(0);
+    setPreviewItems([]);
 
     const series = buildSeries(
       timeSlot?.start_time,
@@ -105,13 +115,18 @@ const RecurrencePreview = ({
         reason = 'Could not verify';
       }
       results.push({ ...item, status, reason });
+      // Progressive update — show results as they come in
+      setPreviewItems([...results]);
+      setProgress(results.length);
     }
 
     if (!controller.signal.aborted) {
-      setPreviewItems(results);
       setChecking(false);
       setChecked(true);
       onPreviewComplete?.(true);
+      // Haptic feedback on completion
+      const hasFailed = results.some((i) => i.status === 'fail');
+      hasFailed ? haptic.warning() : haptic.success();
     }
   }, [timeSlot, recurrenceFrequency, recurrenceOccurrences, service, coach, location, selectedResource, company, onPreviewComplete]);
 
@@ -120,67 +135,69 @@ const RecurrencePreview = ({
   }, []);
 
   const availableCount = previewItems.filter((i) => i.status === 'ok').length;
-  const totalCount = previewItems.length;
-
-  const statusIcon = (status) => {
-    switch (status) {
-      case 'ok': return <MaterialCommunityIcons name="check-circle" size={18} color={colors.success} />;
-      case 'fail': return <MaterialCommunityIcons name="close-circle" size={18} color={colors.error} />;
-      case 'warn': return <MaterialCommunityIcons name="alert-circle" size={18} color={colors.warning} />;
-      default: return null;
-    }
-  };
+  const totalCount = Number(recurrenceOccurrences) || 0;
 
   return (
     <View style={styles.confirmSection}>
-      {!checked && (
+      {!checked && !checking && (
         <Button
           mode="outlined"
           onPress={checkAvailability}
-          loading={checking}
-          disabled={checking}
           icon="calendar-check"
-          style={{ borderColor: colors.accent, borderRadius: 10 }}
-          labelStyle={{ color: colors.accent, fontWeight: '600' }}
+          style={styles.recurrenceCheckButton}
+          labelStyle={styles.recurrenceCheckButtonLabel}
         >
-          {checking ? 'Checking availability...' : 'Check Availability'}
+          Check Availability
         </Button>
       )}
 
-      {checked && totalCount > 0 && (
+      {checking && !checked && (
         <>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
-            <Text style={styles.confirmLabel}>
-              SERIES PREVIEW — {availableCount}/{totalCount} AVAILABLE
-            </Text>
-            <Button
-              mode="text"
-              compact
-              onPress={checkAvailability}
-              labelStyle={{ fontSize: 12, color: colors.accent }}
-            >
-              Recheck
-            </Button>
-          </View>
+          <Button
+            mode="outlined"
+            loading
+            disabled
+            icon="calendar-check"
+            style={styles.recurrenceCheckButton}
+            labelStyle={styles.recurrenceCheckButtonLabel}
+          >
+            Checking {progress}/{totalCount}...
+          </Button>
+        </>
+      )}
+
+      {previewItems.length > 0 && (
+        <>
+          {checked && (
+            <View style={styles.recurrencePreviewHeader}>
+              <Text style={styles.confirmLabel}>
+                SERIES PREVIEW — {availableCount}/{previewItems.length} AVAILABLE
+              </Text>
+              <Button
+                mode="text"
+                onPress={checkAvailability}
+                labelStyle={{ fontSize: 12, color: colors.accent }}
+                contentStyle={{ minHeight: 44 }}
+              >
+                Recheck
+              </Button>
+            </View>
+          )}
           {previewItems.map((item) => (
             <View
               key={item.index}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                paddingVertical: 8,
-                borderBottomWidth: item.index < totalCount ? 1 : 0,
-                borderBottomColor: colors.borderLight,
-              }}
+              style={[
+                styles.recurrencePreviewItem,
+                item.index >= previewItems.length && styles.recurrencePreviewItemLast,
+              ]}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+              <View style={styles.recurrencePreviewItemRow}>
                 {statusIcon(item.status)}
                 <View>
-                  <Text style={{ fontSize: 14, fontWeight: '500', color: colors.textPrimary }}>
+                  <Text style={styles.recurrencePreviewDate}>
                     {formatDateInTz(item.start.toISOString(), company)}
                   </Text>
-                  <Text style={{ fontSize: 12, color: colors.textSecondary }}>
+                  <Text style={styles.recurrencePreviewTime}>
                     {formatTimeInTz(item.start.toISOString(), company)}
                     {' – '}
                     {formatTimeInTz(item.end.toISOString(), company)}
@@ -188,10 +205,10 @@ const RecurrencePreview = ({
                 </View>
               </View>
               {item.status === 'fail' && (
-                <Text style={{ fontSize: 11, color: colors.error }}>{item.reason}</Text>
+                <Text style={[styles.recurrencePreviewReason, { color: colors.error }]}>{item.reason}</Text>
               )}
               {item.status === 'warn' && (
-                <Text style={{ fontSize: 11, color: colors.warning }}>{item.reason}</Text>
+                <Text style={[styles.recurrencePreviewReason, { color: colors.warningDark || colors.warning }]}>{item.reason}</Text>
               )}
             </View>
           ))}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { Text, TextInput, Switch, Menu } from 'react-native-paper';
 import { bookingStyles as styles } from '../../styles/booking.styles';
 import { colors } from '../../theme';
@@ -24,11 +24,19 @@ const RecurrenceSection = ({
     <View style={styles.confirmSection}>
       <View style={styles.recurrenceHeader}>
         <Text style={styles.confirmLabel}>REPEAT BOOKING</Text>
-        <Switch
-          value={recurrenceEnabled}
-          onValueChange={onRecurrenceToggle}
-          color={colors.accent}
-        />
+        <Pressable
+          onPress={() => onRecurrenceToggle(!recurrenceEnabled)}
+          style={{ minHeight: 44, justifyContent: 'center' }}
+          accessibilityRole="switch"
+          accessibilityState={{ checked: recurrenceEnabled }}
+          accessibilityLabel="Toggle repeat booking"
+        >
+          <Switch
+            value={recurrenceEnabled}
+            onValueChange={onRecurrenceToggle}
+            color={colors.accent}
+          />
+        </Pressable>
       </View>
       {recurrenceEnabled && (
         <View style={styles.recurrenceFields}>
