@@ -20,11 +20,13 @@ const EVENT_LABELS = {
   booking_payment_requested: 'Payment Requested',
   waitlist_available: 'Waitlist Spot Available',
   class_cancelled: 'Class Cancelled',
+  class_rescheduled: 'Class Rescheduled',
   membership_welcome: 'Membership Welcome',
   membership_cancelled: 'Membership Cancelled',
   membership_renewal_reminder: 'Renewal Reminder',
   content_shared: 'Content Shared',
   progress_report: 'Progress Report',
+  lesson_feedback: 'Lesson Feedback',
 };
 
 const CHANNELS = [
