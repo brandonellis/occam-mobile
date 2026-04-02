@@ -219,15 +219,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       ? `Book ${recurrenceOccurrences} Sessions`
       : isMembershipBooking || isPackageBooking
         ? 'Confirm Session'
-        : isPaymentNotRequired
+        : isPaymentNotRequired || (!isCoach && !paymentsEnabled)
           ? 'Confirm Booking'
           : isCoach && !paymentsEnabled
             ? 'Book & Send Payment Link'
-            : isCoach && paymentsEnabled
-              ? `Pay ${formatCurrency(summary.total + taxAmount)}`
-              : !paymentsEnabled
-                ? 'Confirm Booking'
-                : `Pay ${formatCurrency(summary.total + taxAmount)}`;
+            : `Pay ${formatCurrency(summary.total + taxAmount)}`;
 
   // ── Success screen ──
 
@@ -286,6 +282,9 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const showPackageBanner = !isEditMode && !membershipLoading && !packageBenefitLoading && !ecommerceLoading && isPackageBooking;
   const showNoPaymentBanner = !isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && isPaymentNotRequired;
   const showPromoSection = !isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled;
+  // Secondary "Send Payment Link" opt-in: shown when Stripe IS connected, as an
+  // alternative to charging in-app. When Stripe is NOT connected, the primary button
+  // routes to handleSendPaymentLink automatically via handleConfirm.
   const showPaymentLinkButton = isCoach && !isEditMode && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled;
 
   // ── Main confirmation form ──

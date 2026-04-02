@@ -37,10 +37,10 @@ const ConfirmBottomBar = ({
           {showPaymentLinkButton && (
             <Button
               mode="outlined"
-              style={{ marginTop: 8 }}
+              style={styles.paymentLinkButton}
+              contentStyle={styles.paymentLinkButtonContent}
               onPress={onSendPaymentLink}
-              disabled={!canConfirm}
-              loading={isSubmitting}
+              disabled={!canConfirm || isSubmitting}
               icon="email-send-outline"
               testID="send-payment-link-button"
             >

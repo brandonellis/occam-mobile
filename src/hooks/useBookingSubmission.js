@@ -89,11 +89,11 @@ const useBookingSubmission = ({
   // Payment saga from extracted hook
   const { executePaymentSaga } = usePaymentSaga({ buildPayload, dispatch, ACTIONS });
 
-  // Handle direct booking (membership or no-payment — no Stripe involved)
-  const handleDirectConfirm = useCallback(async () => {
+  // Handle direct booking (membership, no-payment, or send-payment-link — no inline Stripe)
+  const handleDirectBooking = useCallback(async ({ sendPaymentLink } = {}) => {
     try {
       dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
-      const payload = buildPayload('confirmed');
+      const payload = buildPayload('confirmed', { sendPaymentLink });
       const result = await createBooking(payload);
       const booking = result?.data || result;
       refreshMembership();
@@ -105,21 +105,8 @@ const useBookingSubmission = ({
     }
   }, [buildPayload, refreshMembership]);
 
-  // Handle "send payment link" booking (coach creates confirmed booking, client pays via email link)
-  const handleSendPaymentLink = useCallback(async () => {
-    try {
-      dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
-      const payload = buildPayload('confirmed', { sendPaymentLink: true });
-      const result = await createBooking(payload);
-      const booking = result?.data || result;
-      refreshMembership();
-      dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: booking });
-    } catch (error) {
-      Alert.alert('Booking Failed', extractErrorMessage(error));
-    } finally {
-      dispatch({ type: ACTIONS.SUBMIT_END });
-    }
-  }, [buildPayload, refreshMembership]);
+  const handleDirectConfirm = useCallback(() => handleDirectBooking(), [handleDirectBooking]);
+  const handleSendPaymentLink = useCallback(() => handleDirectBooking({ sendPaymentLink: true }), [handleDirectBooking]);
 
   // Handle recurring booking (coach only — creates a series of bookings)
   const handleRecurringConfirm = useCallback(async () => {
