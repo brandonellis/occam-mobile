@@ -19,6 +19,7 @@ const PaymentSummarySection = ({
   skeletonAnim,
   seriesMultiplier = 1,
   occurrences = null,
+  subtotalOnly = false,
 }) => {
   if (isEditMode) return null;
 
@@ -63,59 +64,70 @@ const PaymentSummarySection = ({
       </View>
 
       {/* Promo discount row */}
-      {appliedPromo && (
+      {!subtotalOnly && appliedPromo && (
         <View style={[styles.confirmRow, styles.summaryFeesRow]}>
           <Text style={[styles.summaryLabel, { color: colors.success }]}>Promo: {appliedPromo.code}</Text>
           <Text style={[styles.summaryValue, { color: colors.success }]}>-{formatCurrency(Number(appliedPromo.discount_amount || 0))}</Text>
         </View>
       )}
 
-      {/* Taxes and Fees row with info toggle */}
-      <View style={styles.summaryFeesRow}>
-        <View style={styles.confirmRow}>
-          <View style={styles.summaryFeesInner}>
-            <Text style={styles.summaryLabel}>Taxes and Fees</Text>
-            <TouchableOpacity
-              onPress={onToggleFeeBreakdown}
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-              style={styles.summaryInfoButton}
-            >
-              <Text style={[styles.summaryInfoIcon, { color: colors.primary }]}>ⓘ</Text>
-            </TouchableOpacity>
+      {/* Taxes and Fees row — hidden when sending payment link (calculated at payment page) */}
+      {!subtotalOnly && (
+        <View style={styles.summaryFeesRow}>
+          <View style={styles.confirmRow}>
+            <View style={styles.summaryFeesInner}>
+              <Text style={styles.summaryLabel}>Taxes and Fees</Text>
+              <TouchableOpacity
+                onPress={onToggleFeeBreakdown}
+                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                style={styles.summaryInfoButton}
+              >
+                <Text style={[styles.summaryInfoIcon, { color: colors.primary }]}>ⓘ</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.summaryValue}>
+              {formatCurrency((summary.platformFee + taxAmount) * seriesMultiplier)}
+            </Text>
           </View>
-          <Text style={styles.summaryValue}>
-            {formatCurrency((summary.platformFee + taxAmount) * seriesMultiplier)}
-          </Text>
-        </View>
 
-        {/* Fee breakdown details */}
-        {feeBreakdownVisible && (
-          <View style={styles.feeBreakdown}>
-            <Text style={styles.feeBreakdownTitle}>Breakdown:</Text>
-            <Text style={styles.feeBreakdownItem}>
-              Platform Fee ({summary.platformFeePercent}%): {summary.platformFeeFormatted}
-            </Text>
-            {taxAmount > 0 && (
+          {/* Fee breakdown details */}
+          {feeBreakdownVisible && (
+            <View style={styles.feeBreakdown}>
+              <Text style={styles.feeBreakdownTitle}>Breakdown:</Text>
               <Text style={styles.feeBreakdownItem}>
-                Tax: {formatCurrency(taxAmount)}
+                Platform Fee ({summary.platformFeePercent}%): {summary.platformFeeFormatted}
               </Text>
-            )}
-            <Text style={styles.feeBreakdownDesc}>
-              {feeDescription}
-            </Text>
-          </View>
-        )}
-      </View>
+              {taxAmount > 0 && (
+                <Text style={styles.feeBreakdownItem}>
+                  Tax: {formatCurrency(taxAmount)}
+                </Text>
+              )}
+              <Text style={styles.feeBreakdownDesc}>
+                {feeDescription}
+              </Text>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Total divider and total row */}
       <View style={[styles.confirmDivider, styles.totalDivider]} />
 
       <View style={styles.confirmRow}>
-        <Text style={styles.totalLabel}>Total</Text>
+        <Text style={styles.totalLabel}>{subtotalOnly ? 'Subtotal' : 'Total'}</Text>
         <Text style={styles.totalPrice}>
-          {summary.isMembershipBooking || summary.isPackageBooking ? 'FREE' : formatCurrency((summary.total + taxAmount) * seriesMultiplier)}
+          {summary.isMembershipBooking || summary.isPackageBooking
+            ? 'FREE'
+            : subtotalOnly
+              ? formatCurrency(summary.subtotal * seriesMultiplier)
+              : formatCurrency((summary.total + taxAmount) * seriesMultiplier)}
         </Text>
       </View>
+      {subtotalOnly && (
+        <Text style={[styles.confirmSubtext, { marginTop: 4 }]}>
+          Taxes and fees calculated at checkout
+        </Text>
+      )}
     </View>
   );
 };
@@ -141,6 +153,7 @@ PaymentSummarySection.propTypes = {
   skeletonAnim: PropTypes.object,
   seriesMultiplier: PropTypes.number,
   occurrences: PropTypes.number,
+  subtotalOnly: PropTypes.bool,
 };
 
 export default PaymentSummarySection;

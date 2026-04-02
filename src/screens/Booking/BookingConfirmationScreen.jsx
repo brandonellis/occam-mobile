@@ -217,7 +217,11 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       ? formatDateInTz(date + 'T12:00:00Z', company, 'long')
       : '';
 
-  const seriesTotal = (summary.total + taxAmount) * seriesMultiplier;
+  // When sending a payment link, only show subtotal — taxes/fees calculated at payment page
+  const isPaymentLinkFlow = isCoach && !paymentsEnabled && !isCoveredByBenefit && !isPaymentNotRequired;
+  const seriesTotal = isPaymentLinkFlow
+    ? summary.subtotal * seriesMultiplier
+    : (summary.total + taxAmount) * seriesMultiplier;
 
   const buttonLabel = isEditMode
     ? 'Update Booking'
@@ -291,6 +295,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const showPackageBenefitSkeleton = !isEditMode && !membershipLoading && !isMembershipBooking && packageBenefitLoading;
   const showPackageBanner = !isEditMode && !membershipLoading && !packageBenefitLoading && !ecommerceLoading && isPackageBooking;
   const showNoPaymentBanner = !isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && isPaymentNotRequired;
+  // When sending a payment link, taxes/fees are calculated at the payment page — show subtotal only
+  const isPaymentLinkOnly = isCoach && !paymentsEnabled && !isCoveredByBenefit && !isPaymentNotRequired;
   const showPromoSection = !isEditMode && !membershipLoading && !ecommerceLoading && !isMembershipBooking && !isPackageBooking && !isPaymentNotRequired && paymentsEnabled;
   // Secondary "Send Payment Link" opt-in: shown when Stripe IS connected, as an
   // alternative to charging in-app. When Stripe is NOT connected, the primary button
@@ -478,6 +484,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           skeletonAnim={skeletonAnim}
           seriesMultiplier={seriesMultiplier}
           occurrences={isRecurring ? recurrenceOccurrences : null}
+          subtotalOnly={isPaymentLinkOnly}
         />
       </ScrollView>
 
