@@ -55,3 +55,13 @@ export const appleSignInNative = async (identityToken, tenantSlug, fullName) => 
   });
   return response.data;
 };
+
+/**
+ * Generate a single-use exchange token for transferring the current session
+ * to the in-app browser (App Store compliance — web-based payment flows).
+ * The token is valid for 5 minutes and consumed on first use.
+ */
+export const createExchangeToken = async () => {
+  const response = await apiClient.post('/auth/exchange-token');
+  return response.data.exchange_token;
+};

@@ -1,6 +1,7 @@
 import * as WebBrowser from 'expo-web-browser';
 import config from '../config';
 import { getTenantId } from './storage.helper';
+import { createExchangeToken } from '../services/auth.api';
 
 /**
  * Build a full tenant web URL for the given path.
@@ -36,7 +37,7 @@ export const openPackagePurchase = () => openTenantWebPage('/book?flow=package')
  *
  * @param {{ service: object, coach: object?, location: object?, timeSlot: object?, duration_minutes: number? }} bookingData
  */
-export const openBookingPayment = (bookingData = {}) => {
+export const openBookingPayment = async (bookingData = {}) => {
   const params = new URLSearchParams({ flow: 'booking' });
   const { service, coach, location, timeSlot, duration_minutes } = bookingData;
 
@@ -45,6 +46,15 @@ export const openBookingPayment = (bookingData = {}) => {
   if (coach?.id) params.set('coach_id', String(coach.id));
   if (timeSlot?.start_time) params.set('start_time', timeSlot.start_time);
   if (duration_minutes) params.set('duration_minutes', String(duration_minutes));
+
+  // Transfer auth session to the in-app browser so the client doesn't
+  // have to log in again on the web booking flow.
+  try {
+    const exchangeToken = await createExchangeToken();
+    if (exchangeToken) params.set('exchange_token', exchangeToken);
+  } catch {
+    // Non-fatal — client can still complete booking as guest or log in on web
+  }
 
   return openTenantWebPage(`/book?${params.toString()}`);
 };
