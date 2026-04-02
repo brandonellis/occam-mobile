@@ -29,6 +29,7 @@ import {
 } from '../../helpers/bookingEdit.helper';
 import { buildBookingMarshalIntent } from '../../helpers/marshalIntent.helper';
 import useMarshalIntent from '../../hooks/useMarshalIntent';
+import ClassSessionSection from '../../components/Booking/ClassSessionSection';
 
 const BookingDetailScreen = ({ navigation, route }) => {
   const { bookingId, booking: passedBooking } = route.params || {};
@@ -308,6 +309,16 @@ const BookingDetailScreen = ({ navigation, route }) => {
             </View>
             <Text style={styles.secondaryText}>{booking.notes}</Text>
           </View>
+        )}
+
+        {/* Class session detail (attendees, capacity, waitlist, enroll, cancel) */}
+        {booking.class_session_id && (
+          <ClassSessionSection
+            classSessionId={booking.class_session_id}
+            isStaffView={isStaffView}
+            onSessionCancelled={() => navigation.goBack()}
+            onEnrollmentChanged={loadBooking}
+          />
         )}
 
         {(isStaffView || canEdit || canCancel || canCollectPayment || canSendPaymentRequest || canSendFeedback) && (

@@ -130,6 +130,44 @@ export const leaveClassSessionWaitlist = async (classSessionId, clientId) => {
 };
 
 /**
+ * Get a single class session with full details (attendees, capacity, waitlist count).
+ * @param {number} classSessionId
+ * @returns {Promise<Object>} Class session details
+ */
+export const getClassSession = async (classSessionId) => {
+  const response = await apiClient.get(`/class-sessions/${classSessionId}`);
+  return response.data;
+};
+
+/**
+ * Get the waitlist for a class session (staff view).
+ * @param {number} classSessionId
+ * @returns {Promise<Array>} Waitlist entries with position and client info
+ */
+export const getClassSessionWaitlist = async (classSessionId) => {
+  const response = await apiClient.get(`/class-sessions/${classSessionId}/waitlist`);
+  return response.data;
+};
+
+/**
+ * Cancel (delete) a single class session. Notifies all attendees.
+ * @param {number} classSessionId
+ * @param {Object} [options]
+ * @param {boolean} [options.notify=true] - Whether to notify attendees
+ * @param {string} [options.message] - Optional message to include in notification
+ * @returns {Promise<Object>} Cancellation result
+ */
+export const cancelClassSession = async (classSessionId, options = {}) => {
+  const response = await apiClient.delete(`/class-sessions/${classSessionId}`, {
+    data: {
+      notify: options.notify ?? true,
+      message_to_client: options.message || null,
+    },
+  });
+  return response.data;
+};
+
+/**
  * Create a recurring booking series.
  * @param {Object} payload - { client_id, service_ids, location_id, start_time, end_time, frequency, occurrences, booking_type, ... }
  * @returns {Promise<Object>} { series_id, uuid, frequency, created_count, failed_count, bookings, message }

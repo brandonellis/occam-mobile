@@ -92,4 +92,56 @@ export const bookingDetailStyles = StyleSheet.create({
   editButtonContent: {
     minHeight: 48,
   },
+
+  // Class session section
+  capacityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  capacityBadges: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  sectionDivider: {
+    marginVertical: spacing.md,
+  },
+  subsectionLabel: {
+    ...typography.labelSmall,
+    color: colors.textTertiary,
+    marginBottom: spacing.sm,
+  },
+  attendeeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    gap: spacing.sm,
+  },
+  attendeeName: {
+    ...typography.body,
+    color: colors.textPrimary,
+  },
+  waitlistPosition: {
+    minWidth: 32,
+  },
+  enrollSearchbar: {
+    marginBottom: spacing.sm,
+    backgroundColor: colors.background,
+    elevation: 0,
+  },
+  enrollResultContent: {
+    justifyContent: 'flex-start',
+    minHeight: 44,
+  },
+  noResultsText: {
+    ...typography.bodySmall,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    paddingVertical: spacing.md,
+  },
+  cancelSessionButton: {
+    marginTop: spacing.sm,
+    borderColor: colors.error,
+  },
 });
