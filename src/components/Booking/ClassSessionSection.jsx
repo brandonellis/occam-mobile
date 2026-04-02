@@ -165,7 +165,8 @@ const ClassSessionSection = ({
             <Chip compact mode="flat" icon="account-check">{enrolled} enrolled</Chip>
             {available != null && (
               <Chip compact mode="flat" icon={isFull ? 'alert-circle' : 'account-plus'}
-                style={isFull ? { backgroundColor: colors.warningSubtle } : undefined}
+                style={isFull ? styles.chipFull : undefined}
+                accessibilityLabel={isFull ? 'Class is full' : `${available} spots available`}
               >
                 {isFull ? 'Full' : `${available} available`}
               </Chip>
@@ -218,6 +219,7 @@ const ClassSessionSection = ({
               mode="outlined"
               icon={isFull ? 'account-clock' : 'account-plus'}
               onPress={() => setShowEnrollSearch(true)}
+              contentStyle={styles.enrollResultContent}
             >
               {isFull ? 'Add to Waitlist' : 'Enroll Client'}
             </Button>
@@ -264,6 +266,7 @@ const ClassSessionSection = ({
             disabled={cancelling}
             textColor={colors.error}
             style={styles.cancelSessionButton}
+            contentStyle={styles.enrollResultContent}
           >
             Cancel Class Session
           </Button>

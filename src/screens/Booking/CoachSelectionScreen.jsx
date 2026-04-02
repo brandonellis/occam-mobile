@@ -162,7 +162,10 @@ const CoachSelectionScreen = ({ route, navigation }) => {
                   <Text style={styles.coachName}>
                     {coach.first_name} {coach.last_name}
                   </Text>
-                  {coach.specialty && (
+                  {isCurrentCoach && (
+                    <Text style={[styles.coachSpecialty, { color: colors.accent }]}>Currently assigned</Text>
+                  )}
+                  {!isCurrentCoach && coach.specialty && (
                     <Text style={styles.coachSpecialty}>{coach.specialty}</Text>
                   )}
                 </View>

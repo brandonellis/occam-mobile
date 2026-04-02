@@ -140,6 +140,9 @@ export const bookingDetailStyles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: spacing.md,
   },
+  chipFull: {
+    backgroundColor: colors.warningSubtle,
+  },
   cancelSessionButton: {
     marginTop: spacing.sm,
     borderColor: colors.error,
