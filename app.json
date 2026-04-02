@@ -2,7 +2,7 @@
   "expo": {
     "name": "Occam Golf",
     "slug": "occam-golf",
-    "version": "41",
+    "version": "46",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",

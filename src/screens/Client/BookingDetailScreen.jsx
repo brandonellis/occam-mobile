@@ -37,6 +37,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
   const [booking, setBooking] = useState(passedBooking || null);
   const [isLoading, setIsLoading] = useState(!passedBooking);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   const loadBooking = useCallback(async () => {
     if (!bookingId && !passedBooking) return;
@@ -75,6 +76,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
           text: 'Cancel Booking',
           style: 'destructive',
           onPress: async () => {
+            setCancelLoading(true);
             try {
               await cancelBooking(booking.id);
               navigation.goBack();
@@ -87,6 +89,8 @@ const BookingDetailScreen = ({ navigation, route }) => {
                 logger.warn('Failed to cancel booking:', err?.message || err);
                 Alert.alert('Error', 'Failed to cancel booking.');
               }
+            } finally {
+              setCancelLoading(false);
             }
           },
         },
@@ -327,6 +331,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
                 textColor={colors.accentDark}
                 onPress={handleEdit}
                 style={styles.editButton}
+                contentStyle={styles.editButtonContent}
               >
                 Edit Booking
               </Button>
@@ -337,6 +342,8 @@ const BookingDetailScreen = ({ navigation, route }) => {
                 icon="close-circle-outline"
                 textColor={colors.error}
                 onPress={handleCancel}
+                loading={cancelLoading}
+                disabled={cancelLoading}
               >
                 Cancel Booking
               </Button>

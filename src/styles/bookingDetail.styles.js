@@ -86,14 +86,10 @@ export const bookingDetailStyles = StyleSheet.create({
     fontSize: 14,
   },
   editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
     borderRadius: borderRadius.md,
-    borderWidth: 1,
     borderColor: colors.accent,
-    backgroundColor: colors.accentSubtle,
+  },
+  editButtonContent: {
+    minHeight: 48,
   },
 });

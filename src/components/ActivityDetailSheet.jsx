@@ -70,7 +70,9 @@ const isAudioUpload = (upload) => {
 };
 
 const NoteItem = ({ note }) => {
-  const authorName = note?.created_by_name || 'Coach';
+  const authorName = note?.created_by_name
+    || (note?.user ? `${note.user.first_name || ''} ${note.user.last_name || ''}`.trim() : '')
+    || 'Unknown';
   const initials = authorName.charAt(0).toUpperCase();
   const noteText = (note?.note || '').trim();
   const isPlaceholder = noteText && ['voice note', 'image', 'video'].includes(noteText.toLowerCase());
