@@ -98,6 +98,9 @@ const useBookingSubmission = ({
       const booking = result?.data || result;
       refreshMembership();
       dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: booking });
+      if (sendPaymentLink && booking.payment_link_sent === false) {
+        Alert.alert('Note', 'Booking created, but the payment link could not be sent. You can resend it from the booking details.');
+      }
     } catch (error) {
       Alert.alert('Booking Failed', extractErrorMessage(error));
     } finally {
