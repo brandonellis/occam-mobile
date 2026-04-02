@@ -104,6 +104,15 @@ const linking = {
       },
 
       // ----- Root-level stack screens -----
+      [SCREENS.BOOKING_DEEP_LINK]: {
+        path: 'book',
+        parse: {
+          service_id: Number,
+          location_id: Number,
+          coach_id: Number,
+          resource_id: Number,
+        },
+      },
       [SCREENS.PAYMENT_LINK]: 'pay/:token',
       [SCREENS.BOOKING_DETAIL]: 'bookings/:bookingId',
       [SCREENS.NOTIFICATIONS]: 'notifications',

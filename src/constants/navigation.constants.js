@@ -61,6 +61,9 @@ export const SCREENS = {
   // Video annotation
   VIDEO_ANNOTATION: 'VideoAnnotation',
 
+  // Booking deep link (from Caddie)
+  BOOKING_DEEP_LINK: 'BookingDeepLink',
+
   // Payment link (deep link from email)
   PAYMENT_LINK: 'PaymentLink',
 

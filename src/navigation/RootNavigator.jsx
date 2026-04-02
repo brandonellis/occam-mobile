@@ -18,6 +18,7 @@ import VideoReviewScreen from '../screens/Coach/VideoReviewScreen';
 import NotificationsScreen from '../screens/Shared/NotificationsScreen';
 import NotificationPreferencesScreen from '../screens/Shared/NotificationPreferencesScreen';
 import PaymentLinkScreen from '../screens/Shared/PaymentLinkScreen';
+import BookingDeepLinkScreen from '../screens/Booking/BookingDeepLinkScreen';
 import BookingDetailScreen from '../screens/Client/BookingDetailScreen';
 import CalendarSyncScreen from '../screens/Client/CalendarSyncScreen';
 import LessonFeedbackScreen from '../screens/Coach/LessonFeedbackScreen';
@@ -105,6 +106,13 @@ const RootNavigator = () => {
             name={SCREENS.VIDEO_REVIEW}
             component={VideoReviewScreen}
             options={{ animation: 'slide_from_right', gestureEnabled: false }}
+          />
+
+          {/* Booking deep link — from Caddie-generated /book?service_id=... URLs */}
+          <Stack.Screen
+            name={SCREENS.BOOKING_DEEP_LINK}
+            component={BookingDeepLinkScreen}
+            options={{ headerShown: false }}
           />
 
           {/* Payment link — deep link from payment request email */}
