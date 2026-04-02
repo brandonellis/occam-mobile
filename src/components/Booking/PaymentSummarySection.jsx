@@ -17,6 +17,8 @@ const PaymentSummarySection = ({
   ecommerceLoading,
   isEditMode,
   skeletonAnim,
+  seriesMultiplier = 1,
+  occurrences = null,
 }) => {
   if (isEditMode) return null;
 
@@ -50,9 +52,13 @@ const PaymentSummarySection = ({
 
       {/* Subtotal row */}
       <View style={[styles.confirmRow, styles.summaryFeesRow]}>
-        <Text style={styles.summaryLabel}>Subtotal</Text>
+        <Text style={styles.summaryLabel}>
+          {occurrences ? `Subtotal (${occurrences} sessions)` : 'Subtotal'}
+        </Text>
         <Text style={[styles.summaryValue, appliedPromo && { textDecorationLine: 'line-through', color: colors.textTertiary }]}>
-          {summary.subtotalFormatted}
+          {occurrences
+            ? formatCurrency(summary.subtotal * seriesMultiplier)
+            : summary.subtotalFormatted}
         </Text>
       </View>
 
@@ -78,7 +84,7 @@ const PaymentSummarySection = ({
             </TouchableOpacity>
           </View>
           <Text style={styles.summaryValue}>
-            {formatCurrency(summary.platformFee + taxAmount)}
+            {formatCurrency((summary.platformFee + taxAmount) * seriesMultiplier)}
           </Text>
         </View>
 
@@ -107,7 +113,7 @@ const PaymentSummarySection = ({
       <View style={styles.confirmRow}>
         <Text style={styles.totalLabel}>Total</Text>
         <Text style={styles.totalPrice}>
-          {summary.isMembershipBooking || summary.isPackageBooking ? 'FREE' : formatCurrency(summary.total + taxAmount)}
+          {summary.isMembershipBooking || summary.isPackageBooking ? 'FREE' : formatCurrency((summary.total + taxAmount) * seriesMultiplier)}
         </Text>
       </View>
     </View>
@@ -133,6 +139,8 @@ PaymentSummarySection.propTypes = {
   ecommerceLoading: PropTypes.bool,
   isEditMode: PropTypes.bool,
   skeletonAnim: PropTypes.object,
+  seriesMultiplier: PropTypes.number,
+  occurrences: PropTypes.number,
 };
 
 export default PaymentSummarySection;

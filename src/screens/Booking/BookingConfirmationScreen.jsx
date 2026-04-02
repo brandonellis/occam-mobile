@@ -207,23 +207,33 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const taxableAmountCents = Math.round(effectiveSubtotal * 100);
   const { taxAmount, taxLoading } = useTaxCalculation(taxableAmountCents);
 
+  // Recurring multiplier — scales total for series unless covered by membership/package
+  const isRecurring = canShowRecurrence && recurrenceEnabled && recurrenceOccurrences > 1;
+  const seriesMultiplier = (isRecurring && !isCoveredByBenefit) ? recurrenceOccurrences : 1;
+
   const formattedDate = timeSlot?.start_time
     ? formatDateInTz(timeSlot.start_time, company, 'long')
     : date
       ? formatDateInTz(date + 'T12:00:00Z', company, 'long')
       : '';
 
+  const seriesTotal = (summary.total + taxAmount) * seriesMultiplier;
+
   const buttonLabel = isEditMode
     ? 'Update Booking'
-    : canShowRecurrence && recurrenceEnabled && recurrenceOccurrences > 1
+    : isRecurring && isCoveredByBenefit
       ? `Book ${recurrenceOccurrences} Sessions`
-      : isMembershipBooking || isPackageBooking
-        ? 'Confirm Session'
-        : isPaymentNotRequired || (!isCoach && !paymentsEnabled)
-          ? 'Confirm Booking'
-          : isCoach && !paymentsEnabled
-            ? 'Book & Send Payment Link'
-            : `Pay ${formatCurrency(summary.total + taxAmount)}`;
+      : isRecurring && !paymentsEnabled && isCoach
+        ? `Book ${recurrenceOccurrences} Sessions & Send Payment Link`
+        : isRecurring
+          ? `Book ${recurrenceOccurrences} Sessions — ${formatCurrency(seriesTotal)}`
+        : isMembershipBooking || isPackageBooking
+          ? 'Confirm Session'
+          : isPaymentNotRequired || (!isCoach && !paymentsEnabled)
+            ? 'Confirm Booking'
+            : isCoach && !paymentsEnabled
+              ? 'Book & Send Payment Link'
+              : `Pay ${formatCurrency(summary.total + taxAmount)}`;
 
   // ── Success screen ──
 
@@ -466,6 +476,8 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           ecommerceLoading={ecommerceLoading}
           isEditMode={isEditMode}
           skeletonAnim={skeletonAnim}
+          seriesMultiplier={seriesMultiplier}
+          occurrences={isRecurring ? recurrenceOccurrences : null}
         />
       </ScrollView>
 
