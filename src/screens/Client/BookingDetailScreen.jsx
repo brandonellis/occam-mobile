@@ -10,7 +10,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Button } from 'react-native-paper';
 import { getBooking, cancelBooking } from '../../services/bookings.api';
-import { collectBookingPayment, handlePaymentSuccess } from '../../services/billing.api';
+import { collectBookingPayment, handlePaymentSuccess, sendPaymentRequest } from '../../services/billing.api';
 import { formatTimeInTz, formatDateInTz } from '../../helpers/timezone.helper';
 import useAuth from '../../hooks/useAuth';
 import { BOOKING_STATUS_CONFIG } from '../../constants/booking.constants';
@@ -37,6 +37,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
   const [booking, setBooking] = useState(passedBooking || null);
   const [isLoading, setIsLoading] = useState(!passedBooking);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentRequestLoading, setPaymentRequestLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
 
   const loadBooking = useCallback(async () => {
@@ -141,6 +142,24 @@ const BookingDetailScreen = ({ navigation, route }) => {
     );
   }, [booking, loadBooking]);
 
+  const handleSendPaymentRequest = useCallback(async () => {
+    if (!booking) return;
+    setPaymentRequestLoading(true);
+    try {
+      const result = await sendPaymentRequest(booking.id);
+      if (result.success) {
+        Alert.alert('Sent', result.message || 'Payment request sent to client.');
+      } else {
+        Alert.alert('Error', result.error || 'Failed to send payment request.');
+      }
+    } catch (err) {
+      const msg = err?.response?.data?.error || err?.message || 'Failed to send payment request.';
+      Alert.alert('Error', msg);
+    } finally {
+      setPaymentRequestLoading(false);
+    }
+  }, [booking]);
+
   const { deliverIntent } = useMarshalIntent();
 
   const handleOpenMarshal = useCallback(() => {
@@ -186,6 +205,11 @@ const BookingDetailScreen = ({ navigation, route }) => {
   const canCollectPayment = isStaffView &&
     booking.booking_type === 'one_off' &&
     service?.payment_required === false &&
+    booking.status === 'confirmed' &&
+    !booking.paid_at &&
+    !booking.class_session_id;
+  const canSendPaymentRequest = isStaffView &&
+    booking.booking_type === 'one_off' &&
     booking.status === 'confirmed' &&
     !booking.paid_at &&
     !booking.class_session_id;
@@ -286,7 +310,7 @@ const BookingDetailScreen = ({ navigation, route }) => {
           </View>
         )}
 
-        {(isStaffView || canEdit || canCancel || canCollectPayment || canSendFeedback) && (
+        {(isStaffView || canEdit || canCancel || canCollectPayment || canSendPaymentRequest || canSendFeedback) && (
           <View style={styles.actionGroup}>
             {canCollectPayment && (
               <Button
@@ -299,6 +323,17 @@ const BookingDetailScreen = ({ navigation, route }) => {
                 textColor={colors.textInverse}
               >
                 Collect Payment
+              </Button>
+            )}
+            {canSendPaymentRequest && (
+              <Button
+                mode="outlined"
+                icon="email-send-outline"
+                onPress={handleSendPaymentRequest}
+                loading={paymentRequestLoading}
+                disabled={paymentRequestLoading}
+              >
+                Send Payment Request
               </Button>
             )}
             {isStaffView && (

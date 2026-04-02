@@ -121,3 +121,14 @@ export const collectBookingPayment = async (bookingId, options = {}) => {
   const response = await apiClient.post(`/billing/bookings/${bookingId}/collect-payment`, payload);
   return response.data;
 };
+
+/**
+ * Send a payment request email to the client for a booking.
+ *
+ * @param {number} bookingId
+ * @returns {Promise<Object>} { success, message }
+ */
+export const sendPaymentRequest = async (bookingId) => {
+  const response = await apiClient.post(`/billing/bookings/${bookingId}/send-payment-request`);
+  return response.data;
+};
