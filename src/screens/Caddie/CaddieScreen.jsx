@@ -203,7 +203,7 @@ const CaddieScreen = () => {
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Conversation</Text>
             <Text style={styles.sectionBody}>
-              Start with something simple like "Find me a lesson this week" or "Show my next booking."
+              Start with something simple like "What services do you offer?" or "Show my next booking."
             </Text>
             <AgentChatMessages
               agentLabel="Caddie"

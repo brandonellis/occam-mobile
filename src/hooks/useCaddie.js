@@ -6,7 +6,7 @@ import { AGENT_CHAT_ACTIONS } from '../reducers/agentChat.reducer';
 import logger from '../helpers/logger.helper';
 
 const INITIAL_SUGGESTIONS = [
-  'Find me a lesson this week',
+  'What services do you offer?',
   'Show my upcoming bookings',
   'What memberships do I have?',
 ];
