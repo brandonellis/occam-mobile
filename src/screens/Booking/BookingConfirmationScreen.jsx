@@ -12,6 +12,7 @@ import PromoCodeInput from '../../components/PromoCodeInput';
 import BookingSuccessView from '../../components/Booking/BookingSuccessView';
 import BookingDetailsSection from '../../components/Booking/BookingDetailsSection';
 import RecurrenceSection from '../../components/Booking/RecurrenceSection';
+import RecurrencePreview from '../../components/Booking/RecurrencePreview';
 import MembershipAllotmentSection from '../../components/Booking/MembershipAllotmentSection';
 import PaymentMethodSection from '../../components/Booking/PaymentMethodSection';
 import PaymentSummarySection from '../../components/Booking/PaymentSummarySection';
@@ -64,6 +65,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
   const [recurrenceEnabled, setRecurrenceEnabled] = useState(false);
   const [recurrenceFrequency, setRecurrenceFrequency] = useState('weekly');
   const [recurrenceOccurrences, setRecurrenceOccurrences] = useState(4);
+  const [recurrenceChecked, setRecurrenceChecked] = useState(false);
   const isClassBooking = Boolean(bookingData.selectedClassSession);
   const canShowRecurrence = isCoach && !isEditMode && !isClassBooking;
 
@@ -323,11 +325,25 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
         {canShowRecurrence && (
           <RecurrenceSection
             recurrenceEnabled={recurrenceEnabled}
-            onRecurrenceToggle={setRecurrenceEnabled}
+            onRecurrenceToggle={(v) => { setRecurrenceEnabled(v); setRecurrenceChecked(false); }}
             recurrenceFrequency={recurrenceFrequency}
             onFrequencyChange={setRecurrenceFrequency}
             recurrenceOccurrences={recurrenceOccurrences}
             onOccurrencesChange={setRecurrenceOccurrences}
+          />
+        )}
+
+        {canShowRecurrence && recurrenceEnabled && recurrenceOccurrences > 1 && (
+          <RecurrencePreview
+            timeSlot={timeSlot}
+            recurrenceFrequency={recurrenceFrequency}
+            recurrenceOccurrences={recurrenceOccurrences}
+            service={service}
+            coach={coach}
+            location={location}
+            selectedResource={selectedResource}
+            company={company}
+            onPreviewComplete={setRecurrenceChecked}
           />
         )}
 
@@ -456,7 +472,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
       </ScrollView>
 
       <ConfirmBottomBar
-        canConfirm={canConfirm}
+        canConfirm={canConfirm && !(canShowRecurrence && recurrenceEnabled && recurrenceOccurrences > 1 && !recurrenceChecked)}
         isSubmitting={isSubmitting}
         loadingMessage={loadingMessage}
         onConfirm={handleConfirm}
