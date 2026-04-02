@@ -104,6 +104,10 @@ export const getNextBookingScreen = (bookingData, isCoach, user) => {
   }
 
   if (service?.requires_coach) {
+    // In edit mode, always show coach selection so staff/coaches can reassign
+    if (bookingData.editMode) {
+      return { screen: SCREENS.COACH_SELECTION, params: { bookingData } };
+    }
     if (isCoach) {
       return {
         screen: SCREENS.TIME_SLOT_SELECTION,

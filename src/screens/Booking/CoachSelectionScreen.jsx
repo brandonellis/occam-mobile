@@ -142,10 +142,12 @@ const CoachSelectionScreen = ({ route, navigation }) => {
           <Text style={styles.sectionHeader}>
             Available coaches for {service?.name}
           </Text>
-          {state.coaches.map((coach) => (
+          {state.coaches.map((coach) => {
+            const isCurrentCoach = bookingData.editMode && bookingData.coach?.id === coach.id;
+            return (
             <TouchableRipple
               key={coach.id}
-              style={styles.coachCard}
+              style={[styles.coachCard, isCurrentCoach && styles.coachCardSelected]}
               onPress={() => handleSelectCoach(coach)}
               borderless
               testID={`coach-card-${coach.id}`}
@@ -166,7 +168,8 @@ const CoachSelectionScreen = ({ route, navigation }) => {
                 </View>
               </View>
             </TouchableRipple>
-          ))}
+            );
+          })}
           {state.coaches.length === 0 && (
             <Text style={styles.noSlotsText}>
               No coaches available for this service.
