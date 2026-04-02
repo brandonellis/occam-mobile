@@ -28,6 +28,7 @@ const BookingSuccessView = ({
   successScale,
   successOpacity,
 }) => {
+  const isRecurring = Boolean(createdBookingData?.created_count);
   const successService = createdBookingData?.services?.[0] || service;
   const successCoach = createdBookingData?.coaches?.[0] || coach;
   const successLocation = createdBookingData?.location || location;
@@ -42,6 +43,14 @@ const BookingSuccessView = ({
   const getSuccessSubtitle = () => {
     if (isEditMode) {
       return 'Your booking changes have been saved.';
+    }
+    if (isRecurring) {
+      const created = createdBookingData.created_count || 0;
+      const failed = createdBookingData.failed_count || 0;
+      if (failed > 0) {
+        return `${created} session${created !== 1 ? 's' : ''} booked. ${failed} could not be scheduled due to conflicts.`;
+      }
+      return `${created} recurring session${created !== 1 ? 's' : ''} have been booked.`;
     }
     if (isMembershipBooking && isCoach && clientName) {
       return `${clientName}'s membership session is all set.`;
@@ -73,7 +82,7 @@ const BookingSuccessView = ({
         </Animated.View>
 
         <Animated.View style={{ opacity: successOpacity, alignItems: 'center' }}>
-          <Text style={styles.successTitle}>{isEditMode ? 'Booking Updated' : 'Booking Confirmed'}</Text>
+          <Text style={styles.successTitle}>{isEditMode ? 'Booking Updated' : isRecurring ? 'Bookings Confirmed' : 'Booking Confirmed'}</Text>
           <Text style={styles.successSubtitle}>{getSuccessSubtitle()}</Text>
         </Animated.View>
 
@@ -136,20 +145,20 @@ const BookingSuccessView = ({
         {!isEditMode && isCoach && (
           <Button
             mode="outlined"
-            style={styles.successSecondaryButton}
+            style={[styles.successSecondaryButton]}
             onPress={() => navigation.popToTop()}
             labelStyle={styles.successSecondaryButtonText}
           >
-            Back to Schedule
+            Schedule
           </Button>
         )}
         <Button
           mode="contained"
-          style={[styles.continueButton, (!isCoach || isEditMode) && styles.successPrimaryFull]}
+          style={[styles.continueButton, { flex: 1, height: 52 }]}
           onPress={() => navigation.popToTop()}
           labelStyle={styles.continueButtonText}
         >
-          {isEditMode ? 'Done' : isCoach ? 'Book Another Session' : 'Done'}
+          {isEditMode ? 'Done' : isCoach ? 'Book Another' : 'Done'}
         </Button>
       </View>
     </SafeAreaView>
