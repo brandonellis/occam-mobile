@@ -25,10 +25,10 @@ const getThumbnailUrl = (item) => {
   if (item?.type === 'resource' && item?.resource_data) {
     const mime = item.resource_data.mime_type || '';
     if (mime.startsWith('image/')) {
-      return item.resource_data.thumbnail_url || item.resource_data.url;
+      return item.resource_data.thumb_url || item.resource_data.url;
     }
     if (mime.startsWith('video/')) {
-      return item.resource_data.thumbnail_url || null;
+      return item.resource_data.thumb_url || null;
     }
   }
   return null;

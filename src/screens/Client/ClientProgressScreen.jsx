@@ -38,7 +38,7 @@ const ResourceCard = ({ resource, navigation, clientId }) => {
   const isVideo = mime.startsWith('video/');
   const isImage = mime.startsWith('image/');
   const mediaUrl = resolveMediaUrl(resource.url);
-  const thumbUrl = resolveMediaUrl(resource.thumbnail_url);
+  const thumbUrl = resolveMediaUrl(resource.thumb_url);
 
   const handleVideoPress = () => {
     if (resource.url) {

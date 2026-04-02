@@ -418,7 +418,7 @@ const ActivityDetailSheet = ({ item, visible, onClose }) => {
                   >
                     <AuthenticatedVideo
                       uri={resourceData.url}
-                      posterUri={resourceData.thumbnail_url || undefined}
+                      posterUri={resourceData.thumb_url || undefined}
                       style={{ width: '100%', height: 240 }}
                       borderRadius={12}
                     />

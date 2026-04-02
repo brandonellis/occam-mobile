@@ -20,7 +20,7 @@ const SharedMediaCard = ({ item, navigation, onUnshare, clientId }) => {
   const isVideo = mime.startsWith('video/');
   const isImage = mime.startsWith('image/');
   const mediaUrl = resolveMediaUrl(item.url);
-  const thumbUrl = resolveMediaUrl(item.thumbnail_url);
+  const thumbUrl = resolveMediaUrl(item.thumb_url);
 
   const handleVideoPress = () => {
     if (item.url) {
