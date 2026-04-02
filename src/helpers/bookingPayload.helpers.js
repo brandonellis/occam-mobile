@@ -11,7 +11,7 @@
  * @returns {Object} Booking creation payload
  */
 export const buildBookingPayload = (
-  { clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource },
+  { clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource, sendPaymentLink },
   status = 'confirmed',
 ) => {
   let bookingType = 'one_off';
@@ -56,6 +56,10 @@ export const buildBookingPayload = (
 
   if (bookingData.selectedClassSession?.id) {
     payload.class_session_id = bookingData.selectedClassSession.id;
+  }
+
+  if (sendPaymentLink) {
+    payload.send_payment_link = true;
   }
 
   return payload;

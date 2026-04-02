@@ -74,9 +74,9 @@ const useBookingSubmission = ({
   const clientId = isCoach ? client?.id : user?.id;
 
   // Wrap pure buildBookingPayload with current closure values
-  const buildPayload = useCallback((status = 'confirmed') => {
+  const buildPayload = useCallback((status = 'confirmed', { sendPaymentLink } = {}) => {
     return buildBookingPayload(
-      { clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource },
+      { clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource, sendPaymentLink },
       status,
     );
   }, [clientId, isMembershipBooking, isPackageBooking, location, service, coach, timeSlot, bookingData, membershipStatus, packageBenefit, bookingNotes, selectedResource]);
@@ -94,6 +94,22 @@ const useBookingSubmission = ({
     try {
       dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
       const payload = buildPayload('confirmed');
+      const result = await createBooking(payload);
+      const booking = result?.data || result;
+      refreshMembership();
+      dispatch({ type: ACTIONS.SUBMIT_SUCCESS, payload: booking });
+    } catch (error) {
+      Alert.alert('Booking Failed', extractErrorMessage(error));
+    } finally {
+      dispatch({ type: ACTIONS.SUBMIT_END });
+    }
+  }, [buildPayload, refreshMembership]);
+
+  // Handle "send payment link" booking (coach creates confirmed booking, client pays via email link)
+  const handleSendPaymentLink = useCallback(async () => {
+    try {
+      dispatch({ type: ACTIONS.SUBMIT_START, payload: 'Creating booking...' });
+      const payload = buildPayload('confirmed', { sendPaymentLink: true });
       const result = await createBooking(payload);
       const booking = result?.data || result;
       refreshMembership();
@@ -297,12 +313,15 @@ const useBookingSubmission = ({
     }
     if (isMembershipBooking || isPackageBooking) {
       handleDirectConfirm();
-    } else if (isPaymentNotRequired || (isCoach && !paymentsEnabled)) {
+    } else if (isPaymentNotRequired) {
       handleDirectConfirm();
     } else if (paymentsEnabled && paymentMode === 'saved' && selectedSavedMethodId) {
       handleSavedCardPayment();
     } else if (paymentsEnabled) {
       handlePaymentConfirm();
+    } else if (isCoach) {
+      // Stripe not connected — create booking and send payment link to client
+      handleSendPaymentLink();
     } else {
       // paymentsEnabled is false for a client — payment system unavailable
       Alert.alert(
@@ -310,7 +329,7 @@ const useBookingSubmission = ({
         'Online payments are not set up for this facility. Please contact them to book.',
       );
     }
-  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, membershipStatus, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, recurrenceEnabled, recurrenceOccurrences, handleDirectConfirm, handleRecurringConfirm, handlePaymentConfirm, handleSavedCardPayment]);
+  }, [isEditMode, handleUpdateConfirm, clientId, service, selectedResource, isCoach, isMembershipBooking, isPackageBooking, membershipStatus, isPaymentNotRequired, paymentsEnabled, paymentMode, selectedSavedMethodId, recurrenceEnabled, recurrenceOccurrences, handleDirectConfirm, handleRecurringConfirm, handlePaymentConfirm, handleSavedCardPayment, handleSendPaymentLink]);
 
   // Compute whether confirm button should be enabled
   const canConfirm = useMemo(() => {
@@ -332,6 +351,7 @@ const useBookingSubmission = ({
     showSuccess,
     createdBookingData,
     handleConfirm,
+    handleSendPaymentLink,
     canConfirm,
   };
 };

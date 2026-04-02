@@ -152,8 +152,17 @@ const CalendarSyncScreen = ({ navigation }) => {
       const result = await syncAllToGoogleCalendar();
       const count = result?.data?.bookings_queued || 0;
       Alert.alert('Sync Started', `${count} booking${count !== 1 ? 's' : ''} queued for sync`);
-    } catch {
-      Alert.alert('Error', 'Failed to sync bookings');
+    } catch (error) {
+      const message = error?.response?.data?.message || 'Failed to sync bookings';
+      logger.warn('Calendar sync failed', { message, status: error?.response?.status });
+
+      if (message.includes('reconnect') || message.includes('token expired')) {
+        Alert.alert('Reconnect Required', 'Your Google Calendar connection has expired. Please disconnect and reconnect.');
+      } else {
+        Alert.alert('Sync Failed', message);
+      }
+      // Refresh status to reflect any backend-side deactivation
+      fetchStatus();
     } finally {
       setSyncing(false);
     }
