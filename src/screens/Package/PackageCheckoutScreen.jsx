@@ -13,6 +13,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SCREENS } from '../../constants/navigation.constants';
 import { CardField, useStripe, useConfirmPayment } from '@stripe/stripe-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
+import { useTaxCalculation } from '../../hooks/useTaxCalculation';
 import { packageStyles as styles } from '../../styles/packages.styles';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { extractErrorMessage } from '../../helpers/error.helper';
@@ -70,7 +71,9 @@ const PackageCheckoutScreen = ({ route, navigation }) => {
 
   const packagePrice = parseFloat(pkg?.price) || 0;
   const platformFee = Math.round(packagePrice * platformFeeRate * 100) / 100;
-  const total = packagePrice + platformFee;
+  const packageAmountCents = Math.round(packagePrice * 100);
+  const { taxAmount, taxLoading: _taxLoading } = useTaxCalculation(packageAmountCents);
+  const total = packagePrice + platformFee + taxAmount;
 
   const services = pkg?.package_services || [];
 
@@ -302,9 +305,9 @@ const PackageCheckoutScreen = ({ route, navigation }) => {
           </View>
 
           <View style={styles.checkoutSummaryRow}>
-            <Text style={styles.checkoutSummaryLabel}>Processing Fee ({Math.round(platformFeeRate * 100)}%)</Text>
+            <Text style={styles.checkoutSummaryLabel}>Taxes and Fees</Text>
             <Text style={styles.checkoutSummaryValue}>
-              {formatCurrency(platformFee)}
+              {formatCurrency(platformFee + taxAmount)}
             </Text>
           </View>
 

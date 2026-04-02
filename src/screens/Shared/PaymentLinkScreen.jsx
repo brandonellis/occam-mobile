@@ -123,6 +123,7 @@ const PaymentLinkInner = ({ route, navigation }) => {
       setPaymentBreakdown({
         serviceAmount: piResult.service_amount,
         platformFee: piResult.platform_fee,
+        taxAmount: piResult.tax_amount || 0,
         totalAmount: piResult.total_amount,
       });
 
@@ -289,8 +290,8 @@ const PaymentLinkInner = ({ route, navigation }) => {
                 <Text style={styles.checkoutSummaryValue}>{formatCurrency(paymentBreakdown.serviceAmount / 100)}</Text>
               </View>
               <View style={styles.checkoutSummaryRow}>
-                <Text style={styles.checkoutSummaryLabel}>Taxes & Fees</Text>
-                <Text style={styles.checkoutSummaryValue}>{formatCurrency(paymentBreakdown.platformFee / 100)}</Text>
+                <Text style={styles.checkoutSummaryLabel}>Taxes and Fees</Text>
+                <Text style={styles.checkoutSummaryValue}>{formatCurrency((paymentBreakdown.platformFee + (paymentBreakdown.taxAmount || 0)) / 100)}</Text>
               </View>
             </>
           )}

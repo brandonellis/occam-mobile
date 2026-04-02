@@ -37,13 +37,28 @@ export const calculateEffectivePrice = (service, selectedDuration = null) => {
  * @param {string} [options.currency='USD']
  * @returns {string}
  */
+// Module-level currency default — set by setCurrencyDefault() from app init
+let _currencyDefault = { locale: 'en-US', currency: 'USD' };
+
+/**
+ * Set the app-wide default currency for formatCurrency.
+ * Call this once when the tenant currency is known.
+ */
+export const setCurrencyDefault = (currencyCode, locale = 'en-US') => {
+  if (currencyCode) {
+    _currencyDefault = { locale, currency: String(currencyCode).toUpperCase() };
+  }
+};
+
 export const formatCurrency = (
   amount,
-  { locale = 'en-US', currency = 'USD' } = {}
+  { locale, currency } = {}
 ) => {
-  const formatter = new Intl.NumberFormat(locale, {
+  const effectiveLocale = locale || _currencyDefault.locale;
+  const effectiveCurrency = currency || _currencyDefault.currency;
+  const formatter = new Intl.NumberFormat(effectiveLocale, {
     style: 'currency',
-    currency,
+    currency: effectiveCurrency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

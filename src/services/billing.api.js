@@ -67,6 +67,22 @@ export const getMyPaymentMethods = async () => {
 };
 
 /**
+ * Calculate tax for a given amount using the Stripe Tax Calculation API.
+ *
+ * @param {number} amountCents - Taxable amount in cents
+ * @param {string} [currency='usd'] - Three-letter currency code
+ * @returns {Promise<Object>} { success, tax_amount } (tax_amount in cents)
+ */
+export const calculateTaxForAmount = async (amountCents, currency = 'usd') => {
+  try {
+    const response = await apiClient.post('/billing/tax-estimate', { amount_cents: amountCents, currency });
+    return response.data;
+  } catch (_) {
+    return { success: true, tax_amount: 0 };
+  }
+};
+
+/**
  * Resolve a booking payment token to booking details.
  * Public endpoint — no auth required.
  *

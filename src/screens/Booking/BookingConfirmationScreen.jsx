@@ -15,10 +15,11 @@ import RecurrenceSection from '../../components/Booking/RecurrenceSection';
 import MembershipAllotmentSection from '../../components/Booking/MembershipAllotmentSection';
 import PaymentMethodSection from '../../components/Booking/PaymentMethodSection';
 import PaymentSummarySection from '../../components/Booking/PaymentSummarySection';
+import { useTaxCalculation } from '../../hooks/useTaxCalculation';
 import BookingBenefitBanner from '../../components/Booking/BookingBenefitBanner';
 import ConfirmBottomBar from '../../components/Booking/ConfirmBottomBar';
 import { bookingStyles as styles } from '../../styles/booking.styles';
-import { buildPaymentSummary } from '../../helpers/pricing.helper';
+import { buildPaymentSummary, formatCurrency } from '../../helpers/pricing.helper';
 import { confirmCancelBooking } from '../../helpers/booking.navigation.helper';
 import { getBookingSteps } from '../../helpers/booking.helper';
 import { formatDateInTz } from '../../helpers/timezone.helper';
@@ -189,6 +190,12 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
     discountAmount: appliedPromo?.discount_amount ? Number(appliedPromo.discount_amount) : 0,
   });
 
+  const isCoveredByBenefit = !!isMembershipBooking || isPackageBooking;
+  const discountAmt = appliedPromo?.discount_amount ? Number(appliedPromo.discount_amount) : 0;
+  const effectiveSubtotal = isCoveredByBenefit ? 0 : Math.max(0, (summary.subtotal || 0) - discountAmt);
+  const taxableAmountCents = Math.round(effectiveSubtotal * 100);
+  const { taxAmount, taxLoading } = useTaxCalculation(taxableAmountCents);
+
   const formattedDate = timeSlot?.start_time
     ? formatDateInTz(timeSlot.start_time, company, 'long')
     : date
@@ -207,7 +214,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
             ? 'Book Session'
             : isPaymentNotRequired || !paymentsEnabled
               ? 'Confirm Booking'
-              : `Pay ${summary.totalFormatted}`;
+              : `Pay ${formatCurrency(summary.total + taxAmount)}`;
 
   // ── Success screen ──
 
@@ -433,6 +440,7 @@ const BookingConfirmationInner = ({ route, navigation, ecommerceConfig }) => {
           <PaymentSummarySection
             summary={summary}
             appliedPromo={appliedPromo}
+            taxAmount={taxAmount}
             feeBreakdownVisible={feeBreakdownVisible}
             onToggleFeeBreakdown={() => setFeeBreakdownVisible((v) => !v)}
             feeDescription={feeDescription}

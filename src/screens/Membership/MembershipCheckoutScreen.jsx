@@ -13,6 +13,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SCREENS } from '../../constants/navigation.constants';
 import { CardField, useStripe, useConfirmPayment } from '@stripe/stripe-react-native';
 import ScreenHeader from '../../components/ScreenHeader';
+import { useTaxCalculation } from '../../hooks/useTaxCalculation';
 import { membershipStyles as styles } from '../../styles/membership.styles';
 import { formatCurrency } from '../../helpers/pricing.helper';
 import { extractErrorMessage } from '../../helpers/error.helper';
@@ -74,7 +75,9 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
   // Price calculation
   const cyclePrice = billingCycle ? parseFloat(billingCycle.price) || 0 : parseFloat(plan.monthly_price || plan.price || 0);
   const platformFee = Math.round(cyclePrice * platformFeeRate * 100) / 100;
-  const total = cyclePrice + platformFee;
+  const membershipAmountCents = Math.round(cyclePrice * 100);
+  const { taxAmount, taxLoading: _taxLoading } = useTaxCalculation(membershipAmountCents);
+  const total = cyclePrice + platformFee + taxAmount;
 
   const planServices = plan.plan_services || [];
 
@@ -301,9 +304,9 @@ const MembershipCheckoutScreen = ({ route, navigation }) => {
           </View>
 
           <View style={styles.checkoutSummaryRow}>
-            <Text style={styles.checkoutSummaryLabel}>Processing Fee ({Math.round(platformFeeRate * 100)}%)</Text>
+            <Text style={styles.checkoutSummaryLabel}>Taxes and Fees</Text>
             <Text style={styles.checkoutSummaryValue}>
-              {formatCurrency(platformFee)}
+              {formatCurrency(platformFee + taxAmount)}
             </Text>
           </View>
 
