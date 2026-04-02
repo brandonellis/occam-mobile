@@ -28,8 +28,25 @@ export const openTenantWebPage = async (path) => {
   return WebBrowser.openBrowserAsync(url);
 };
 
-export const openMembershipPurchase = () => openTenantWebPage('/book?flow=membership');
-export const openPackagePurchase = () => openTenantWebPage('/book?flow=package');
+/**
+ * Open a tenant web page with an exchange token for seamless auth transfer.
+ * Falls back to unauthenticated if token generation fails.
+ */
+const openAuthenticatedWebPage = async (path) => {
+  try {
+    const exchangeToken = await createExchangeToken();
+    if (exchangeToken) {
+      const separator = path.includes('?') ? '&' : '?';
+      return openTenantWebPage(`${path}${separator}exchange_token=${encodeURIComponent(exchangeToken)}`);
+    }
+  } catch {
+    // Non-fatal — client can still log in on web
+  }
+  return openTenantWebPage(path);
+};
+
+export const openMembershipPurchase = () => openAuthenticatedWebPage('/book?flow=membership');
+export const openPackagePurchase = () => openAuthenticatedWebPage('/book?flow=package');
 
 /**
  * Redirect a client to the web booking flow with full context so they

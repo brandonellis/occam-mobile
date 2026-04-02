@@ -62,6 +62,6 @@ export const appleSignInNative = async (identityToken, tenantSlug, fullName) => 
  * The token is valid for 5 minutes and consumed on first use.
  */
 export const createExchangeToken = async () => {
-  const response = await apiClient.post('/auth/exchange-token');
+  const response = await apiClient.post('/auth/exchange-token', null, { timeout: 5000 });
   return response.data.exchange_token;
 };
