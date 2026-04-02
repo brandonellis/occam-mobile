@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
 import { View } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -88,6 +89,11 @@ const BookingDeepLinkScreen = ({ navigation, route }) => {
       </View>
     </SafeAreaView>
   );
+};
+
+BookingDeepLinkScreen.propTypes = {
+  navigation: PropTypes.object.isRequired,
+  route: PropTypes.object.isRequired,
 };
 
 export default BookingDeepLinkScreen;

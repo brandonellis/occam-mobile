@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, ScrollView } from 'react-native';
+import { View, ScrollView, StyleSheet } from 'react-native';
 import { Text, Button, Portal, Modal, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import PropTypes from 'prop-types';
@@ -79,7 +79,7 @@ const RecurringResultModal = ({ visible, onDismiss, result }) => {
   );
 };
 
-const modalStyles = {
+const modalStyles = StyleSheet.create({
   container: {
     backgroundColor: colors.white,
     marginHorizontal: 24,
@@ -135,7 +135,7 @@ const modalStyles = {
   doneButton: {
     marginTop: 12,
   },
-};
+});
 
 RecurringResultModal.propTypes = {
   visible: PropTypes.bool.isRequired,
